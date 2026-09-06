@@ -32,47 +32,70 @@ export function App() {
   const store = useCommunityStore();
   // Parse initial view and slug from location.hash or pathname
   const parseHashLocation = () => {
-    let hash = '';
+    let path = '';
     if (typeof window !== 'undefined') {
-      const pathname = window.location.pathname.replace(/^\//, '').toLowerCase();
-      if (pathname === 'admin' || pathname === 'core') {
-        return { view: pathname, detailId: undefined };
+      const pathname = window.location.pathname.replace(/^\//, '').replace(/\/$/, '').toLowerCase();
+      if (pathname) {
+        if (pathname.startsWith('activity/')) {
+          return { view: 'activity_detail', detailId: pathname.replace('activity/', '') };
+        }
+        if (pathname.startsWith('activities/')) {
+          return { view: 'activity_detail', detailId: pathname.replace('activities/', '') };
+        }
+        if (pathname.startsWith('learn/')) {
+          return { view: 'learn', detailId: pathname.replace('learn/', '') };
+        }
+        if (pathname.startsWith('projects/')) {
+          return { view: 'projects', detailId: pathname.replace('projects/', '') };
+        }
+        if (pathname.startsWith('challenges/')) {
+          return { view: 'challenges', detailId: pathname.replace('challenges/', '') };
+        }
+        if (pathname.startsWith('resources/')) {
+          return { view: 'resources', detailId: pathname.replace('resources/', '') };
+        }
+        if (pathname.startsWith('core/draft/')) {
+          return { view: 'core', detailId: pathname.replace('core/draft/', '') };
+        }
+        if (['home', 'activities', 'learn', 'projects', 'challenges', 'resources', 'about', 'join', 'admin', 'core'].includes(pathname)) {
+          return { view: pathname, detailId: undefined };
+        }
       }
-      hash = window.location.hash.replace(/^#\/?/, '');
+      path = window.location.hash.replace(/^#\/?/, '');
     }
-    if (!hash || hash === 'home') {
+    if (!path || path === 'home') {
       return { view: 'home', detailId: undefined };
     }
-    if (hash.startsWith('activity/')) {
-      const slug = hash.replace('activity/', '');
+    if (path.startsWith('activity/')) {
+      const slug = path.replace('activity/', '');
       return { view: 'activity_detail', detailId: slug };
     }
-    if (hash.startsWith('activities/')) {
-      const slug = hash.replace('activities/', '');
+    if (path.startsWith('activities/')) {
+      const slug = path.replace('activities/', '');
       return { view: 'activity_detail', detailId: slug };
     }
-    if (hash.startsWith('learn/')) {
-      const slug = hash.replace('learn/', '');
+    if (path.startsWith('learn/')) {
+      const slug = path.replace('learn/', '');
       return { view: 'learn', detailId: slug };
     }
-    if (hash.startsWith('projects/')) {
-      const slug = hash.replace('projects/', '');
+    if (path.startsWith('projects/')) {
+      const slug = path.replace('projects/', '');
       return { view: 'projects', detailId: slug };
     }
-    if (hash.startsWith('challenges/')) {
-      const slug = hash.replace('challenges/', '');
+    if (path.startsWith('challenges/')) {
+      const slug = path.replace('challenges/', '');
       return { view: 'challenges', detailId: slug };
     }
-    if (hash.startsWith('resources/')) {
-      const slug = hash.replace('resources/', '');
+    if (path.startsWith('resources/')) {
+      const slug = path.replace('resources/', '');
       return { view: 'resources', detailId: slug };
     }
-    if (hash.startsWith('core/draft/')) {
-      const draftId = hash.replace('core/draft/', '');
+    if (path.startsWith('core/draft/')) {
+      const draftId = path.replace('core/draft/', '');
       return { view: 'core', detailId: draftId };
     }
-    if (['activities', 'learn', 'projects', 'challenges', 'resources', 'about', 'join', 'admin', 'core'].includes(hash)) {
-      return { view: hash, detailId: undefined };
+    if (['activities', 'learn', 'projects', 'challenges', 'resources', 'about', 'join', 'admin', 'core'].includes(path)) {
+      return { view: path, detailId: undefined };
     }
     return { view: 'home', detailId: undefined };
   };
