@@ -109,13 +109,15 @@ export const HomePage: React.FC<Props> = ({
   return (
     <div style={{ paddingBottom: '5rem' }}>
       {/* 1. HERO SECTION */}
+      {/* 1. HERO SECTION & INTEGRATED STATS GRID */}
       <section style={{
-        paddingTop: '4.5rem',
-        paddingBottom: '4.5rem',
-        background: 'radial-gradient(ellipse at 50% 0%, rgba(250, 70, 22, 0.08) 0%, rgba(11, 11, 11, 0) 70%)',
-        borderBottom: '1px solid var(--border-subtle)'
+        paddingTop: '5rem',
+        paddingBottom: '5.5rem',
+        background: 'radial-gradient(ellipse 80% 50% at 50% -10%, rgba(250, 70, 22, 0.18), transparent 70%)',
+        borderBottom: '1px solid var(--border-subtle)',
+        position: 'relative'
       }}>
-        <div className="container">
+        <div className="container" style={{ maxWidth: '1240px' }}>
           <div style={{ maxWidth: '840px', margin: '0 auto', textAlign: 'center' }}>
             {/* Institution Chapter Eyebrow Badge */}
             <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem' }}>
@@ -164,63 +166,71 @@ export const HomePage: React.FC<Props> = ({
               {heroTagline}
             </p>
 
-            {/* Primary & Secondary Action Buttons */}
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+            {/* Primary & Secondary Action Buttons (Equal h-11, text-sm font-medium, rounded-xl) */}
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
+              {/* Primary CTA */}
               <button
                 onClick={() => onNavigate(primaryCtaLink)}
-                className="btn btn-lg"
                 style={{
+                  height: '2.75rem',
+                  paddingLeft: '1.5rem',
+                  paddingRight: '1.5rem',
+                  fontSize: '0.875rem',
+                  fontWeight: 500,
+                  borderRadius: '0.75rem',
                   background: '#FA4616',
                   color: '#FFFFFF',
-                  fontWeight: 600,
-                  fontSize: '0.975rem',
-                  borderRadius: '10px',
-                  padding: '0.85rem 1.85rem',
-                  boxShadow: '0 4px 14px rgba(250, 70, 22, 0.25)',
-                  transition: 'all 0.2s ease',
                   border: '1px solid transparent',
-                  cursor: 'pointer'
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                  cursor: 'pointer',
+                  transition: 'all 200ms ease'
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.boxShadow = '0 0 24px rgba(255, 70, 22, 0.45)';
+                  e.currentTarget.style.background = '#ff5722';
+                  e.currentTarget.style.boxShadow = '0 0 20px rgba(250, 70, 22, 0.4)';
                   e.currentTarget.style.transform = 'translateY(-1px)';
-                  e.currentTarget.style.background = '#FF521D';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.boxShadow = '0 4px 14px rgba(250, 70, 22, 0.25)';
-                  e.currentTarget.style.transform = 'translateY(0)';
                   e.currentTarget.style.background = '#FA4616';
+                  e.currentTarget.style.boxShadow = 'none';
+                  e.currentTarget.style.transform = 'translateY(0)';
                 }}
               >
-                {primaryCtaText} <ArrowRight size={18} />
+                <span>{primaryCtaText}</span> <span style={{ fontSize: '1rem', lineHeight: 1 }}>&rarr;</span>
               </button>
 
+              {/* Secondary CTA */}
               <button
                 onClick={() => onNavigate(secondaryCtaLink)}
-                className="btn btn-lg"
                 style={{
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  border: '1px solid rgba(255, 255, 255, 0.10)',
-                  borderRadius: '10px',
-                  padding: '0.85rem 1.85rem',
-                  color: '#E5E7EB',
-                  fontWeight: 600,
-                  fontSize: '0.975rem',
-                  backdropFilter: 'blur(8px)',
-                  WebkitBackdropFilter: 'blur(8px)',
-                  transition: 'all 0.2s ease',
-                  cursor: 'pointer'
+                  height: '2.75rem',
+                  paddingLeft: '1.5rem',
+                  paddingRight: '1.5rem',
+                  fontSize: '0.875rem',
+                  fontWeight: 500,
+                  borderRadius: '0.75rem',
+                  background: 'rgba(23, 23, 23, 0.60)',
+                  border: '1px solid rgba(64, 64, 64, 0.80)',
+                  color: '#E5E5E5',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  transition: 'all 200ms ease'
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.10)';
-                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.20)';
+                  e.currentTarget.style.background = '#262626';
+                  e.currentTarget.style.borderColor = '#525252';
                   e.currentTarget.style.color = '#FFFFFF';
                   e.currentTarget.style.transform = 'translateY(-1px)';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.10)';
-                  e.currentTarget.style.color = '#E5E7EB';
+                  e.currentTarget.style.background = 'rgba(23, 23, 23, 0.60)';
+                  e.currentTarget.style.borderColor = 'rgba(64, 64, 64, 0.80)';
+                  e.currentTarget.style.color = '#E5E5E5';
                   e.currentTarget.style.transform = 'translateY(0)';
                 }}
               >
@@ -228,76 +238,80 @@ export const HomePage: React.FC<Props> = ({
               </button>
             </div>
           </div>
-        </div>
-      </section>
 
-      {/* 2. COMMUNITY STATISTICS - Card Separation & Divider */}
-      <section style={{
-        paddingTop: '3.5rem',
-        paddingBottom: '3.5rem',
-        borderTop: '1px solid rgba(255, 255, 255, 0.10)',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-        background: 'rgba(14, 14, 14, 0.65)'
-      }}>
-        <div className="container">
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-            gap: '1.25rem'
-          }}>
+          {/* Stats Grid: responsive 4-column layout (grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 max-w-6xl mx-auto px-4 mt-16) */}
+          <div
+            className="stats-responsive-grid"
+            style={{
+              maxWidth: '72rem',
+              marginLeft: 'auto',
+              marginRight: 'auto',
+              paddingLeft: '1rem',
+              paddingRight: '1rem',
+              marginTop: '4rem'
+            }}
+          >
             {statisticsList.map((stat) => (
               <div
                 key={stat.id}
+                className="stat-card"
                 style={{
-                  background: 'rgba(255, 255, 255, 0.025)',
-                  border: '1px solid rgba(255, 255, 255, 0.06)',
-                  borderRadius: '0.75rem',
+                  background: 'rgba(23, 23, 23, 0.40)',
+                  border: '1px solid rgba(38, 38, 38, 0.80)',
+                  borderRadius: '1rem',
                   padding: '1.5rem',
+                  backdropFilter: 'blur(4px)',
+                  WebkitBackdropFilter: 'blur(4px)',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
-                  transition: 'all 0.2s ease',
-                  position: 'relative'
+                  transition: 'all 300ms ease',
+                  cursor: 'default'
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = 'rgba(250, 70, 22, 0.3)';
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.045)';
-                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.borderColor = '#404040';
+                  e.currentTarget.style.transform = 'translateY(-4px)';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.06)';
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.025)';
+                  e.currentTarget.style.borderColor = 'rgba(38, 38, 38, 0.80)';
                   e.currentTarget.style.transform = 'translateY(0)';
                 }}
               >
                 <div>
-                  <div style={{
-                    fontSize: 'clamp(2.2rem, 3.2vw, 2.75rem)',
-                    fontWeight: 800,
-                    color: '#FA4616',
-                    lineHeight: 1.1,
-                    letterSpacing: '-0.025em',
-                    marginBottom: '0.65rem'
-                  }}>
+                  {/* Numbers: text-3xl md:text-4xl font-extrabold text-[#FA4616] tracking-tight */}
+                  <div
+                    style={{
+                      fontSize: 'clamp(1.875rem, 3.2vw, 2.25rem)',
+                      fontWeight: 800,
+                      color: '#FA4616',
+                      letterSpacing: '-0.025em',
+                      lineHeight: 1.1
+                    }}
+                  >
                     {stat.value}
                   </div>
+                  {/* Label: text-sm font-semibold text-white mt-2 */}
                   <div style={{
-                    fontSize: '0.975rem',
-                    fontWeight: 700,
+                    fontSize: '0.875rem',
+                    fontWeight: 600,
                     color: '#FFFFFF',
-                    marginBottom: '0.45rem',
+                    marginTop: '0.5rem',
                     letterSpacing: '-0.01em'
                   }}>
                     {stat.title}
                   </div>
                 </div>
+                {/* Description: text-xs text-neutral-400 mt-1 leading-relaxed line-clamp-2 */}
                 <div style={{
-                  fontSize: '0.825rem',
-                  color: '#9CA3AF',
-                  lineHeight: 1.5,
+                  fontSize: '0.75rem',
+                  color: '#A3A3A3',
                   marginTop: '0.25rem',
-                  wordBreak: 'normal',
-                  overflow: 'visible'
+                  lineHeight: 1.625,
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis'
                 }}>
                   {stat.description}
                 </div>
@@ -974,6 +988,23 @@ export const HomePage: React.FC<Props> = ({
       </section>
 
       <style>{`
+        .stats-responsive-grid {
+          display: grid;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 1.5rem;
+        }
+        @media (max-width: 900px) {
+          .stats-responsive-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: 1rem !important;
+          }
+        }
+        @media (max-width: 480px) {
+          .stats-responsive-grid {
+            grid-template-columns: 1fr !important;
+            gap: 0.875rem !important;
+          }
+        }
         @media (max-width: 860px) {
           .featured-event-grid {
             grid-template-columns: 1fr !important;

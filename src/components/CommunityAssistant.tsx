@@ -153,36 +153,34 @@ export const CommunityAssistant: React.FC<Props> = ({
             bottom: '1.5rem',
             right: '1.5rem',
             zIndex: 50,
-            background: 'rgba(12, 12, 12, 0.85)',
-            color: '#E5E7EB',
-            border: '1px solid rgba(255, 255, 255, 0.12)',
+            background: 'rgba(23, 23, 23, 0.90)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+            border: '1px solid rgba(64, 64, 64, 0.80)',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.75)',
+            padding: '0.5rem 1rem',
             borderRadius: '9999px',
-            padding: '0.625rem 1.15rem',
-            display: 'flex',
+            fontSize: '0.75rem',
+            color: '#D4D4D4',
+            display: 'inline-flex',
             alignItems: 'center',
-            gap: '0.5rem',
-            fontWeight: 600,
-            fontSize: '0.8125rem',
+            gap: '0.45rem',
+            fontWeight: 500,
             cursor: 'pointer',
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.6), 0 0 12px rgba(250, 70, 22, 0.15)',
-            backdropFilter: 'blur(16px)',
-            WebkitBackdropFilter: 'blur(16px)',
-            transition: 'all 0.2s ease'
+            transition: 'all 200ms ease'
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = 'rgba(250, 70, 22, 0.45)';
-            e.currentTarget.style.boxShadow = '0 10px 35px rgba(0, 0, 0, 0.75), 0 0 24px rgba(250, 70, 22, 0.35)';
-            e.currentTarget.style.transform = 'translateY(-2px)';
+            e.currentTarget.style.borderColor = 'rgba(250, 70, 22, 0.5)';
             e.currentTarget.style.color = '#FFFFFF';
+            e.currentTarget.style.transform = 'translateY(-1px)';
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.12)';
-            e.currentTarget.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.6), 0 0 12px rgba(250, 70, 22, 0.15)';
+            e.currentTarget.style.borderColor = 'rgba(64, 64, 64, 0.80)';
+            e.currentTarget.style.color = '#D4D4D4';
             e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.color = '#E5E7EB';
           }}
         >
-          <HelpCircle size={16} style={{ color: '#FA4616' }} />
+          <HelpCircle size={14} style={{ color: '#FA4616', flexShrink: 0 }} />
           <span>Ask Guide</span>
         </button>
       )}
