@@ -82,9 +82,13 @@ export const localDatabase = {
 
   getSettings: (): SiteSettings => {
     const loaded = getItem<SiteSettings>(STORAGE_KEYS.SETTINGS, INITIAL_SETTINGS);
+    const heroHeading = (loaded?.heroHeading && !loaded.heroHeading.includes('Student Community'))
+      ? loaded.heroHeading
+      : INITIAL_SETTINGS.heroHeading;
     return {
       ...INITIAL_SETTINGS,
       ...loaded,
+      heroHeading,
       statistics: loaded?.statistics && loaded.statistics.length > 0 ? loaded.statistics : INITIAL_SETTINGS.statistics,
       announcements: loaded?.announcements && loaded.announcements.length > 0 ? loaded.announcements : INITIAL_SETTINGS.announcements,
       timelineMilestones: loaded?.timelineMilestones && loaded.timelineMilestones.length > 0 ? loaded.timelineMilestones : INITIAL_SETTINGS.timelineMilestones

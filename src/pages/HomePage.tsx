@@ -36,7 +36,10 @@ export const HomePage: React.FC<Props> = ({
   onNavigate
 }) => {
   // Data-driven content resolution
-  const heroHeading = settings.heroHeading || 'ACE UiPath Community';
+  const rawHeading = settings.heroHeading || 'ACE UiPath Community';
+  const heroHeading = rawHeading.includes('Student Community')
+    ? rawHeading.replace('Student Community', 'Community')
+    : rawHeading;
   const heroTagline = settings.heroTagline || 'A student community at ACE Engineering College focused on learning, building and exploring automation.';
   const primaryCtaText = settings.primaryCtaText || 'Explore the Community';
   const primaryCtaLink = settings.primaryCtaLink || 'activities';
@@ -53,35 +56,19 @@ export const HomePage: React.FC<Props> = ({
         { id: 's4', title: 'Hours Automated', value: '3,800+', description: 'Saved in academic grading and records handling', visible: true, order: 4 }
       ];
 
-  // Helper to render gradient on "Student Community" or "Community"
+  // Helper to render gradient on "Community"
   const renderHeroHeading = (text: string) => {
-    if (text.includes('Student Community')) {
-      const parts = text.split('Student Community');
+    const cleanText = text.replace('Student Community', 'Community');
+    if (cleanText.includes('Community')) {
+      const parts = cleanText.split('Community');
       return (
         <>
           {parts[0]}
           <span style={{
-            background: 'linear-gradient(135deg, #FFFFFF 20%, #FA4616 100%)',
+            background: 'linear-gradient(135deg, #FFFFFF 25%, #FA4616 100%)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
-            display: 'inline-block'
-          }}>
-            Student Community
-          </span>
-          {parts.slice(1).join('Student Community')}
-        </>
-      );
-    }
-    if (text.includes('Community')) {
-      const parts = text.split('Community');
-      return (
-        <>
-          {parts[0]}
-          <span style={{
-            background: 'linear-gradient(135deg, #FFFFFF 20%, #FA4616 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            display: 'inline-block'
+            display: 'inline'
           }}>
             Community
           </span>
@@ -89,7 +76,7 @@ export const HomePage: React.FC<Props> = ({
         </>
       );
     }
-    return text;
+    return cleanText;
   };
 
   // Featured / Latest Event
@@ -111,63 +98,67 @@ export const HomePage: React.FC<Props> = ({
       {/* 1. HERO SECTION */}
       {/* 1. HERO SECTION & INTEGRATED STATS GRID */}
       <section style={{
-        paddingTop: '5rem',
-        paddingBottom: '5.5rem',
-        background: 'radial-gradient(ellipse 80% 50% at 50% -10%, rgba(250, 70, 22, 0.18), transparent 70%)',
+        paddingTop: '3.5rem',
+        paddingBottom: '3.75rem',
+        background: 'radial-gradient(ellipse 70% 45% at 50% 0%, rgba(250, 70, 22, 0.10), transparent 70%)',
         borderBottom: '1px solid var(--border-subtle)',
         position: 'relative'
       }}>
         <div className="container" style={{ maxWidth: '1240px' }}>
-          <div style={{ maxWidth: '840px', margin: '0 auto', textAlign: 'center' }}>
+          <div style={{ maxWidth: '920px', margin: '0 auto', textAlign: 'center' }}>
             {/* Institution Chapter Eyebrow Badge */}
-            <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem' }}>
               <span style={{
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '0.5rem',
+                gap: '0.45rem',
                 background: 'rgba(255, 70, 22, 0.08)',
                 border: '1px solid rgba(255, 70, 22, 0.25)',
                 borderRadius: '9999px',
-                padding: '0.4rem 1.05rem',
-                fontSize: '0.78rem',
+                padding: '0.35rem 0.95rem',
+                fontSize: '0.75rem',
                 fontWeight: 600,
                 letterSpacing: '0.04em',
                 textTransform: 'uppercase',
                 color: '#FA4616',
-                boxShadow: '0 0 12px rgba(255, 70, 22, 0.15)',
+                boxShadow: '0 0 12px rgba(255, 70, 22, 0.12)',
                 backdropFilter: 'blur(8px)',
                 WebkitBackdropFilter: 'blur(8px)'
               }}>
-                <ShieldCheck size={14} style={{ color: '#FA4616', flexShrink: 0 }} />
+                <ShieldCheck size={13} style={{ color: '#FA4616', flexShrink: 0 }} />
                 <span>UiPath Academic Alliance &bull; ACE Engineering College</span>
               </span>
             </div>
 
             {/* Main Headline */}
             <h1 style={{
-              fontSize: 'clamp(2.5rem, 5.5vw, 4rem)',
-              lineHeight: 1.1,
+              fontSize: 'clamp(2.25rem, 4.2vw, 3.25rem)',
+              lineHeight: 1.15,
               fontWeight: 800,
               letterSpacing: '-0.03em',
               color: '#FFFFFF',
-              marginBottom: '1.25rem'
+              marginBottom: '1rem',
+              maxWidth: '900px',
+              marginLeft: 'auto',
+              marginRight: 'auto',
+              whiteSpace: 'normal'
             }}>
               {renderHeroHeading(heroHeading)}
             </h1>
 
             {/* Sub-headline */}
             <p style={{
-              fontSize: 'clamp(1.05rem, 2vw, 1.25rem)',
+              fontSize: 'clamp(1rem, 1.8vw, 1.15rem)',
               color: '#D1D5DB',
               lineHeight: 1.6,
-              maxWidth: '720px',
-              margin: '0 auto 2.5rem auto'
+              maxWidth: '680px',
+              margin: '0 auto 2rem auto'
             }}>
               {heroTagline}
             </p>
 
             {/* Primary & Secondary Action Buttons (Equal h-11, text-sm font-medium, rounded-xl) */}
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '0.85rem', flexWrap: 'wrap', alignItems: 'center' }}>
               {/* Primary CTA */}
               <button
                 onClick={() => onNavigate(primaryCtaLink)}
@@ -239,7 +230,7 @@ export const HomePage: React.FC<Props> = ({
             </div>
           </div>
 
-          {/* Stats Grid: responsive 4-column layout (grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 max-w-6xl mx-auto px-4 mt-16) */}
+          {/* Stats Grid: responsive 4-column layout */}
           <div
             className="stats-responsive-grid"
             style={{
@@ -248,7 +239,7 @@ export const HomePage: React.FC<Props> = ({
               marginRight: 'auto',
               paddingLeft: '1rem',
               paddingRight: '1rem',
-              marginTop: '4rem'
+              marginTop: '2.75rem'
             }}
           >
             {statisticsList.map((stat) => (
