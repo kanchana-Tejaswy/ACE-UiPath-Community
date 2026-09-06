@@ -52,7 +52,7 @@ export const JoinPage: React.FC<Props> = ({ settings, onNavigate }) => {
             Join the ACE UiPath Movement
           </h1>
           <p style={{ fontSize: '1.05rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-            Connect with 850+ automation peers at ACE Engineering College. Choose how you want to contribute to our long-term digital ecosystem.
+            Connect with 950+ automation peers at ACE Engineering College. Choose how you want to contribute to our long-term digital ecosystem.
           </p>
         </div>
 

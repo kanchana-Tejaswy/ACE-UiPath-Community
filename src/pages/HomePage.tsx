@@ -47,7 +47,7 @@ export const HomePage: React.FC<Props> = ({
   const statisticsList = (settings.statistics && settings.statistics.length > 0)
     ? settings.statistics.filter((s) => s.visible !== false).sort((a, b) => a.order - b.order)
     : [
-        { id: 's1', title: 'Students Trained', value: '850+', description: 'Workshops across CSE, IT, ECE & allied branches', visible: true, order: 1 },
+        { id: 's1', title: 'Students Trained', value: '950+', description: 'Workshops across CSE, IT, ECE & allied branches', visible: true, order: 1 },
         { id: 's2', title: 'Automations Built', value: '140+', description: 'Production-ready bots deployed for student and campus needs', visible: true, order: 2 },
         { id: 's3', title: 'UiPath Certifications', value: '95+', description: 'Certified Associate & Specialist developers', visible: true, order: 3 },
         { id: 's4', title: 'Hours Automated', value: '3,800+', description: 'Saved in academic grading and records handling', visible: true, order: 4 }
@@ -914,7 +914,7 @@ export const HomePage: React.FC<Props> = ({
                 fontSize: '0.9rem',
                 color: '#FED7AA'
               }}>
-                {settings.communityStoryHighlight || 'Over 850 students trained and 140+ functional automations built for campus and enterprise use cases.'}
+                {settings.communityStoryHighlight || 'Over 950 students trained and 140+ functional automations built for campus and enterprise use cases.'}
               </div>
 
               <button

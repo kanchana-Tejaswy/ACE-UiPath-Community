@@ -183,7 +183,7 @@ export const AdminPage: React.FC<Props> = ({
 
   // 2. STATISTICS STATE & MODAL
   const currentStatistics = settings.statistics || [
-    { id: 'stat_1', title: 'Students Trained', value: '850+', description: 'Workshops across branches', visible: true, order: 1 },
+    { id: 'stat_1', title: 'Students Trained', value: '950+', description: 'Workshops across branches', visible: true, order: 1 },
     { id: 'stat_2', title: 'Automations Built', value: '140+', description: 'Real bots deployed for campus needs', visible: true, order: 2 },
     { id: 'stat_3', title: 'UiPath Certifications', value: '95+', description: 'Certified Associate developers', visible: true, order: 3 },
     { id: 'stat_4', title: 'Hours Automated', value: '3,800+', description: 'Saved in academic tasks', visible: true, order: 4 }
@@ -1575,7 +1575,7 @@ export const AdminPage: React.FC<Props> = ({
                 />
               </div>
               <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>VALUE (e.g. 850+)</label>
+                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>VALUE (e.g. 950+)</label>
                 <input
                   type="text"
                   required

@@ -54,3 +54,5 @@ powershell.cmd
 *.njsproj
 *.sln
 *.sw?
+
+.vercel
