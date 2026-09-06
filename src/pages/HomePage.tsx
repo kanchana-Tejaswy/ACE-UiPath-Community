@@ -2,6 +2,7 @@ import React from 'react';
 import { 
   ArrowRight, 
   Calendar, 
+  CalendarPlus,
   MapPin, 
   Clock, 
   ExternalLink,
@@ -327,128 +328,328 @@ export const HomePage: React.FC<Props> = ({
               </button>
             </div>
 
-            {/* Event Feature Layout: Real Visual + Direct Information */}
-            <div style={{
-              background: 'var(--bg-secondary)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: 'var(--radius-lg)',
-              overflow: 'hidden',
-              display: 'grid',
-              gridTemplateColumns: featuredActivity.bannerImage ? 'minmax(300px, 420px) minmax(0, 1fr)' : '1fr',
-              gap: '0'
-            }} className="featured-event-grid">
-              {/* Event Image / Poster */}
-              {featuredActivity.bannerImage && (
-                <div style={{
-                  background: 'var(--bg-tertiary)',
-                  minHeight: '300px',
+            {/* Unified Featured Card Wrapper with Soft Ambient Orange Backlight */}
+            <div style={{ position: 'relative' }}>
+              {/* Soft Ambient Orange Backlight */}
+              <div style={{
+                position: 'absolute',
+                inset: '-12px',
+                background: 'radial-gradient(ellipse at 15% 45%, rgba(250, 70, 22, 0.12) 0%, rgba(250, 70, 22, 0.03) 50%, transparent 75%)',
+                filter: 'blur(32px)',
+                borderRadius: '1.5rem',
+                zIndex: 0,
+                pointerEvents: 'none'
+              }} />
+
+              {/* Main Card Container with Subtle Dark Glassmorphism */}
+              <div
+                className="featured-event-grid"
+                style={{
                   position: 'relative',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  overflow: 'hidden'
-                }}>
-                  <img
-                    src={featuredActivity.bannerImage}
-                    alt={featuredActivity.title}
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover',
-                      maxHeight: '440px',
-                      display: 'block'
-                    }}
-                    onError={(e) => {
-                      // Graceful fallback to neutral placeholder
-                      (e.target as HTMLImageElement).style.display = 'none';
-                    }}
-                  />
-                </div>
-              )}
-
-              {/* Event Details */}
-              <div style={{ padding: '2.5rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
-                    <span className="badge badge-orange">{featuredActivity.category}</span>
-                    <span className="badge badge-neutral">{featuredActivity.eventType}</span>
-                    <span className={`badge ${featuredActivity.status === 'Upcoming' ? 'badge-green' : 'badge-slate'}`}>
-                      {featuredActivity.status}
-                    </span>
-                  </div>
-
-                  <h3 style={{ fontSize: '1.65rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '0.85rem' }}>
-                    {featuredActivity.title}
-                  </h3>
-
-                  <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '1.75rem' }}>
-                    {featuredActivity.summary}
-                  </p>
-
-                  {/* Metadata Row: Date, Time, Venue */}
+                  zIndex: 1,
+                  background: 'rgba(23, 23, 23, 0.40)', // bg-neutral-900/40
+                  border: '1px solid rgba(255, 255, 255, 0.08)', // border-neutral-800/80
+                  borderRadius: '1rem', // rounded-2xl
+                  padding: 'clamp(1.5rem, 3.5vw, 2.25rem)', // p-6 md:p-8
+                  backdropFilter: 'blur(12px)',
+                  WebkitBackdropFilter: 'blur(12px)',
+                  boxShadow: '0 25px 60px rgba(0, 0, 0, 0.6)',
+                  display: 'grid',
+                  gridTemplateColumns: featuredActivity.bannerImage ? 'minmax(280px, 420px) minmax(0, 1fr)' : '1fr',
+                  gap: 'clamp(1.5rem, 3vw, 2.5rem)',
+                  alignItems: 'center'
+                }}
+              >
+                {/* Event Image / Poster with Rounded Border & Aspect Ratio Wrapper */}
+                {featuredActivity.bannerImage && (
                   <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-                    gap: '1rem',
-                    padding: '1.25rem',
-                    background: 'var(--bg-primary)',
-                    borderRadius: 'var(--radius-md)',
-                    border: '1px solid var(--border-subtle)',
-                    marginBottom: '1.75rem'
+                    borderRadius: '0.75rem', // rounded-xl
+                    overflow: 'hidden',
+                    border: '1px solid rgba(255, 255, 255, 0.10)', // border-white/10
+                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8)', // shadow-2xl
+                    background: '#141414',
+                    position: 'relative',
+                    width: '100%',
+                    aspectRatio: '16 / 10',
+                    maxHeight: '400px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
                   }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-                      <Calendar size={18} style={{ color: 'var(--uipath-orange)', flexShrink: 0 }} />
-                      <div>
-                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>DATE</div>
-                        <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>{featuredActivity.date}</div>
-                      </div>
+                    <img
+                      src={featuredActivity.bannerImage}
+                      alt={featuredActivity.title}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        display: 'block',
+                        transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'scale(1.02)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'scale(1)';
+                      }}
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = '/logo.png';
+                      }}
+                    />
+                  </div>
+                )}
+
+                {/* Event Details */}
+                <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                  <div>
+                    {/* Status Badges & Eyebrow Hierarchy */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+                      {/* Category Pill */}
+                      <span style={{
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        padding: '0.25rem 0.65rem',
+                        borderRadius: '9999px',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        background: 'rgba(250, 70, 22, 0.10)',
+                        color: '#FB923C', // text-orange-400
+                        border: '1px solid rgba(250, 70, 22, 0.20)'
+                      }}>
+                        {featuredActivity.category || 'COMMUNITY MEETUP'}
+                      </span>
+
+                      {/* Event Type Pill */}
+                      <span style={{
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        padding: '0.25rem 0.65rem',
+                        borderRadius: '9999px',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        background: '#262626', // bg-neutral-800
+                        color: '#D4D4D4', // text-neutral-300
+                        border: '1px solid #404040' // border-neutral-700
+                      }}>
+                        {featuredActivity.eventType || 'HYBRID'}
+                      </span>
+
+                      {/* Status Pill with Pulsing Green Micro-Dot for Upcoming */}
+                      <span style={{
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        padding: '0.25rem 0.65rem',
+                        borderRadius: '9999px',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.375rem',
+                        background: featuredActivity.status === 'Upcoming' ? 'rgba(16, 185, 129, 0.10)' : 'rgba(255, 255, 255, 0.05)',
+                        color: featuredActivity.status === 'Upcoming' ? '#34D399' : '#9CA3AF',
+                        border: featuredActivity.status === 'Upcoming' ? '1px solid rgba(16, 185, 129, 0.20)' : '1px solid rgba(255, 255, 255, 0.10)'
+                      }}>
+                        {featuredActivity.status === 'Upcoming' && (
+                          <span style={{ position: 'relative', display: 'inline-flex', height: '7px', width: '7px' }}>
+                            <span style={{
+                              position: 'absolute',
+                              display: 'inline-flex',
+                              height: '100%',
+                              width: '100%',
+                              borderRadius: '9999px',
+                              background: '#10B981',
+                              opacity: 0.75,
+                              animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+                            }} />
+                            <span style={{
+                              position: 'relative',
+                              display: 'inline-flex',
+                              borderRadius: '9999px',
+                              height: '7px',
+                              width: '7px',
+                              background: '#10B981'
+                            }} />
+                          </span>
+                        )}
+                        <span>{featuredActivity.status}</span>
+                      </span>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-                      <Clock size={18} style={{ color: 'var(--uipath-orange)', flexShrink: 0 }} />
-                      <div>
-                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>TIME</div>
-                        <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                          {featuredActivity.timeStart} - {featuredActivity.timeEnd}
+                    <h3 style={{
+                      fontSize: 'clamp(1.4rem, 2.5vw, 1.85rem)',
+                      fontWeight: 800,
+                      color: '#FFFFFF',
+                      lineHeight: 1.2,
+                      letterSpacing: '-0.02em',
+                      marginBottom: '0.75rem'
+                    }}>
+                      {featuredActivity.title}
+                    </h3>
+
+                    <p style={{
+                      fontSize: '0.95rem',
+                      color: '#D1D5DB', // text-neutral-300
+                      lineHeight: 1.6,
+                      marginBottom: '1.5rem'
+                    }}>
+                      {featuredActivity.summary}
+                    </p>
+
+                    {/* Event Meta Grid (Date, Time, Venue) - Mini Dashboard */}
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(135px, 1fr))',
+                      gap: '0.75rem',
+                      padding: '1rem 1.15rem',
+                      borderRadius: '0.75rem', // rounded-xl
+                      background: 'rgba(10, 10, 10, 0.60)', // bg-neutral-950/60
+                      border: '1px solid rgba(255, 255, 255, 0.08)', // border-neutral-800/60
+                      marginBottom: '1.75rem'
+                    }}>
+                      {/* DATE */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                        <Calendar size={18} style={{ color: '#FA4616', flexShrink: 0 }} />
+                        <div>
+                          <div style={{
+                            fontSize: '11px',
+                            fontWeight: 600,
+                            color: '#9CA3AF', // text-neutral-400
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em',
+                            marginBottom: '0.15rem'
+                          }}>
+                            DATE
+                          </div>
+                          <div style={{ fontSize: '0.875rem', fontWeight: 500, color: '#F3F4F6' }}>
+                            {featuredActivity.date}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* TIME */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                        <Clock size={18} style={{ color: '#FA4616', flexShrink: 0 }} />
+                        <div>
+                          <div style={{
+                            fontSize: '11px',
+                            fontWeight: 600,
+                            color: '#9CA3AF',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em',
+                            marginBottom: '0.15rem'
+                          }}>
+                            TIME
+                          </div>
+                          <div style={{ fontSize: '0.875rem', fontWeight: 500, color: '#F3F4F6' }}>
+                            {featuredActivity.timeStart} - {featuredActivity.timeEnd}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* VENUE */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                        <MapPin size={18} style={{ color: '#FA4616', flexShrink: 0 }} />
+                        <div>
+                          <div style={{
+                            fontSize: '11px',
+                            fontWeight: 600,
+                            color: '#9CA3AF',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.05em',
+                            marginBottom: '0.15rem'
+                          }}>
+                            VENUE
+                          </div>
+                          <div style={{ fontSize: '0.875rem', fontWeight: 500, color: '#F3F4F6' }}>
+                            {featuredActivity.venue}
+                          </div>
                         </div>
                       </div>
                     </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-                      <MapPin size={18} style={{ color: 'var(--uipath-orange)', flexShrink: 0 }} />
-                      <div>
-                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>VENUE</div>
-                        <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>{featuredActivity.venue}</div>
-                      </div>
-                    </div>
                   </div>
 
-                  {/* Speaker info if available */}
-                  {featuredActivity.speakers && featuredActivity.speakers.length > 0 && (
-                    <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
-                      Speaker: <strong style={{ color: 'var(--text-primary)' }}>{featuredActivity.speakers[0].name}</strong> ({featuredActivity.speakers[0].roleTitle}, {featuredActivity.speakers[0].organization})
-                    </div>
-                  )}
-                </div>
-
-                <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-                  <button
-                    onClick={() => onNavigate('activities', featuredActivity.slug)}
-                    className="btn btn-primary"
-                  >
-                    View Session Details <ArrowRight size={16} />
-                  </button>
-
-                  {featuredActivity.slidesUrl && (
-                    <a
-                      href={featuredActivity.slidesUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="btn btn-secondary"
+                  {/* Actions (Elevated View Details + Add to Calendar Ghost Button) */}
+                  <div style={{ display: 'flex', gap: '0.85rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                    <button
+                      onClick={() => onNavigate('activities', featuredActivity.slug)}
+                      style={{
+                        background: '#FA4616',
+                        color: '#FFFFFF',
+                        fontWeight: 500,
+                        fontSize: '0.925rem',
+                        padding: '0.65rem 1.5rem',
+                        borderRadius: '8px',
+                        border: '1px solid transparent',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        boxShadow: '0 4px 14px rgba(250, 70, 22, 0.25)'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = '#FF5722';
+                        e.currentTarget.style.boxShadow = '0 0 20px rgba(250, 70, 22, 0.4)';
+                        e.currentTarget.style.transform = 'translateY(-1px)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = '#FA4616';
+                        e.currentTarget.style.boxShadow = '0 4px 14px rgba(250, 70, 22, 0.25)';
+                        e.currentTarget.style.transform = 'translateY(0)';
+                      }}
                     >
-                      Session Materials <ExternalLink size={14} />
-                    </a>
-                  )}
+                      View Session Details <ArrowRight size={16} />
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        const title = encodeURIComponent(featuredActivity.title);
+                        const details = encodeURIComponent(featuredActivity.summary || 'ACE UiPath Community Session');
+                        const location = encodeURIComponent(featuredActivity.venue || 'ACE Engineering College, Hyderabad');
+                        window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&details=${details}&location=${location}`, '_blank', 'noopener,noreferrer');
+                      }}
+                      style={{
+                        background: 'rgba(23, 23, 23, 0.60)',
+                        border: '1px solid #404040',
+                        borderRadius: '8px',
+                        padding: '0.65rem 1rem',
+                        fontSize: '0.875rem',
+                        color: '#D1D5DB',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.45rem',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = '#262626';
+                        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.25)';
+                        e.currentTarget.style.color = '#FFFFFF';
+                        e.currentTarget.style.transform = 'translateY(-1px)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'rgba(23, 23, 23, 0.60)';
+                        e.currentTarget.style.borderColor = '#404040';
+                        e.currentTarget.style.color = '#D1D5DB';
+                        e.currentTarget.style.transform = 'translateY(0)';
+                      }}
+                    >
+                      <CalendarPlus size={15} style={{ color: '#FA4616' }} />
+                      <span>Add to Calendar</span>
+                    </button>
+
+                    {featuredActivity.slidesUrl && (
+                      <a
+                        href={featuredActivity.slidesUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn btn-secondary btn-sm"
+                        style={{ padding: '0.6rem 0.9rem', borderRadius: '8px', fontSize: '0.85rem' }}
+                      >
+                        Session Materials <ExternalLink size={14} />
+                      </a>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
