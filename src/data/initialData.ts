@@ -148,8 +148,8 @@ export const INITIAL_SETTINGS: SiteSettings = {
 export const INITIAL_USERS: User[] = [
   {
     id: 'user_admin_1',
-    email: 'admin@aceec.ac.in',
-    name: 'Kanchana Tejaswy',
+    email: 'mail2tejaswy@gmail.com',
+    name: 'k.tejaswy',
     rollNumber: '21ACE05A01',
     branch: 'Computer Science & Engineering',
     graduationYear: 2025,

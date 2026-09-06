@@ -41,8 +41,8 @@ export const AuthModal: React.FC<Props> = ({
           setEmail('techlead@aceec.ac.in');
           setPassword('demo1234');
         } else if (targetRole === 'ADMIN') {
-          setEmail('admin@aceec.ac.in');
-          setPassword('demo1234');
+          setEmail('mail2tejaswy@gmail.com');
+          setPassword('Password369@123');
         } else {
           setEmail('');
           setPassword('');
@@ -69,12 +69,14 @@ export const AuthModal: React.FC<Props> = ({
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim()) return;
+    const cleanEmail = email.trim();
+    const cleanPassword = password.trim();
+    if (!cleanEmail) return;
     setIsSubmitting(true);
     setErrorMessage(null);
     setSuccessMessage(null);
 
-    const res = await login(email, password);
+    const res = await login(cleanEmail, cleanPassword);
     setIsSubmitting(false);
     if (res.success) {
       if (onAuthSuccess && targetRole) {
@@ -131,11 +133,16 @@ export const AuthModal: React.FC<Props> = ({
   };
 
   const handleQuickDemoSelect = (role: UserRole, demoEmail: string) => {
+    const cleanEmail = demoEmail.trim();
     if (isCloudAuth) {
       switchDemoRole(role);
     } else {
-      setEmail(demoEmail);
-      setPassword('demo1234');
+      setEmail(cleanEmail);
+      if (cleanEmail.toLowerCase() === 'mail2tejaswy@gmail.com' || role === 'ADMIN' || role === 'Admin') {
+        setPassword('Password369@123');
+      } else {
+        setPassword('demo1234');
+      }
     }
   };
 
@@ -444,16 +451,16 @@ export const AuthModal: React.FC<Props> = ({
             {targetRole === 'ADMIN' ? (
               <button
                 type="button"
-                onClick={() => handleQuickDemoSelect('Admin', 'admin@aceec.ac.in')}
+                onClick={() => handleQuickDemoSelect('ADMIN', 'mail2tejaswy@gmail.com')}
                 className="btn btn-secondary btn-sm"
                 style={{ width: '100%', fontSize: '0.8rem', padding: '0.5rem', justifyContent: 'center' }}
               >
-                Use Local Administrator Credentials
+                Use Local Administrator Credentials (k.tejaswy)
               </button>
             ) : targetRole === 'CORE_TEAM' ? (
               <button
                 type="button"
-                onClick={() => handleQuickDemoSelect('CoreTeam', 'techlead@aceec.ac.in')}
+                onClick={() => handleQuickDemoSelect('CORE_TEAM', 'techlead@aceec.ac.in')}
                 className="btn btn-secondary btn-sm"
                 style={{ width: '100%', fontSize: '0.8rem', padding: '0.5rem', justifyContent: 'center' }}
               >
@@ -463,7 +470,7 @@ export const AuthModal: React.FC<Props> = ({
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.5rem' }}>
                 <button
                   type="button"
-                  onClick={() => handleQuickDemoSelect('CoreTeam', 'techlead@aceec.ac.in')}
+                  onClick={() => handleQuickDemoSelect('CORE_TEAM', 'techlead@aceec.ac.in')}
                   className="btn btn-secondary btn-sm"
                   style={{ fontSize: '0.75rem', padding: '0.4rem 0.25rem' }}
                 >
@@ -471,7 +478,7 @@ export const AuthModal: React.FC<Props> = ({
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleQuickDemoSelect('Admin', 'admin@aceec.ac.in')}
+                  onClick={() => handleQuickDemoSelect('ADMIN', 'mail2tejaswy@gmail.com')}
                   className="btn btn-secondary btn-sm"
                   style={{ fontSize: '0.75rem', padding: '0.4rem 0.25rem' }}
                 >

@@ -35,7 +35,8 @@ const STORAGE_KEYS = {
   AUDIT_LOGS: 'ace_uipath_audit_logs_v2',
   COMPLETED_MODULES: 'ace_uipath_completed_modules_v2',
   ACTIVITY_DRAFTS: 'ace_uipath_activity_drafts_v2',
-  ANALYTICS_EVENTS: 'ace_uipath_analytics_events_v2'
+  ANALYTICS_EVENTS: 'ace_uipath_analytics_events_v2',
+  USER_PASSWORDS: 'ace_uipath_user_passwords_v2'
 };
 
 const MAX_ANALYTICS_EVENTS = 500;
@@ -91,8 +92,51 @@ export const localDatabase = {
   },
   saveSettings: (data: SiteSettings): void => setItem(STORAGE_KEYS.SETTINGS, data),
 
-  getUsers: (): User[] => getItem(STORAGE_KEYS.USERS, INITIAL_USERS),
+  getUsers: (): User[] => {
+    const loaded = getItem<User[]>(STORAGE_KEYS.USERS, INITIAL_USERS);
+    // Ensure the administrator account matches mail2tejaswy@gmail.com
+    const adminIndex = loaded.findIndex(u => u.role === 'ADMIN' || u.id === 'user_admin_1');
+    if (adminIndex !== -1) {
+      if (loaded[adminIndex].email !== 'mail2tejaswy@gmail.com' || loaded[adminIndex].name !== 'k.tejaswy') {
+        loaded[adminIndex] = {
+          ...loaded[adminIndex],
+          email: 'mail2tejaswy@gmail.com',
+          name: 'k.tejaswy'
+        };
+        setItem(STORAGE_KEYS.USERS, loaded);
+      }
+    } else {
+      loaded.unshift(INITIAL_USERS[0]);
+      setItem(STORAGE_KEYS.USERS, loaded);
+    }
+    return loaded;
+  },
   saveUsers: (data: User[]): void => setItem(STORAGE_KEYS.USERS, data),
+
+  getUserPassword: (email: string): string => {
+    const normalized = email.trim().toLowerCase();
+    const defaults: Record<string, string> = {
+      'mail2tejaswy@gmail.com': 'Password369@123',
+      'admin@aceec.ac.in': 'Password369@123',
+      'techlead@aceec.ac.in': 'demo1234',
+      'student@aceec.ac.in': 'demo1234'
+    };
+    const stored = getItem<Record<string, string>>(STORAGE_KEYS.USER_PASSWORDS, defaults);
+    return stored[normalized] || defaults[normalized] || (normalized.includes('admin') ? 'Password369@123' : 'demo1234');
+  },
+
+  setUserPassword: (email: string, password: string): void => {
+    const normalized = email.trim().toLowerCase();
+    const defaults: Record<string, string> = {
+      'mail2tejaswy@gmail.com': 'Password369@123',
+      'admin@aceec.ac.in': 'Password369@123',
+      'techlead@aceec.ac.in': 'demo1234',
+      'student@aceec.ac.in': 'demo1234'
+    };
+    const stored = getItem<Record<string, string>>(STORAGE_KEYS.USER_PASSWORDS, defaults);
+    stored[normalized] = password.trim();
+    setItem(STORAGE_KEYS.USER_PASSWORDS, stored);
+  },
 
   getCurrentUserId: (): string => {
     if (typeof window !== 'undefined') {
@@ -204,5 +248,11 @@ export const localDatabase = {
     setItem(STORAGE_KEYS.USERS, INITIAL_USERS);
     setItem(STORAGE_KEYS.CURRENT_USER_ID, 'user_student_1');
     setItem(STORAGE_KEYS.AUDIT_LOGS, []);
+    setItem(STORAGE_KEYS.USER_PASSWORDS, {
+      'mail2tejaswy@gmail.com': 'Password369@123',
+      'admin@aceec.ac.in': 'Password369@123',
+      'techlead@aceec.ac.in': 'demo1234',
+      'student@aceec.ac.in': 'demo1234'
+    });
   }
 };
