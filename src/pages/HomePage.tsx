@@ -47,10 +47,49 @@ export const HomePage: React.FC<Props> = ({
     ? settings.statistics.filter((s) => s.visible !== false).sort((a, b) => a.order - b.order)
     : [
         { id: 's1', title: 'Students Trained', value: '850+', description: 'Workshops across CSE, IT, ECE & allied branches', visible: true, order: 1 },
-        { id: 's2', title: 'Automations Built', value: '140+', description: 'Real bots deployed for student and campus needs', visible: true, order: 2 },
+        { id: 's2', title: 'Automations Built', value: '140+', description: 'Production-ready bots deployed for student and campus needs', visible: true, order: 2 },
         { id: 's3', title: 'UiPath Certifications', value: '95+', description: 'Certified Associate & Specialist developers', visible: true, order: 3 },
         { id: 's4', title: 'Hours Automated', value: '3,800+', description: 'Saved in academic grading and records handling', visible: true, order: 4 }
       ];
+
+  // Helper to render gradient on "Student Community" or "Community"
+  const renderHeroHeading = (text: string) => {
+    if (text.includes('Student Community')) {
+      const parts = text.split('Student Community');
+      return (
+        <>
+          {parts[0]}
+          <span style={{
+            background: 'linear-gradient(135deg, #FFFFFF 20%, #FA4616 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            display: 'inline-block'
+          }}>
+            Student Community
+          </span>
+          {parts.slice(1).join('Student Community')}
+        </>
+      );
+    }
+    if (text.includes('Community')) {
+      const parts = text.split('Community');
+      return (
+        <>
+          {parts[0]}
+          <span style={{
+            background: 'linear-gradient(135deg, #FFFFFF 20%, #FA4616 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            display: 'inline-block'
+          }}>
+            Community
+          </span>
+          {parts.slice(1).join('Community')}
+        </>
+      );
+    }
+    return text;
+  };
 
   // Featured / Latest Event
   const featuredActivity = (settings.featuredActivityId && activities.find((a) => a.id === settings.featuredActivityId))
@@ -77,29 +116,46 @@ export const HomePage: React.FC<Props> = ({
       }}>
         <div className="container">
           <div style={{ maxWidth: '840px', margin: '0 auto', textAlign: 'center' }}>
-            {/* Institution Chapter Label */}
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
-              <span className="badge badge-orange" style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }}>
-                <ShieldCheck size={14} /> UiPath Academic Alliance • ACE Engineering College
+            {/* Institution Chapter Eyebrow Badge */}
+            <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem' }}>
+              <span style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                background: 'rgba(255, 70, 22, 0.08)',
+                border: '1px solid rgba(255, 70, 22, 0.25)',
+                borderRadius: '9999px',
+                padding: '0.4rem 1.05rem',
+                fontSize: '0.78rem',
+                fontWeight: 600,
+                letterSpacing: '0.04em',
+                textTransform: 'uppercase',
+                color: '#FA4616',
+                boxShadow: '0 0 12px rgba(255, 70, 22, 0.15)',
+                backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)'
+              }}>
+                <ShieldCheck size={14} style={{ color: '#FA4616', flexShrink: 0 }} />
+                <span>UiPath Academic Alliance &bull; ACE Engineering College</span>
               </span>
             </div>
 
             {/* Main Headline */}
             <h1 style={{
-              fontSize: 'clamp(2.5rem, 5.5vw, 3.75rem)',
-              lineHeight: 1.15,
+              fontSize: 'clamp(2.5rem, 5.5vw, 4rem)',
+              lineHeight: 1.1,
               fontWeight: 800,
               letterSpacing: '-0.03em',
-              color: 'var(--text-primary)',
+              color: '#FFFFFF',
               marginBottom: '1.25rem'
             }}>
-              {heroHeading}
+              {renderHeroHeading(heroHeading)}
             </h1>
 
             {/* Sub-headline */}
             <p style={{
-              fontSize: 'clamp(1.1rem, 2vw, 1.25rem)',
-              color: 'var(--text-secondary)',
+              fontSize: 'clamp(1.05rem, 2vw, 1.25rem)',
+              color: '#D1D5DB',
               lineHeight: 1.6,
               maxWidth: '720px',
               margin: '0 auto 2.5rem auto'
@@ -107,18 +163,65 @@ export const HomePage: React.FC<Props> = ({
               {heroTagline}
             </p>
 
-            {/* Primary Action Buttons */}
+            {/* Primary & Secondary Action Buttons */}
             <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap' }}>
               <button
                 onClick={() => onNavigate(primaryCtaLink)}
-                className="btn btn-primary btn-lg"
+                className="btn btn-lg"
+                style={{
+                  background: '#FA4616',
+                  color: '#FFFFFF',
+                  fontWeight: 600,
+                  fontSize: '0.975rem',
+                  borderRadius: '10px',
+                  padding: '0.85rem 1.85rem',
+                  boxShadow: '0 4px 14px rgba(250, 70, 22, 0.25)',
+                  transition: 'all 0.2s ease',
+                  border: '1px solid transparent',
+                  cursor: 'pointer'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.boxShadow = '0 0 24px rgba(255, 70, 22, 0.45)';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                  e.currentTarget.style.background = '#FF521D';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.boxShadow = '0 4px 14px rgba(250, 70, 22, 0.25)';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.background = '#FA4616';
+                }}
               >
                 {primaryCtaText} <ArrowRight size={18} />
               </button>
 
               <button
                 onClick={() => onNavigate(secondaryCtaLink)}
-                className="btn btn-secondary btn-lg"
+                className="btn btn-lg"
+                style={{
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.10)',
+                  borderRadius: '10px',
+                  padding: '0.85rem 1.85rem',
+                  color: '#E5E7EB',
+                  fontWeight: 600,
+                  fontSize: '0.975rem',
+                  backdropFilter: 'blur(8px)',
+                  WebkitBackdropFilter: 'blur(8px)',
+                  transition: 'all 0.2s ease',
+                  cursor: 'pointer'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.10)';
+                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.20)';
+                  e.currentTarget.style.color = '#FFFFFF';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.10)';
+                  e.currentTarget.style.color = '#E5E7EB';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
               >
                 {secondaryCtaText}
               </button>
@@ -127,36 +230,74 @@ export const HomePage: React.FC<Props> = ({
         </div>
       </section>
 
-      {/* 2. COMMUNITY STATISTICS - Clean Editorial Typography */}
+      {/* 2. COMMUNITY STATISTICS - Card Separation & Divider */}
       <section style={{
-        paddingTop: '3rem',
+        paddingTop: '3.5rem',
         paddingBottom: '3.5rem',
-        borderBottom: '1px solid var(--border-subtle)',
-        background: 'var(--bg-secondary)'
+        borderTop: '1px solid rgba(255, 255, 255, 0.10)',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+        background: 'rgba(14, 14, 14, 0.65)'
       }}>
         <div className="container">
           <div style={{
             display: 'grid',
-            gridTemplateColumns: `repeat(auto-fit, minmax(220px, 1fr))`,
-            gap: '2.5rem 1.5rem'
+            gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+            gap: '1.25rem'
           }}>
             {statisticsList.map((stat) => (
-              <div key={stat.id} style={{ borderLeft: '2px solid var(--border-medium)', paddingLeft: '1.25rem' }}>
+              <div
+                key={stat.id}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.025)',
+                  border: '1px solid rgba(255, 255, 255, 0.06)',
+                  borderRadius: '0.75rem',
+                  padding: '1.5rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  transition: 'all 0.2s ease',
+                  position: 'relative'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = 'rgba(250, 70, 22, 0.3)';
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.045)';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.06)';
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.025)';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+              >
+                <div>
+                  <div style={{
+                    fontSize: 'clamp(2.2rem, 3.2vw, 2.75rem)',
+                    fontWeight: 800,
+                    color: '#FA4616',
+                    lineHeight: 1.1,
+                    letterSpacing: '-0.025em',
+                    marginBottom: '0.65rem'
+                  }}>
+                    {stat.value}
+                  </div>
+                  <div style={{
+                    fontSize: '0.975rem',
+                    fontWeight: 700,
+                    color: '#FFFFFF',
+                    marginBottom: '0.45rem',
+                    letterSpacing: '-0.01em'
+                  }}>
+                    {stat.title}
+                  </div>
+                </div>
                 <div style={{
-                  fontSize: 'clamp(2.2rem, 3.5vw, 2.8rem)',
-                  fontWeight: 800,
-                  color: 'var(--uipath-orange)',
-                  lineHeight: 1,
-                  fontFamily: 'var(--font-sans)',
-                  letterSpacing: '-0.02em',
-                  marginBottom: '0.5rem'
+                  fontSize: '0.825rem',
+                  color: '#9CA3AF',
+                  lineHeight: 1.5,
+                  marginTop: '0.25rem',
+                  wordBreak: 'normal',
+                  overflow: 'visible'
                 }}>
-                  {stat.value}
-                </div>
-                <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.25rem' }}>
-                  {stat.title}
-                </div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>
                   {stat.description}
                 </div>
               </div>

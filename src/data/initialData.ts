@@ -116,7 +116,7 @@ export const INITIAL_TIMELINE_MILESTONES: TimelineMilestone[] = [
 ];
 
 export const INITIAL_SETTINGS: SiteSettings = {
-  heroHeading: 'ACE UiPath Community',
+  heroHeading: 'ACE UiPath Student Community',
   heroTagline: 'A student community at ACE Engineering College focused on learning, building and exploring automation.',
   heroSubheadline: 'Empowering engineering students to master Enterprise Robotic Process Automation, AI-driven workflows, and deploy high-impact automations at ACE Engineering College.',
   primaryCtaText: 'Explore the Community',
