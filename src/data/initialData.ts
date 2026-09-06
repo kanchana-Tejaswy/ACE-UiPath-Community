@@ -130,6 +130,7 @@ export const INITIAL_SETTINGS: SiteSettings = {
   communityStoryHeading: 'Building an Engineering Legacy in Robotic Automation',
   communityStoryText: 'Founded under the UiPath Academic Alliance at ACE Engineering College (Ghatkesar, Hyderabad), our community bridges the gap between academic theory and industry automation practice. Guided by dedicated faculty and student champions, we conduct weekly hands-on labs, open-source bot hackathons, and enterprise certification bootcamps.',
   communityStoryHighlight: 'Over 850 students trained and 140+ functional automations built for campus and enterprise use cases.',
+  communityStoryImageUrl: '/ace-campus.jpg',
   communityEmail: 'uipath.community@aceec.ac.in',
   communityDiscordUrl: 'https://discord.gg/ace-uipath',
   communityWhatsappUrl: 'https://chat.whatsapp.com/ace-uipath',

@@ -578,20 +578,21 @@ export const HomePage: React.FC<Props> = ({
               padding: '1.25rem'
             }}>
               <img
-                src="/uipath-session-1.png"
-                alt="ACE UiPath Meetup Event"
+                src={settings.communityStoryImageUrl || '/ace-campus.jpg'}
+                alt="ACE Engineering College Campus, Ghatkesar, Hyderabad"
                 style={{
                   width: '100%',
                   height: 'auto',
                   borderRadius: 'var(--radius-md)',
-                  display: 'block'
+                  display: 'block',
+                  objectFit: 'cover'
                 }}
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = '/logo.png';
+                  (e.target as HTMLImageElement).src = '/campus.jpg';
                 }}
               />
-              <div style={{ padding: '1rem 0.5rem 0.25rem 0.5rem', fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center' }}>
-                Campus Meetup on RPA & AI held at ACE Engineering College, Ghatkesar
+              <div style={{ padding: '1rem 0.5rem 0.25rem 0.5rem', fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center', lineHeight: 1.5 }}>
+                ACE Engineering College Campus, Ghatkesar (Hyderabad) — Home of the ACE UiPath Community
               </div>
             </div>
           </div>

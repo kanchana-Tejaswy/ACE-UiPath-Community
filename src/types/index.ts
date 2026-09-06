@@ -304,6 +304,7 @@ export interface SiteSettings {
   communityStoryHeading?: string;
   communityStoryText?: string;
   communityStoryHighlight?: string;
+  communityStoryImageUrl?: string;
   communityEmail: string;
   communityDiscordUrl: string;
   communityWhatsappUrl: string;

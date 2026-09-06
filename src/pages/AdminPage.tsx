@@ -156,6 +156,7 @@ export const AdminPage: React.FC<Props> = ({
   const [storyHeading, setStoryHeading] = useState(settings.communityStoryHeading || 'Building an Engineering Legacy in Robotic Automation');
   const [storyText, setStoryText] = useState(settings.communityStoryText || '');
   const [storyHighlight, setStoryHighlight] = useState(settings.communityStoryHighlight || '');
+  const [storyImageUrl, setStoryImageUrl] = useState(settings.communityStoryImageUrl || '/ace-campus.jpg');
   const [allianceId, setAllianceId] = useState(settings.uipathAllianceId || '');
   const [communityEmail, setCommunityEmail] = useState(settings.communityEmail || 'uipath.community@aceec.ac.in');
 
@@ -173,6 +174,7 @@ export const AdminPage: React.FC<Props> = ({
       communityStoryHeading: storyHeading,
       communityStoryText: storyText,
       communityStoryHighlight: storyHighlight,
+      communityStoryImageUrl: storyImageUrl,
       uipathAllianceId: allianceId,
       communityEmail
     });
@@ -795,6 +797,16 @@ export const AdminPage: React.FC<Props> = ({
                         type="text"
                         value={storyHighlight}
                         onChange={(e) => setStoryHighlight(e.target.value)}
+                        style={{ width: '100%', padding: '0.65rem', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', color: '#FFF', marginTop: '0.25rem' }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>STORY IMAGE URL (Campus / Community Visual)</label>
+                      <input
+                        type="text"
+                        value={storyImageUrl}
+                        onChange={(e) => setStoryImageUrl(e.target.value)}
+                        placeholder="/ace-campus.jpg"
                         style={{ width: '100%', padding: '0.65rem', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', color: '#FFF', marginTop: '0.25rem' }}
                       />
                     </div>
