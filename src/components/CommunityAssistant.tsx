@@ -142,29 +142,44 @@ export const CommunityAssistant: React.FC<Props> = ({
 
   return (
     <>
-      {/* Subtle Assistance Trigger */}
+      {/* Floating Ambient Assistance Trigger */}
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
           title="Community Q&A Guide"
+          className="ask-guide-floating-btn"
           style={{
             position: 'fixed',
-            bottom: '1.75rem',
-            right: '1.75rem',
-            zIndex: 90,
-            background: 'var(--bg-surface)',
-            color: 'var(--text-secondary)',
-            border: '1px solid var(--border-medium)',
-            borderRadius: 'var(--radius-full)',
-            padding: '0.6rem 0.95rem',
+            bottom: '1.5rem',
+            right: '1.5rem',
+            zIndex: 50,
+            background: 'rgba(18, 18, 18, 0.95)',
+            color: '#E5E7EB',
+            border: '1px solid rgba(250, 70, 22, 0.25)',
+            borderRadius: '9999px',
+            padding: '0.6rem 1rem',
             display: 'flex',
             alignItems: 'center',
             gap: '0.5rem',
             fontWeight: 600,
-            fontSize: '0.8rem',
+            fontSize: '0.8125rem',
             cursor: 'pointer',
-            boxShadow: 'var(--shadow-md)',
-            transition: 'all var(--transition-fast)'
+            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.6), 0 0 16px rgba(250, 70, 22, 0.15)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+            transition: 'all 0.2s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = 'rgba(250, 70, 22, 0.5)';
+            e.currentTarget.style.boxShadow = '0 12px 28px rgba(0, 0, 0, 0.7), 0 0 24px rgba(250, 70, 22, 0.3)';
+            e.currentTarget.style.transform = 'translateY(-2px)';
+            e.currentTarget.style.color = '#FFFFFF';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = 'rgba(250, 70, 22, 0.25)';
+            e.currentTarget.style.boxShadow = '0 10px 25px rgba(0, 0, 0, 0.6), 0 0 16px rgba(250, 70, 22, 0.15)';
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.color = '#E5E7EB';
           }}
         >
           <HelpCircle size={16} style={{ color: 'var(--uipath-orange)' }} />
