@@ -12,9 +12,10 @@ import {
   Users,
   CheckCircle2,
   ChevronRight,
-  ShieldCheck
+  ShieldCheck,
+  Newspaper
 } from 'lucide-react';
-import { Activity, LearningPath, ProjectShowcase, Challenge, SiteSettings, User } from '../types';
+import { Activity, LearningPath, ProjectShowcase, Challenge, SiteSettings, User, Article } from '../types';
 
 interface Props {
   activities: Activity[];
@@ -23,6 +24,7 @@ interface Props {
   challenges: Challenge[];
   settings: SiteSettings;
   currentUser: User;
+  articles?: Article[];
   onNavigate: (view: string, detailId?: string) => void;
 }
 
@@ -33,6 +35,7 @@ export const HomePage: React.FC<Props> = ({
   challenges,
   settings,
   currentUser,
+  articles = [],
   onNavigate
 }) => {
   // Data-driven content resolution
@@ -92,6 +95,18 @@ export const HomePage: React.FC<Props> = ({
 
   // Recent highlights (completed activities)
   const recentHighlights = activities.filter((a) => a.id !== featuredActivity?.id).slice(0, 3);
+
+  // Featured Technical Publication (Only publicly eligible: published or scheduled whose time has elapsed)
+  const publiclyVisibleArticles = articles.filter((a) => {
+    if (a.status === 'PUBLISHED') return true;
+    if (a.status === 'SCHEDULED' && a.scheduledAt && new Date(a.scheduledAt).getTime() <= Date.now()) return true;
+    return false;
+  });
+
+  const homepageArticle = (settings.featuredArticleId && publiclyVisibleArticles.find((a) => a.id === settings.featuredArticleId))
+    || publiclyVisibleArticles.find((a) => a.isFeatured)
+    || publiclyVisibleArticles[0]
+    || null;
 
   return (
     <div style={{ paddingBottom: '5rem' }}>
@@ -879,6 +894,99 @@ export const HomePage: React.FC<Props> = ({
         </div>
       </section>
 
+      {/* 5B. FEATURED TECHNICAL PUBLICATION */}
+      {homepageArticle && (
+        <section className="section-divider">
+          <div className="container">
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'flex-end',
+              marginBottom: '2rem',
+              flexWrap: 'wrap',
+              gap: '1rem'
+            }}>
+              <div>
+                <div className="section-tag" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <Newspaper size={13} style={{ color: '#FA4616' }} />
+                  <span>COMMUNITY WRITING & RESEARCH</span>
+                </div>
+                <h2 className="section-title">Featured Technical Publication</h2>
+                <p className="section-subtitle">
+                  Architectural blueprints, hands-on tutorials, and RPA implementations authored by community leads.
+                </p>
+              </div>
+
+              <button
+                onClick={() => onNavigate('blogs')}
+                className="btn btn-outline btn-sm"
+              >
+                Read All Articles ({articles.length}) <ArrowRight size={14} />
+              </button>
+            </div>
+
+            <div
+              onClick={() => onNavigate('blog_detail', homepageArticle.slug || homepageArticle.id)}
+              style={{
+                background: 'linear-gradient(180deg, rgba(23, 23, 23, 0.7) 0%, rgba(15, 15, 15, 0.9) 100%)',
+                border: '1px solid #262626',
+                borderRadius: '1.25rem',
+                overflow: 'hidden',
+                cursor: 'pointer',
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+                boxShadow: '0 12px 32px rgba(0, 0, 0, 0.35)'
+              }}
+              className="card-hover-border"
+            >
+              <div style={{ position: 'relative', minHeight: '240px', overflow: 'hidden' }}>
+                <img
+                  src={homepageArticle.coverImageUrl || homepageArticle.coverImage}
+                  alt={homepageArticle.title}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+                <div style={{ position: 'absolute', top: '1rem', left: '1rem' }}>
+                  <span className="badge badge-orange" style={{ fontSize: '0.72rem' }}>
+                    {homepageArticle.category}
+                  </span>
+                </div>
+              </div>
+
+              <div style={{ padding: '2rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '0.65rem' }}>
+                    <span>{new Date(homepageArticle.publishedAt || homepageArticle.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                    <span>•</span>
+                    <span>{homepageArticle.readTimeMinutes || 5} min read</span>
+                    <span>•</span>
+                    <span>{homepageArticle.views || homepageArticle.viewsCount || 0} views</span>
+                  </div>
+
+                  <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#FFFFFF', lineHeight: 1.3, marginBottom: '0.75rem' }}>
+                    {homepageArticle.title}
+                  </h3>
+
+                  <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '1.25rem' }}>
+                    {homepageArticle.excerpt}
+                  </p>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '1rem' }}>
+                  <div style={{ fontSize: '0.84rem', color: 'var(--text-muted)' }}>
+                    By <strong style={{ color: '#E5E7EB' }}>{homepageArticle.authorName}</strong> ({homepageArticle.authorRole})
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#FA4616', fontSize: '0.85rem', fontWeight: 600 }}>
+                    <span>Read Article</span>
+                    <ArrowRight size={14} />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* 6. COMMUNITY STORY - Institutional Longevity & Purpose */}
       <section className="section-divider" style={{ background: 'var(--bg-secondary)' }}>
         <div className="container">
@@ -961,12 +1069,14 @@ export const HomePage: React.FC<Props> = ({
               Whether you are a first-year student writing your first Excel bot or a senior preparing for enterprise certification, our community has a place for you.
             </p>
             <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-              <button
-                onClick={() => onNavigate('join')}
+              <a
+                href="https://www.linkedin.com/company/ace-uipath-community/?viewAsMember=true"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="btn btn-primary btn-lg"
               >
                 Join the Community <ArrowRight size={18} />
-              </button>
+              </a>
               <button
                 onClick={() => onNavigate('learn')}
                 className="btn btn-outline btn-lg"

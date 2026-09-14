@@ -25,7 +25,8 @@ import {
   Eye,
   EyeOff,
   Star,
-  ExternalLink
+  ExternalLink,
+  Newspaper
 } from 'lucide-react';
 
 import { 
@@ -44,7 +45,8 @@ import {
   CommunityStatistic,
   Announcement,
   TimelineMilestone,
-  LeadershipMember
+  LeadershipMember,
+  Article
 } from '../types';
 
 import { UserManagementSection } from '../components/UserManagementSection';
@@ -56,6 +58,7 @@ interface Props {
   projects: ProjectShowcase[];
   challenges: Challenge[];
   resources: CommunityResource[];
+  articles?: Article[];
   leadership?: LeadershipMember[];
   activityDrafts?: ActivityDraft[];
   users?: User[];
@@ -81,6 +84,8 @@ interface Props {
   onDeleteAnnouncement?: (id: string) => void;
   onSaveTimelineMilestone?: (milestone: TimelineMilestone) => void;
   onDeleteTimelineMilestone?: (id: string) => void;
+  onSaveArticle?: (art: Article) => void;
+  onDeleteArticle?: (id: string) => void;
   onReviewDraft?: (id: string, status: DraftStatus, notes?: string) => void;
   onPublishDraft?: (id: string) => void;
   onUpdateUserRole?: (userId: string, role: UserRole) => void;
@@ -123,6 +128,8 @@ export const AdminPage: React.FC<Props> = ({
   onDeleteAnnouncement,
   onSaveTimelineMilestone,
   onDeleteTimelineMilestone,
+  onSaveArticle,
+  onDeleteArticle,
   onReviewDraft,
   onPublishDraft,
   onUpdateUserRole,
@@ -131,11 +138,15 @@ export const AdminPage: React.FC<Props> = ({
   onResetData,
   onExportJson,
   onImportJson,
-  onNavigate
+  onNavigate,
+  articles = []
 }) => {
   const [activeTab, setActiveTab] = useState<
-    'homepage' | 'statistics' | 'events' | 'projects' | 'learning' | 'hackathons' | 'resources' | 'timeline' | 'team' | 'announcements' | 'review_queue' | 'users' | 'analytics' | 'backup'
+    'homepage' | 'statistics' | 'events' | 'projects' | 'learning' | 'blogs' | 'hackathons' | 'resources' | 'timeline' | 'team' | 'announcements' | 'review_queue' | 'users' | 'analytics' | 'backup'
   >('homepage');
+
+  const [articleFilter, setArticleFilter] = useState<'ALL' | 'PUBLISHED' | 'SCHEDULED' | 'DRAFT'>('ALL');
+  const [articleSearch, setArticleSearch] = useState('');
 
   // Success toast state
   const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
@@ -593,6 +604,7 @@ export const AdminPage: React.FC<Props> = ({
             { id: 'events', label: `Events & Meetups (${activities.length})`, icon: Calendar },
             { id: 'projects', label: `Student Projects (${projects.length})`, icon: Trophy },
             { id: 'learning', label: `Learning Tracks (${learningPaths.length})`, icon: BookOpen },
+            { id: 'blogs', label: `Blogs & Articles (${articles.length})`, icon: Newspaper },
             { id: 'hackathons', label: `Hackathons (${challenges.length})`, icon: Trophy },
             { id: 'resources', label: `Resources Vault (${resources.length})`, icon: FileCode },
             { id: 'timeline', label: `Timeline & History (${currentTimeline.length})`, icon: History },
@@ -610,11 +622,11 @@ export const AdminPage: React.FC<Props> = ({
                   alignItems: 'center',
                   gap: '0.65rem',
                   padding: '0.65rem 0.85rem',
-                  borderRadius: 'var(--radius-sm)',
-                  background: isCurrent ? 'var(--uipath-orange)' : 'var(--bg-secondary)',
+                  borderRadius: isCurrent ? '0.75rem' : 'var(--radius-sm)',
+                  background: isCurrent ? '#FA4616' : 'var(--bg-secondary)',
                   color: isCurrent ? '#FFFFFF' : 'var(--text-secondary)',
                   border: isCurrent ? 'none' : '1px solid var(--border-subtle)',
-                  fontWeight: 600,
+                  fontWeight: isCurrent ? 500 : 600,
                   fontSize: '0.85rem',
                   cursor: 'pointer',
                   textAlign: 'left'
@@ -1089,6 +1101,334 @@ export const AdminPage: React.FC<Props> = ({
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {/* TAB 5B: BLOGS & ARTICLES CMS */}
+          {activeTab === 'blogs' && (
+            <div>
+              {/* Top bar */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
+                <div>
+                  <h2 style={{ fontSize: '1.4rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                    <Newspaper size={24} style={{ color: '#FA4616' }} />
+                    Blogs & Technical Articles
+                  </h2>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+                    Create, curate, schedule, and publish technical guides, architectural deep dives, and community write-ups.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onNavigate('article_editor', 'new')}
+                  style={{
+                    background: '#FA4616',
+                    color: '#FFFFFF',
+                    fontWeight: 500,
+                    fontSize: '0.875rem',
+                    padding: '0.55rem 1.15rem',
+                    borderRadius: '0.75rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    boxShadow: '0 4px 14px rgba(250, 70, 22, 0.25)',
+                    border: 'none',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  <Plus size={16} />
+                  <span>+ Create Article</span>
+                </button>
+              </div>
+
+              {/* Filters & Search Row */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: '0.4rem' }}>
+                  {(['ALL', 'PUBLISHED', 'SCHEDULED', 'DRAFT'] as const).map((filterVal) => {
+                    const count = filterVal === 'ALL'
+                      ? articles.length
+                      : articles.filter(a => a.status === filterVal).length;
+                    const isActive = articleFilter === filterVal;
+                    return (
+                      <button
+                        key={filterVal}
+                        type="button"
+                        onClick={() => setArticleFilter(filterVal)}
+                        style={{
+                          background: isActive ? 'rgba(250, 70, 22, 0.15)' : 'var(--bg-primary)',
+                          color: isActive ? '#FA4616' : 'var(--text-secondary)',
+                          border: `1px solid ${isActive ? 'rgba(250, 70, 22, 0.35)' : 'var(--border-subtle)'}`,
+                          borderRadius: '0.5rem',
+                          padding: '0.35rem 0.75rem',
+                          fontSize: '0.78rem',
+                          fontWeight: 600,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {filterVal === 'ALL' ? 'All' : filterVal.charAt(0) + filterVal.slice(1).toLowerCase()} ({count})
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div style={{ position: 'relative', minWidth: '240px' }}>
+                  <Search size={14} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                  <input
+                    type="text"
+                    placeholder="Search articles..."
+                    value={articleSearch}
+                    onChange={(e) => setArticleSearch(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '0.45rem 0.75rem 0.45rem 2.2rem',
+                      background: 'var(--bg-primary)',
+                      border: '1px solid var(--border-subtle)',
+                      borderRadius: '0.5rem',
+                      color: '#FFF',
+                      fontSize: '0.82rem',
+                      outline: 'none'
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Article Cards List */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {articles
+                  .filter((art) => {
+                    if (articleFilter !== 'ALL' && art.status !== articleFilter) return false;
+                    if (articleSearch.trim()) {
+                      const q = articleSearch.toLowerCase();
+                      return (
+                        art.title.toLowerCase().includes(q) ||
+                        art.excerpt.toLowerCase().includes(q) ||
+                        art.authorName.toLowerCase().includes(q) ||
+                        art.category.toLowerCase().includes(q)
+                      );
+                    }
+                    return true;
+                  })
+                  .map((art) => {
+                    const isPublished = art.status === 'PUBLISHED';
+                    const isScheduled = art.status === 'SCHEDULED';
+                    const isDraft = art.status === 'DRAFT';
+
+                    return (
+                      <div
+                        key={art.id}
+                        style={{
+                          background: 'rgba(23, 23, 23, 0.5)',
+                          border: '1px solid #262626',
+                          borderRadius: '1rem',
+                          padding: '1.25rem',
+                          transition: 'border-color 0.2s ease',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '0.75rem'
+                        }}
+                      >
+                        {/* Badges & Meta top row */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                            <span className="badge badge-orange" style={{ fontSize: '0.7rem' }}>
+                              {art.category}
+                            </span>
+
+                            {/* Status badge */}
+                            {isPublished && (
+                              <span
+                                style={{
+                                  fontSize: '0.7rem',
+                                  fontWeight: 600,
+                                  color: '#34D399',
+                                  background: 'rgba(16, 185, 129, 0.12)',
+                                  border: '1px solid rgba(52, 211, 153, 0.3)',
+                                  padding: '0.15rem 0.55rem',
+                                  borderRadius: '999px',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '0.3rem'
+                                }}
+                              >
+                                <CheckCircle2 size={11} /> Published
+                              </span>
+                            )}
+                            {isScheduled && (
+                              <span
+                                style={{
+                                  fontSize: '0.7rem',
+                                  fontWeight: 600,
+                                  color: '#60A5FA',
+                                  background: 'rgba(59, 130, 246, 0.12)',
+                                  border: '1px solid rgba(96, 165, 250, 0.3)',
+                                  padding: '0.15rem 0.55rem',
+                                  borderRadius: '999px',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '0.3rem'
+                                }}
+                              >
+                                <Calendar size={11} /> Scheduled ({art.scheduledAt ? new Date(art.scheduledAt).toLocaleDateString() : 'Pending'})
+                              </span>
+                            )}
+                            {isDraft && (
+                              <span
+                                style={{
+                                  fontSize: '0.7rem',
+                                  fontWeight: 600,
+                                  color: '#FBBF24',
+                                  background: 'rgba(245, 158, 11, 0.12)',
+                                  border: '1px solid rgba(251, 191, 36, 0.3)',
+                                  padding: '0.15rem 0.55rem',
+                                  borderRadius: '999px'
+                                }}
+                              >
+                                Draft
+                              </span>
+                            )}
+
+                            {/* Homepage Featured Badge */}
+                            {art.isFeatured && (
+                              <span
+                                style={{
+                                  fontSize: '0.7rem',
+                                  fontWeight: 700,
+                                  color: '#FA4616',
+                                  background: 'rgba(250, 70, 22, 0.15)',
+                                  border: '1px solid rgba(250, 70, 22, 0.35)',
+                                  padding: '0.15rem 0.6rem',
+                                  borderRadius: '999px',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '0.25rem'
+                                }}
+                              >
+                                <Star size={11} style={{ fill: '#FA4616' }} /> HOMEPAGE FEATURED
+                              </span>
+                            )}
+                          </div>
+
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                            {art.views || art.viewsCount || 0} views • {art.readTimeMinutes || 5} min read
+                          </div>
+                        </div>
+
+                        {/* Title & Excerpt */}
+                        <div>
+                          <h3
+                            onClick={() => onNavigate('article_editor', art.slug || art.id)}
+                            style={{
+                              fontSize: '1.15rem',
+                              fontWeight: 700,
+                              color: '#FFFFFF',
+                              cursor: 'pointer',
+                              margin: 0,
+                              marginBottom: '0.35rem'
+                            }}
+                          >
+                            {art.title}
+                          </h3>
+                          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
+                            {art.excerpt}
+                          </p>
+                        </div>
+
+                        {/* Author, Date, and Actions row */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(255, 255, 255, 0.05)', paddingTop: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                          <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                            By <strong style={{ color: '#E5E7EB' }}>{art.authorName}</strong> ({art.authorRole}) • {new Date(art.publishedAt || art.createdAt).toLocaleDateString()}
+                          </div>
+
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            {/* Feature toggle */}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (onSaveArticle) {
+                                  onSaveArticle({
+                                    ...art,
+                                    isFeatured: !art.isFeatured
+                                  });
+                                  showToast(art.isFeatured ? 'Article unfeatured from homepage' : 'Article set as Homepage Featured');
+                                }
+                              }}
+                              className="btn btn-secondary btn-sm"
+                              style={{
+                                fontSize: '0.75rem',
+                                color: art.isFeatured ? '#FA4616' : 'var(--text-secondary)',
+                                borderColor: art.isFeatured ? 'rgba(250, 70, 22, 0.4)' : undefined
+                              }}
+                              title="Toggle Homepage Feature"
+                            >
+                              <Star size={13} style={{ fill: art.isFeatured ? '#FA4616' : 'none' }} />
+                              <span>{art.isFeatured ? 'Featured' : 'Feature on Home'}</span>
+                            </button>
+
+                            {/* View Live */}
+                            {(isPublished || isScheduled) && (
+                              <button
+                                type="button"
+                                onClick={() => onNavigate('blog_detail', art.slug || art.id)}
+                                className="btn btn-secondary btn-sm"
+                                style={{ fontSize: '0.75rem' }}
+                                title="View Public Article"
+                              >
+                                <ExternalLink size={13} />
+                                <span>View</span>
+                              </button>
+                            )}
+
+                            {/* Edit */}
+                            <button
+                              type="button"
+                              onClick={() => onNavigate('article_editor', art.slug || art.id)}
+                              className="btn btn-secondary btn-sm"
+                              style={{ fontSize: '0.75rem' }}
+                              title="Edit Article"
+                            >
+                              <Edit3 size={13} />
+                              <span>Edit</span>
+                            </button>
+
+                            {/* Delete */}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (window.confirm(`Are you sure you want to delete article "${art.title}"? This cannot be undone.`)) {
+                                  if (onDeleteArticle) {
+                                    onDeleteArticle(art.id);
+                                    showToast('Article deleted.');
+                                  }
+                                }
+                              }}
+                              className="btn btn-secondary btn-sm"
+                              style={{ color: '#EF4444', fontSize: '0.75rem' }}
+                              title="Delete Article"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                {articles.length === 0 && (
+                  <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.02)', borderRadius: '1rem', border: '1px dashed var(--border-subtle)' }}>
+                    <Newspaper size={36} style={{ color: 'var(--text-muted)', margin: '0 auto 0.75rem', opacity: 0.5 }} />
+                    <p style={{ fontSize: '0.95rem', fontWeight: 600, color: '#FFF', margin: '0 0 0.25rem' }}>No articles yet</p>
+                    <p style={{ fontSize: '0.82rem', margin: '0 0 1rem' }}>Create your first technical article or guide for the ACE UiPath Community.</p>
+                    <button
+                      type="button"
+                      onClick={() => onNavigate('article_editor', 'new')}
+                      className="btn btn-primary btn-sm"
+                    >
+                      <Plus size={14} /> Create Article
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           )}

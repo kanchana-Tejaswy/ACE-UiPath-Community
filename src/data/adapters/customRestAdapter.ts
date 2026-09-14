@@ -4,13 +4,16 @@ import {
   Activity,
   LearningPath,
   ProjectShowcase,
+  Challenge,
   CommunityResource,
+  LeadershipMember,
   SiteSettings,
   AuditLogEntry,
   ActivityDraft,
   DraftStatus,
   AnalyticsEvent,
-  AnalyticsEventType
+  AnalyticsEventType,
+  Article
 } from '../../types';
 
 const API_BASE = (typeof window !== 'undefined' && (window as any).VITE_API_BASE_URL) || '/api';
@@ -247,6 +250,55 @@ export const customRestAdapter: DataAdapter = {
     }
   },
 
+  // Articles & Technical Write-ups
+  getArticles: async (): Promise<Article[]> => {
+    try {
+      const res = await fetch(`${API_BASE}/articles`);
+      if (!res.ok) throw new Error('REST API articles fetch failed');
+      const json = await res.json();
+      return json.data || [];
+    } catch {
+      return localAdapter.getArticles();
+    }
+  },
+
+  saveArticle: async (article: Article): Promise<Article[]> => {
+    try {
+      const res = await fetch(`${API_BASE}/articles`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(article)
+      });
+      if (!res.ok) throw new Error('REST API save article failed');
+      const json = await res.json();
+      return json.data || [];
+    } catch {
+      return localAdapter.saveArticle(article);
+    }
+  },
+
+  deleteArticle: async (id: string): Promise<Article[]> => {
+    try {
+      const res = await fetch(`${API_BASE}/articles/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('REST API delete article failed');
+      const json = await res.json();
+      return json.data || [];
+    } catch {
+      return localAdapter.deleteArticle(id);
+    }
+  },
+
+  incrementArticleViews: async (id: string): Promise<Article[]> => {
+    try {
+      const res = await fetch(`${API_BASE}/articles/${id}/views`, { method: 'POST' });
+      if (!res.ok) throw new Error('REST API increment views failed');
+      const json = await res.json();
+      return json.data || [];
+    } catch {
+      return localAdapter.incrementArticleViews(id);
+    }
+  },
+
   // Settings & System
   getSettings: async (): Promise<SiteSettings> => {
     try {
@@ -335,6 +387,109 @@ export const customRestAdapter: DataAdapter = {
       return json.data || [];
     } catch {
       return localAdapter.getEventsByType(type);
+    }
+  },
+
+  // Learning Paths Mutations
+  saveLearningPath: async (path: LearningPath): Promise<LearningPath[]> => {
+    try {
+      const res = await fetch(`${API_BASE}/learning-paths`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(path)
+      });
+      if (!res.ok) throw new Error('REST API save learning path failed');
+      const json = await res.json();
+      return json.data || [];
+    } catch {
+      return localAdapter.saveLearningPath(path);
+    }
+  },
+
+  deleteLearningPath: async (id: string): Promise<LearningPath[]> => {
+    try {
+      const res = await fetch(`${API_BASE}/learning-paths/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('REST API delete learning path failed');
+      const json = await res.json();
+      return json.data || [];
+    } catch {
+      return localAdapter.deleteLearningPath(id);
+    }
+  },
+
+  // Challenges
+  getChallenges: async (): Promise<Challenge[]> => {
+    try {
+      const res = await fetch(`${API_BASE}/challenges`);
+      if (!res.ok) throw new Error('REST API challenges fetch failed');
+      const json = await res.json();
+      return json.data || [];
+    } catch {
+      return localAdapter.getChallenges();
+    }
+  },
+
+  saveChallenge: async (challenge: Challenge): Promise<Challenge[]> => {
+    try {
+      const res = await fetch(`${API_BASE}/challenges`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(challenge)
+      });
+      if (!res.ok) throw new Error('REST API save challenge failed');
+      const json = await res.json();
+      return json.data || [];
+    } catch {
+      return localAdapter.saveChallenge(challenge);
+    }
+  },
+
+  deleteChallenge: async (id: string): Promise<Challenge[]> => {
+    try {
+      const res = await fetch(`${API_BASE}/challenges/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('REST API delete challenge failed');
+      const json = await res.json();
+      return json.data || [];
+    } catch {
+      return localAdapter.deleteChallenge(id);
+    }
+  },
+
+  // Leadership
+  getLeadership: async (): Promise<LeadershipMember[]> => {
+    try {
+      const res = await fetch(`${API_BASE}/leadership`);
+      if (!res.ok) throw new Error('REST API leadership fetch failed');
+      const json = await res.json();
+      return json.data || [];
+    } catch {
+      return localAdapter.getLeadership();
+    }
+  },
+
+  saveLeadership: async (member: LeadershipMember): Promise<LeadershipMember[]> => {
+    try {
+      const res = await fetch(`${API_BASE}/leadership`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(member)
+      });
+      if (!res.ok) throw new Error('REST API save leadership failed');
+      const json = await res.json();
+      return json.data || [];
+    } catch {
+      return localAdapter.saveLeadership(member);
+    }
+  },
+
+  deleteLeadership: async (id: string): Promise<LeadershipMember[]> => {
+    try {
+      const res = await fetch(`${API_BASE}/leadership/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('REST API delete leadership failed');
+      const json = await res.json();
+      return json.data || [];
+    } catch {
+      return localAdapter.deleteLeadership(id);
     }
   }
 };

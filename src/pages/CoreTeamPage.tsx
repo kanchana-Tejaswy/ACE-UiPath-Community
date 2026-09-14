@@ -19,7 +19,8 @@ import {
   Check,
   X,
   FileCode,
-  Download
+  Download,
+  Newspaper
 } from 'lucide-react';
 import { Activity, ProjectShowcase, User, ActivityDraft, DraftStatus } from '../types';
 
@@ -195,9 +196,18 @@ export const CoreTeamPage: React.FC<Props> = ({
             </p>
           </div>
 
-          <button onClick={handleCreateNewDraft} className="btn btn-primary" style={{ gap: '0.4rem' }}>
-            <Plus size={16} /> Create Activity Draft
-          </button>
+          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+            <button
+              onClick={() => onNavigate('article_editor', 'new')}
+              className="btn btn-secondary"
+              style={{ gap: '0.4rem', borderColor: 'rgba(250, 70, 22, 0.4)', color: '#FA4616' }}
+            >
+              <Newspaper size={16} /> Write Technical Article
+            </button>
+            <button onClick={handleCreateNewDraft} className="btn btn-primary" style={{ gap: '0.4rem' }}>
+              <Plus size={16} /> Create Activity Draft
+            </button>
+          </div>
         </div>
       </div>
 

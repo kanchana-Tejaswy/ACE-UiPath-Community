@@ -16,7 +16,8 @@ import {
   AnalyticsEvent,
   CommunityStatistic,
   Announcement,
-  TimelineMilestone
+  TimelineMilestone,
+  Article
 } from '../types';
 import { localDatabase } from './local/localDatabase';
 import { activitiesRepository } from './repositories/activitiesRepository';
@@ -26,6 +27,8 @@ import { resourcesRepository } from './repositories/resourcesRepository';
 import { settingsRepository } from './repositories/settingsRepository';
 import { activityDraftsRepository } from './repositories/activityDraftsRepository';
 import { analyticsRepository } from './repositories/analyticsRepository';
+import { articlesRepository } from './repositories/articlesRepository';
+import { activeAdapter } from './adapters';
 import { hasPermission, isValidDraftStatusTransition, normalizeRole } from '../lib/security';
 import { authService } from '../lib/auth/authService';
 
@@ -51,35 +54,111 @@ export function useCommunityStore() {
   const [completedModuleIds, setCompletedModuleIds] = useState<string[]>(() => localDatabase.getCompletedModules());
   const [activityDrafts, setActivityDrafts] = useState<ActivityDraft[]>(() => activityDraftsRepository.getAll());
   const [analyticsEvents, setAnalyticsEvents] = useState<AnalyticsEvent[]>(() => localDatabase.getAnalyticsEvents());
+  const [articles, setArticles] = useState<Article[]>(() => articlesRepository.getAll());
 
-  // Sync with local repository and remote backend
+  // Sync with remote Supabase cloud backend
   useEffect(() => {
     let isMounted = true;
 
-    async function syncSupabase() {
-      const [remoteActivities, remoteProjects, remoteResources] = await Promise.all([
-        import('../lib/supabase/services').then((s) => s.fetchActivitiesFromSupabase()),
-        import('../lib/supabase/services').then((s) => s.fetchProjectsFromSupabase()),
-        import('../lib/supabase/services').then((s) => s.fetchResourcesFromSupabase())
-      ]);
+    async function syncCloudBackend() {
+      if (!activeAdapter.isCloudConnected()) {
+        return;
+      }
 
-      if (isMounted) {
-        if (remoteActivities && remoteActivities.length > 0) {
-          setActivities(remoteActivities);
+      try {
+        const [
+          remoteSettings,
+          remoteActivities,
+          remoteProjects,
+          remoteResources,
+          remoteLearningPaths,
+          remoteChallenges,
+          remoteLeadership,
+          remoteDrafts,
+          remoteArticles
+        ] = await Promise.all([
+          activeAdapter.getSettings(),
+          activeAdapter.getActivities(),
+          activeAdapter.getProjects(),
+          activeAdapter.getResources(),
+          activeAdapter.getLearningPaths(),
+          activeAdapter.getChallenges(),
+          activeAdapter.getLeadership(),
+          activeAdapter.getActivityDrafts(),
+          activeAdapter.getArticles()
+        ]);
+
+        if (isMounted) {
+          if (remoteSettings && remoteSettings.heroHeading) {
+            setSettings(remoteSettings);
+            localDatabase.saveSettings(remoteSettings);
+          }
+          if (remoteActivities && remoteActivities.length > 0) {
+            setActivities(remoteActivities);
+            localDatabase.saveActivities(remoteActivities);
+          }
+          if (remoteProjects && remoteProjects.length > 0) {
+            setProjects(remoteProjects);
+            localDatabase.saveProjects(remoteProjects);
+          }
+          if (remoteResources && remoteResources.length > 0) {
+            setResources(remoteResources);
+            localDatabase.saveResources(remoteResources);
+          }
+          if (remoteLearningPaths && remoteLearningPaths.length > 0) {
+            setLearningPaths(remoteLearningPaths);
+            localDatabase.saveLearningPaths(remoteLearningPaths);
+          }
+          if (remoteChallenges && remoteChallenges.length > 0) {
+            setChallenges(remoteChallenges);
+            localDatabase.saveChallenges(remoteChallenges);
+          }
+          if (remoteLeadership && remoteLeadership.length > 0) {
+            setLeadership(remoteLeadership);
+            localDatabase.saveLeadership(remoteLeadership);
+          }
+          if (remoteDrafts && remoteDrafts.length > 0) {
+            setActivityDrafts(remoteDrafts);
+            localDatabase.saveActivityDrafts(remoteDrafts);
+          }
+          if (remoteArticles && remoteArticles.length > 0) {
+            setArticles(remoteArticles);
+            localDatabase.saveArticles(remoteArticles);
+          }
         }
-        if (remoteProjects && remoteProjects.length > 0) {
-          setProjects(remoteProjects);
-        }
-        if (remoteResources && remoteResources.length > 0) {
-          setResources(remoteResources);
-        }
+      } catch (err) {
+        console.debug('Cloud backend sync notice:', err);
       }
     }
 
-    syncSupabase().catch((err) => {
-      // Local-first mode fallback: Supabase is disconnected
-      console.debug('Local-first mode active (Supabase cloud disconnected):', err);
-    });
+    syncCloudBackend();
+
+    // Auto-transition scheduled articles whose time has passed
+    const evaluateScheduledArticles = () => {
+      const allArticles = articlesRepository.getAll();
+      const now = new Date();
+      let hasChanges = false;
+      const updated = allArticles.map((art) => {
+        if (art.status === 'SCHEDULED' && art.scheduledAt && new Date(art.scheduledAt) <= now) {
+          hasChanges = true;
+          return {
+            ...art,
+            status: 'PUBLISHED' as const,
+            publishedAt: art.scheduledAt,
+            updatedAt: now.toISOString()
+          };
+        }
+        return art;
+      });
+      if (hasChanges) {
+        localDatabase.saveArticles(updated);
+        setArticles(updated);
+        notifyDbChange();
+      }
+    };
+
+    evaluateScheduledArticles();
+    const scheduledTimer = setInterval(evaluateScheduledArticles, 15000);
 
     const handleUpdate = () => {
       setActivities(activitiesRepository.getAll());
@@ -94,11 +173,13 @@ export function useCommunityStore() {
       setAuditLogs(localDatabase.getAuditLogs());
       setActivityDrafts(activityDraftsRepository.getAll());
       setAnalyticsEvents(localDatabase.getAnalyticsEvents());
+      setArticles(articlesRepository.getAll());
     };
 
     window.addEventListener(DB_CHANGE_EVENT, handleUpdate);
     return () => {
       isMounted = false;
+      clearInterval(scheduledTimer);
       window.removeEventListener(DB_CHANGE_EVENT, handleUpdate);
     };
   }, []);
@@ -111,6 +192,9 @@ export function useCommunityStore() {
       userId: event.userId || currentUser?.id,
     });
     setAnalyticsEvents(localDatabase.getAnalyticsEvents());
+    if (activeAdapter.isCloudConnected()) {
+      activeAdapter.recordAnalyticsEvent(event).catch(() => {});
+    }
     return newEvent;
   };
 
@@ -168,6 +252,9 @@ export function useCommunityStore() {
   const saveActivity = (activity: Activity) => {
     const updated = activitiesRepository.save(activity);
     setActivities(updated);
+    if (activeAdapter.isCloudConnected()) {
+      activeAdapter.saveActivity(activity).catch((e) => console.warn('Supabase saveActivity warning:', e));
+    }
     localDatabase.addAuditLog({
       action: 'ADMIN_SAVED_ACTIVITY',
       entityType: 'ACTIVITY',
@@ -182,6 +269,9 @@ export function useCommunityStore() {
     const act = activities.find((a) => a.id === id);
     const updated = activitiesRepository.delete(id);
     setActivities(updated);
+    if (activeAdapter.isCloudConnected()) {
+      activeAdapter.deleteActivity(id).catch((e) => console.warn('Supabase deleteActivity warning:', e));
+    }
     localDatabase.addAuditLog({
       action: 'ADMIN_DELETED_ACTIVITY',
       entityType: 'ACTIVITY',
@@ -195,6 +285,9 @@ export function useCommunityStore() {
   const saveProject = (project: ProjectShowcase) => {
     const updated = projectsRepository.save(project);
     setProjects(updated);
+    if (activeAdapter.isCloudConnected()) {
+      activeAdapter.saveProject(project).catch((e) => console.warn('Supabase saveProject warning:', e));
+    }
     localDatabase.addAuditLog({
       action: 'ADMIN_SAVED_PROJECT',
       entityType: 'PROJECT',
@@ -209,6 +302,9 @@ export function useCommunityStore() {
     const proj = projects.find((p) => p.id === id);
     const updated = projectsRepository.delete(id);
     setProjects(updated);
+    if (activeAdapter.isCloudConnected()) {
+      activeAdapter.deleteProject(id).catch((e) => console.warn('Supabase deleteProject warning:', e));
+    }
     localDatabase.addAuditLog({
       action: 'ADMIN_DELETED_PROJECT',
       entityType: 'PROJECT',
@@ -222,6 +318,9 @@ export function useCommunityStore() {
   const upvoteProject = (id: string) => {
     const updated = projectsRepository.upvote(id);
     setProjects(updated);
+    if (activeAdapter.isCloudConnected()) {
+      activeAdapter.upvoteProject(id).catch((e) => console.warn('Supabase upvoteProject warning:', e));
+    }
     recordAnalyticsEvent({
       eventType: 'PROJECT_UPVOTED',
       entityType: 'Project',
@@ -233,6 +332,9 @@ export function useCommunityStore() {
   const saveResource = (res: CommunityResource) => {
     const updated = resourcesRepository.save(res);
     setResources(updated);
+    if (activeAdapter.isCloudConnected()) {
+      activeAdapter.saveResource(res).catch((e) => console.warn('Supabase saveResource warning:', e));
+    }
     localDatabase.addAuditLog({
       action: 'ADMIN_SAVED_RESOURCE',
       entityType: 'RESOURCE',
@@ -247,6 +349,9 @@ export function useCommunityStore() {
     const res = resources.find((r) => r.id === id);
     const updated = resourcesRepository.delete(id);
     setResources(updated);
+    if (activeAdapter.isCloudConnected()) {
+      activeAdapter.deleteResource(id).catch((e) => console.warn('Supabase deleteResource warning:', e));
+    }
     localDatabase.addAuditLog({
       action: 'ADMIN_DELETED_RESOURCE',
       entityType: 'RESOURCE',
@@ -255,6 +360,69 @@ export function useCommunityStore() {
       performedBy: currentUser.name
     });
     notifyDbChange();
+  };
+
+  const saveArticle = (article: Article) => {
+    if (!hasPermission(currentUser.role, 'CORE_TEAM')) {
+      alert('Access Restricted: Only Admin and Core Team members can create or edit articles.');
+      return;
+    }
+
+    const updated = articlesRepository.save(article);
+    setArticles(updated);
+    if (activeAdapter.isCloudConnected()) {
+      activeAdapter.saveArticle(article).catch((e) => console.warn('Supabase saveArticle warning:', e));
+    }
+
+    if (article.isFeatured) {
+      updateSettings({ featuredArticleId: article.id });
+    } else if (settings.featuredArticleId === article.id) {
+      updateSettings({ featuredArticleId: undefined });
+    }
+
+    localDatabase.addAuditLog({
+      action: 'ADMIN_SAVED_ARTICLE',
+      entityType: 'ARTICLE',
+      entityId: article.id,
+      description: `Saved article "${article.title}" (${article.status})`,
+      performedBy: currentUser.name
+    });
+    notifyDbChange();
+  };
+
+  const deleteArticle = (id: string) => {
+    if (!hasPermission(currentUser.role, 'CORE_TEAM')) {
+      alert('Access Restricted: Only Admin and Core Team members can delete articles.');
+      return;
+    }
+
+    const target = articles.find((a) => a.id === id);
+    const updated = articlesRepository.delete(id);
+    setArticles(updated);
+    if (activeAdapter.isCloudConnected()) {
+      activeAdapter.deleteArticle(id).catch((e) => console.warn('Supabase deleteArticle warning:', e));
+    }
+
+    if (settings.featuredArticleId === id) {
+      updateSettings({ featuredArticleId: undefined });
+    }
+
+    localDatabase.addAuditLog({
+      action: 'ADMIN_DELETED_ARTICLE',
+      entityType: 'ARTICLE',
+      entityId: id,
+      description: `Deleted article "${target?.title || id}"`,
+      performedBy: currentUser.name
+    });
+    notifyDbChange();
+  };
+
+  const incrementArticleViews = (id: string) => {
+    const updated = articlesRepository.incrementViews(id);
+    setArticles(updated);
+    if (activeAdapter.isCloudConnected()) {
+      activeAdapter.incrementArticleViews(id).catch((e) => console.warn('Supabase incrementArticleViews warning:', e));
+    }
   };
 
   const saveChallenge = (chal: Challenge) => {
@@ -268,6 +436,9 @@ export function useCommunityStore() {
     }
     setChallenges(updated);
     localDatabase.saveChallenges(updated);
+    if (activeAdapter.isCloudConnected()) {
+      activeAdapter.saveChallenge(chal).catch((e) => console.warn('Supabase saveChallenge warning:', e));
+    }
     localDatabase.addAuditLog({
       action: 'ADMIN_SAVED_CHALLENGE',
       entityType: 'CHALLENGE',
@@ -278,9 +449,30 @@ export function useCommunityStore() {
     notifyDbChange();
   };
 
+  const deleteChallenge = (id: string) => {
+    const chal = challenges.find((c) => c.id === id);
+    const updated = challenges.filter((c) => c.id !== id);
+    setChallenges(updated);
+    localDatabase.saveChallenges(updated);
+    if (activeAdapter.isCloudConnected()) {
+      activeAdapter.deleteChallenge(id).catch((e) => console.warn('Supabase deleteChallenge warning:', e));
+    }
+    localDatabase.addAuditLog({
+      action: 'ADMIN_DELETED_CHALLENGE',
+      entityType: 'CHALLENGE',
+      entityId: id,
+      description: `Deleted hackathon challenge "${chal?.title || id}"`,
+      performedBy: currentUser.name
+    });
+    notifyDbChange();
+  };
+
   const updateSettings = (newSettings: Partial<SiteSettings>) => {
     const updated = settingsRepository.update(newSettings);
     setSettings(updated);
+    if (activeAdapter.isCloudConnected()) {
+      activeAdapter.updateSettings(updated).catch((e) => console.warn('Supabase updateSettings warning:', e));
+    }
     localDatabase.addAuditLog({
       action: 'ADMIN_UPDATED_SETTINGS',
       entityType: 'SETTINGS',
@@ -321,6 +513,7 @@ export function useCommunityStore() {
         projects,
         challenges,
         resources,
+        articles,
         activityDrafts,
         leadership,
         users,
@@ -349,6 +542,7 @@ export function useCommunityStore() {
       if (Array.isArray(data.projects)) localDatabase.saveProjects(data.projects);
       if (Array.isArray(data.challenges)) localDatabase.saveChallenges(data.challenges);
       if (Array.isArray(data.resources)) localDatabase.saveResources(data.resources);
+      if (Array.isArray(data.articles)) localDatabase.saveArticles(data.articles);
       if (Array.isArray(data.activityDrafts)) localDatabase.saveActivityDrafts(data.activityDrafts);
       if (Array.isArray(data.leadership)) localDatabase.saveLeadership(data.leadership);
       if (Array.isArray(data.analyticsEvents)) localDatabase.saveAnalyticsEvents(data.analyticsEvents);
@@ -370,6 +564,9 @@ export function useCommunityStore() {
   const incrementResourceDownloads = (id: string) => {
     const updated = resourcesRepository.incrementDownloads(id);
     setResources(updated);
+    if (activeAdapter.isCloudConnected()) {
+      activeAdapter.incrementResourceDownloads(id).catch((e) => console.warn('Supabase incrementResourceDownloads warning:', e));
+    }
     recordAnalyticsEvent({
       eventType: 'RESOURCE_DOWNLOADED',
       entityType: 'Resource',
@@ -402,6 +599,9 @@ export function useCommunityStore() {
     }
     const updated = activityDraftsRepository.save(draft);
     setActivityDrafts(updated);
+    if (activeAdapter.isCloudConnected()) {
+      activeAdapter.saveActivityDraft(draft).catch((e) => console.warn('Supabase saveActivityDraft warning:', e));
+    }
     localDatabase.addAuditLog({
       action: draft.createdAt === draft.updatedAt ? 'CORE_CREATED_DRAFT' : 'CORE_UPDATED_DRAFT',
       entityType: 'ActivityDraft',
@@ -417,6 +617,9 @@ export function useCommunityStore() {
     const draft = activityDraftsRepository.getById(id);
     const updated = activityDraftsRepository.delete(id);
     setActivityDrafts(updated);
+    if (activeAdapter.isCloudConnected()) {
+      activeAdapter.deleteActivityDraft(id).catch((e) => console.warn('Supabase deleteActivityDraft warning:', e));
+    }
     if (draft) {
       localDatabase.addAuditLog({
         action: 'CORE_DELETED_DRAFT',
@@ -442,6 +645,9 @@ export function useCommunityStore() {
 
     const updated = activityDraftsRepository.updateStatus(id, 'SUBMITTED');
     setActivityDrafts(updated);
+    if (activeAdapter.isCloudConnected()) {
+      activeAdapter.updateDraftStatus(id, 'SUBMITTED').catch((e) => console.warn('Supabase submit draft warning:', e));
+    }
     localDatabase.addAuditLog({
       action: 'CORE_SUBMITTED_DRAFT',
       entityType: 'ActivityDraft',
@@ -468,6 +674,9 @@ export function useCommunityStore() {
 
     const updated = activityDraftsRepository.updateStatus(id, status, notes);
     setActivityDrafts(updated);
+    if (activeAdapter.isCloudConnected()) {
+      activeAdapter.updateDraftStatus(id, status, notes).catch((e) => console.warn('Supabase review draft warning:', e));
+    }
     const actionName = status === 'CHANGES_REQUESTED' ? 'ADMIN_REQUESTED_CHANGES' : status === 'APPROVED' ? 'ADMIN_APPROVED_DRAFT' : 'ADMIN_REVIEWED_DRAFT';
     localDatabase.addAuditLog({
       action: actionName,
@@ -487,7 +696,6 @@ export function useCommunityStore() {
     const draft = activityDraftsRepository.getById(id);
     if (!draft) return;
 
-    // Self-approval safety check: CoreTeam user acting in Admin mode cannot approve their own draft without explicit Admin role
     const check = isValidDraftStatusTransition(draft.status, 'PUBLISHED', currentUser.role);
     if (!check.valid) {
       alert(check.reason);
@@ -528,6 +736,11 @@ export function useCommunityStore() {
 
     const updatedDrafts = activityDraftsRepository.updateStatus(id, 'PUBLISHED');
     setActivityDrafts(updatedDrafts);
+
+    if (activeAdapter.isCloudConnected()) {
+      activeAdapter.saveActivity(publicActivity).catch((e) => console.warn('Supabase saveActivity on publish warning:', e));
+      activeAdapter.updateDraftStatus(id, 'PUBLISHED').catch((e) => console.warn('Supabase draft status on publish warning:', e));
+    }
 
     localDatabase.addAuditLog({
       action: 'ADMIN_PUBLISHED_DRAFT',
@@ -608,6 +821,9 @@ export function useCommunityStore() {
     }
     setLeadership(updated);
     localDatabase.saveLeadership(updated);
+    if (activeAdapter.isCloudConnected()) {
+      activeAdapter.saveLeadership(member).catch((e) => console.warn('Supabase saveLeadership warning:', e));
+    }
     localDatabase.addAuditLog({
       action: 'ADMIN_SAVED_LEADERSHIP',
       entityType: 'LEADERSHIP',
@@ -624,6 +840,9 @@ export function useCommunityStore() {
     const updated = all.filter((m) => m.id !== id);
     setLeadership(updated);
     localDatabase.saveLeadership(updated);
+    if (activeAdapter.isCloudConnected()) {
+      activeAdapter.deleteLeadership(id).catch((e) => console.warn('Supabase deleteLeadership warning:', e));
+    }
     localDatabase.addAuditLog({
       action: 'ADMIN_DELETED_LEADERSHIP',
       entityType: 'LEADERSHIP',
@@ -646,6 +865,9 @@ export function useCommunityStore() {
     }
     setLearningPaths(updated);
     localDatabase.saveLearningPaths(updated);
+    if (activeAdapter.isCloudConnected()) {
+      activeAdapter.saveLearningPath(path).catch((e) => console.warn('Supabase saveLearningPath warning:', e));
+    }
     localDatabase.addAuditLog({
       action: 'ADMIN_SAVED_LEARNING_PATH',
       entityType: 'LEARNING_PATH',
@@ -657,31 +879,17 @@ export function useCommunityStore() {
   };
 
   const deleteLearningPath = (id: string) => {
-    const all = learningRepository.getAll();
-    const target = all.find((p) => p.id === id);
-    const updated = all.filter((p) => p.id !== id);
-    setLearningPaths(updated);
-    localDatabase.saveLearningPaths(updated);
+    const all = learningPaths.filter((p) => p.id !== id);
+    setLearningPaths(all);
+    localDatabase.saveLearningPaths(all);
+    if (activeAdapter.isCloudConnected()) {
+      activeAdapter.deleteLearningPath(id).catch((e) => console.warn('Supabase deleteLearningPath warning:', e));
+    }
     localDatabase.addAuditLog({
       action: 'ADMIN_DELETED_LEARNING_PATH',
       entityType: 'LEARNING_PATH',
       entityId: id,
-      description: `Deleted learning path "${target?.title || id}"`,
-      performedBy: currentUser.name
-    });
-    notifyDbChange();
-  };
-
-  const deleteChallenge = (id: string) => {
-    const chal = challenges.find((c) => c.id === id);
-    const updated = challenges.filter((c) => c.id !== id);
-    setChallenges(updated);
-    localDatabase.saveChallenges(updated);
-    localDatabase.addAuditLog({
-      action: 'ADMIN_DELETED_CHALLENGE',
-      entityType: 'CHALLENGE',
-      entityId: id,
-      description: `Deleted hackathon challenge "${chal?.title || id}"`,
+      description: `Deleted learning path ID "${id}"`,
       performedBy: currentUser.name
     });
     notifyDbChange();
@@ -693,6 +901,7 @@ export function useCommunityStore() {
     projects,
     challenges,
     resources,
+    articles,
     leadership,
     settings,
     users,
@@ -719,6 +928,9 @@ export function useCommunityStore() {
     upvoteProject,
     saveResource,
     deleteResource,
+    saveArticle,
+    deleteArticle,
+    incrementArticleViews,
     saveChallenge,
     deleteChallenge,
     saveLearningPath,

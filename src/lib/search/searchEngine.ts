@@ -1,6 +1,6 @@
-import { Activity, LearningPath, ProjectShowcase, Challenge, CommunityResource } from '../../types';
+import { Activity, LearningPath, ProjectShowcase, Challenge, CommunityResource, Article } from '../../types';
 
-export type SearchResultType = 'activity' | 'module' | 'project' | 'challenge' | 'resource';
+export type SearchResultType = 'activity' | 'module' | 'project' | 'challenge' | 'resource' | 'article';
 
 export interface SearchResult {
   id: string;
@@ -15,7 +15,7 @@ export interface SearchResult {
 }
 
 export interface SearchFilters {
-  contentType?: 'all' | 'activity' | 'module' | 'project' | 'challenge' | 'resource';
+  contentType?: 'all' | 'activity' | 'module' | 'project' | 'challenge' | 'resource' | 'article';
   uipathTool?: string;
   category?: string;
 }
@@ -42,6 +42,7 @@ export function searchContent(
     projects: ProjectShowcase[];
     challenges: Challenge[];
     resources: CommunityResource[];
+    articles?: Article[];
   }
 ): SearchResult[] {
   const queryTokens = tokenize(rawQuery);
@@ -248,6 +249,27 @@ export function searchContent(
       { fileType: res.fileType, downloadCount: res.downloadCount }
     );
   });
+
+  // Search Articles & Technical Tutorials
+  if (collections.articles) {
+    collections.articles
+      .filter((a) => a.status === 'PUBLISHED' || (a.status === 'SCHEDULED' && a.scheduledAt && new Date(a.scheduledAt) <= new Date()))
+      .forEach((art) => {
+        scoreItem(
+          art.id,
+          'article',
+          art.title,
+          art.excerpt,
+          [art.category, 'blog', 'article', 'tutorial', 'guide'],
+          [],
+          art.category,
+          `By ${art.authorName} (${art.authorRole})`,
+          '#blogs',
+          art.slug,
+          { category: art.category, authorName: art.authorName, publishedAt: art.publishedAt, views: art.views }
+        );
+      });
+  }
 
   // Sort descending by relevance score
   return results.sort((a, b) => b.score - a.score);

@@ -81,7 +81,8 @@ export type AnalyticsEventType =
   | 'AI_ASSISTANT_OPENED'
   | 'AI_QUESTION_ASKED'
   | 'AI_SOURCE_OPENED'
-  | 'AI_NO_ANSWER';
+  | 'AI_NO_ANSWER'
+  | 'ARTICLE_VIEWED';
 
 export interface AnalyticsEvent {
   id: string;
@@ -301,6 +302,7 @@ export interface SiteSettings {
   isAnnouncementActive: boolean;
   featuredActivityId?: string;
   featuredProjectIds?: string[];
+  featuredArticleId?: string;
   communityStoryHeading?: string;
   communityStoryText?: string;
   communityStoryHighlight?: string;
@@ -318,4 +320,62 @@ export interface SiteSettings {
   statistics?: CommunityStatistic[];
   announcements?: Announcement[];
   timelineMilestones?: TimelineMilestone[];
+}
+
+export type ArticleCategory =
+  | 'Associate Developer'
+  | 'Tutorial'
+  | 'Student Project Story'
+  | 'UiPath Tips & Tricks'
+  | 'Industry News'
+  | 'RPA'
+  | 'AI & Automation'
+  | 'Community'
+  | 'Advanced Developer'
+  | 'Specialized AI'
+  | 'Architecture'
+  | 'Community Spotlight';
+
+export const ARTICLE_CATEGORIES: ArticleCategory[] = [
+  'Associate Developer',
+  'Tutorial',
+  'Student Project Story',
+  'UiPath Tips & Tricks',
+  'Industry News',
+  'RPA',
+  'AI & Automation',
+  'Community',
+  'Advanced Developer',
+  'Specialized AI',
+  'Architecture',
+  'Community Spotlight'
+];
+
+export type ArticleStatus = 'DRAFT' | 'PUBLISHED' | 'SCHEDULED';
+
+export interface Article {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string;
+  content: string; // Markdown technical content
+  coverImage?: string;
+  coverImageUrl?: string;
+  category: ArticleCategory;
+  authorName: string;
+  authorRole: string;
+  authorAvatar?: string;
+  authorId?: string;
+  tags?: string[];
+  status: ArticleStatus;
+  scheduledAt?: string; // ISO string
+  publishedAt?: string; // ISO string
+  isFeatured: boolean;
+  views: number;
+  viewsCount?: number;
+  readTimeMinutes?: number;
+  createdAt: string;
+  updatedAt: string;
+  createdBy?: string;
+  updatedBy?: string;
 }

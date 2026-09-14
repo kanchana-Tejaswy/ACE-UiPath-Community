@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Search, X, Layers, GraduationCap, Sparkles, FileCode, Trophy, ArrowRight, Filter } from 'lucide-react';
-import { Activity, LearningPath, ProjectShowcase, CommunityResource, Challenge } from '../types';
+import { Search, X, Layers, GraduationCap, Sparkles, FileCode, Trophy, ArrowRight, Filter, Newspaper } from 'lucide-react';
+import { Activity, LearningPath, ProjectShowcase, CommunityResource, Challenge, Article } from '../types';
 import { searchContent, SearchResult } from '../lib/search/searchEngine';
 
 interface Props {
@@ -11,11 +11,12 @@ interface Props {
   projects: ProjectShowcase[];
   challenges: Challenge[];
   resources: CommunityResource[];
+  articles?: Article[];
   onNavigate: (view: string, detailId?: string) => void;
   onRecordAnalytics?: (event: { eventType: any; entityType?: string; entityId?: string; metadata?: any }) => void;
 }
 
-type FilterChip = 'all' | 'activity' | 'module' | 'project' | 'challenge' | 'resource';
+type FilterChip = 'all' | 'activity' | 'module' | 'project' | 'challenge' | 'resource' | 'article';
 
 export const CommandSearchModal: React.FC<Props> = ({
   isOpen,
@@ -25,6 +26,7 @@ export const CommandSearchModal: React.FC<Props> = ({
   projects,
   challenges,
   resources,
+  articles = [],
   onNavigate,
   onRecordAnalytics
 }) => {
@@ -52,9 +54,10 @@ export const CommandSearchModal: React.FC<Props> = ({
       learningPaths,
       projects,
       challenges,
-      resources
+      resources,
+      articles
     });
-  }, [query, activeFilter, activities, learningPaths, projects, challenges, resources]);
+  }, [query, activeFilter, activities, learningPaths, projects, challenges, resources, articles]);
 
   // Reset selected index when query or filter changes
   useEffect(() => {
@@ -87,6 +90,8 @@ export const CommandSearchModal: React.FC<Props> = ({
       onNavigate('challenges');
     } else if (item.type === 'resource') {
       onNavigate('resources');
+    } else if (item.type === 'article' && item.detailId) {
+      onNavigate('blog_detail', item.detailId);
     }
     onClose();
   };
@@ -127,6 +132,7 @@ export const CommandSearchModal: React.FC<Props> = ({
       case 'project': return <Sparkles size={14} style={{ color: '#34D399' }} />;
       case 'challenge': return <Trophy size={14} style={{ color: '#F59E0B' }} />;
       case 'resource': return <FileCode size={14} style={{ color: 'var(--text-secondary)' }} />;
+      case 'article': return <Newspaper size={14} style={{ color: '#FA4616' }} />;
     }
   };
 
@@ -137,6 +143,7 @@ export const CommandSearchModal: React.FC<Props> = ({
       case 'project': return <span className="badge badge-green" style={{ fontSize: '0.65rem' }}>Bot Showcase</span>;
       case 'challenge': return <span className="badge badge-orange" style={{ fontSize: '0.65rem' }}>Hackathon</span>;
       case 'resource': return <span className="badge badge-neutral" style={{ fontSize: '0.65rem' }}>Resource</span>;
+      case 'article': return <span className="badge badge-orange" style={{ fontSize: '0.65rem' }}>Article</span>;
     }
   };
 

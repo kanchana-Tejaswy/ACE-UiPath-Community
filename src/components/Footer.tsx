@@ -160,6 +160,11 @@ export const Footer: React.FC<Props> = ({ settings, onNavigate }) => {
                 </button>
               </li>
               <li>
+                <button onClick={() => onNavigate('blogs')} className="footer-nav-link">
+                  Blogs & Technical Articles
+                </button>
+              </li>
+              <li>
                 <button onClick={() => onNavigate('resources')} className="footer-nav-link">
                   Download Starter .XAML & Cheat Sheets
                 </button>

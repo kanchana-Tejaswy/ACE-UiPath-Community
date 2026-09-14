@@ -4,12 +4,14 @@ import {
   ProjectShowcase, 
   Challenge, 
   CommunityResource, 
+  LeadershipMember,
   SiteSettings, 
   AuditLogEntry, 
   ActivityDraft, 
   DraftStatus,
   AnalyticsEvent,
-  AnalyticsEventType
+  AnalyticsEventType,
+  Article
 } from '../../types';
 
 export interface DataAdapter {
@@ -28,8 +30,15 @@ export interface DataAdapter {
 
   // Learning
   getLearningPaths(): Promise<LearningPath[]>;
+  saveLearningPath(path: LearningPath): Promise<LearningPath[]>;
+  deleteLearningPath(id: string): Promise<LearningPath[]>;
   getCompletedModules(): Promise<string[]>;
   toggleModuleCompletion(moduleId: string): Promise<string[]>;
+
+  // Challenges
+  getChallenges(): Promise<Challenge[]>;
+  saveChallenge(challenge: Challenge): Promise<Challenge[]>;
+  deleteChallenge(id: string): Promise<Challenge[]>;
 
   // Resources
   getResources(): Promise<CommunityResource[]>;
@@ -37,11 +46,22 @@ export interface DataAdapter {
   deleteResource(id: string): Promise<CommunityResource[]>;
   incrementResourceDownloads(id: string): Promise<CommunityResource[]>;
 
+  // Leadership
+  getLeadership(): Promise<LeadershipMember[]>;
+  saveLeadership(member: LeadershipMember): Promise<LeadershipMember[]>;
+  deleteLeadership(id: string): Promise<LeadershipMember[]>;
+
   // Activity Drafts
   getActivityDrafts(): Promise<ActivityDraft[]>;
   saveActivityDraft(draft: ActivityDraft): Promise<ActivityDraft[]>;
   deleteActivityDraft(id: string): Promise<ActivityDraft[]>;
   updateDraftStatus(id: string, status: DraftStatus, notes?: string): Promise<ActivityDraft[]>;
+
+  // Articles & Technical Write-ups
+  getArticles(): Promise<Article[]>;
+  saveArticle(article: Article): Promise<Article[]>;
+  deleteArticle(id: string): Promise<Article[]>;
+  incrementArticleViews(id: string): Promise<Article[]>;
 
   // Settings & System
   getSettings(): Promise<SiteSettings>;

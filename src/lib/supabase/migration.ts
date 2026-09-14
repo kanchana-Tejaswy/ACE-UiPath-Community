@@ -3,15 +3,30 @@ import { localDatabase } from '../../data/local/localDatabase';
 import { activitiesRepository } from '../../data/repositories/activitiesRepository';
 import { projectsRepository } from '../../data/repositories/projectsRepository';
 import { resourcesRepository } from '../../data/repositories/resourcesRepository';
+import { learningRepository } from '../../data/repositories/learningRepository';
 import { activityDraftsRepository } from '../../data/repositories/activityDraftsRepository';
+import { settingsRepository } from '../../data/repositories/settingsRepository';
+import { 
+  mapActivityEntityToRow, 
+  mapProjectEntityToRow, 
+  mapResourceEntityToRow, 
+  mapLearningPathEntityToRow, 
+  mapChallengeEntityToRow, 
+  mapLeadershipEntityToRow, 
+  mapActivityDraftEntityToRow 
+} from './mappers';
 
 export interface MigrationReport {
   success: boolean;
   message: string;
   counts: {
+    settings: number;
     activities: number;
     projects: number;
+    learningPaths: number;
+    challenges: number;
     resources: number;
+    leadership: number;
     drafts: number;
   };
   errors: string[];
@@ -21,7 +36,16 @@ export async function migrateLocalToSupabase(): Promise<MigrationReport> {
   const report: MigrationReport = {
     success: false,
     message: '',
-    counts: { activities: 0, projects: 0, resources: 0, drafts: 0 },
+    counts: { 
+      settings: 0, 
+      activities: 0, 
+      projects: 0, 
+      learningPaths: 0, 
+      challenges: 0, 
+      resources: 0, 
+      leadership: 0, 
+      drafts: 0 
+    },
     errors: []
   };
 
@@ -31,34 +55,25 @@ export async function migrateLocalToSupabase(): Promise<MigrationReport> {
   }
 
   try {
-    // 1. Migrate Activities
+    // 1. Migrate Site Settings
+    const settings = settingsRepository.get();
+    if (settings) {
+      const { error } = await supabase.from('site_settings').upsert({
+        key: 'global_config',
+        value_json: settings,
+        updated_at: new Date().toISOString()
+      });
+      if (error) {
+        report.errors.push(`Site Settings migration error: ${error.message}`);
+      } else {
+        report.counts.settings = 1;
+      }
+    }
+
+    // 2. Migrate Activities
     const activities = activitiesRepository.getAll();
     if (activities.length > 0) {
-      const rows = activities.map((act) => ({
-        id: act.id,
-        slug: act.slug,
-        title: act.title,
-        category: act.category,
-        event_type: act.eventType,
-        activity_date: act.date,
-        time_start: act.timeStart,
-        time_end: act.timeEnd,
-        venue: act.venue,
-        summary: act.summary,
-        full_description_md: act.fullDescriptionMd,
-        objectives_text: act.objectives,
-        uipath_topics: act.uipathTopicsCovered,
-        learning_outcomes: act.learningOutcomes,
-        banner_image_url: act.bannerImage,
-        recording_url: act.recordingUrl,
-        slides_url: act.slidesUrl,
-        github_url: act.githubUrl,
-        workflow_package_url: act.workflowPackageUrl,
-        status: act.status,
-        is_featured: act.isFeatured,
-        updated_at: new Date().toISOString()
-      }));
-
+      const rows = activities.map(mapActivityEntityToRow);
       const { error } = await supabase.from('activities').upsert(rows);
       if (error) {
         report.errors.push(`Activities migration error: ${error.message}`);
@@ -67,31 +82,10 @@ export async function migrateLocalToSupabase(): Promise<MigrationReport> {
       }
     }
 
-    // 2. Migrate Projects
+    // 3. Migrate Projects
     const projects = projectsRepository.getAll();
     if (projects.length > 0) {
-      const rows = projects.map((proj) => ({
-        id: proj.id,
-        slug: proj.slug,
-        title: proj.title,
-        tagline: proj.tagline,
-        summary: proj.summary,
-        problem_statement: proj.problemStatement,
-        solution_description: proj.solutionDescription,
-        uipath_tools_used: proj.uipathToolsUsed,
-        roi_metrics: proj.roiMetrics,
-        repo_url: proj.repoUrl,
-        package_download_url: proj.packageDownloadUrl,
-        video_demo_url: proj.videoDemoUrl,
-        author_name: proj.authorName,
-        author_roll_number: proj.authorRollNumber,
-        author_branch: proj.authorBranch,
-        status: proj.status,
-        upvotes: proj.upvotes,
-        download_count: proj.downloadCount,
-        created_at: proj.createdAt
-      }));
-
+      const rows = projects.map(mapProjectEntityToRow);
       const { error } = await supabase.from('projects').upsert(rows);
       if (error) {
         report.errors.push(`Projects migration error: ${error.message}`);
@@ -100,21 +94,34 @@ export async function migrateLocalToSupabase(): Promise<MigrationReport> {
       }
     }
 
-    // 3. Migrate Resources
+    // 4. Migrate Learning Paths
+    const paths = learningRepository.getAll();
+    if (paths.length > 0) {
+      const rows = paths.map(mapLearningPathEntityToRow);
+      const { error } = await supabase.from('learning_paths').upsert(rows);
+      if (error) {
+        report.errors.push(`Learning Paths migration error: ${error.message}`);
+      } else {
+        report.counts.learningPaths = paths.length;
+      }
+    }
+
+    // 5. Migrate Challenges
+    const challenges = localDatabase.getChallenges();
+    if (challenges.length > 0) {
+      const rows = challenges.map(mapChallengeEntityToRow);
+      const { error } = await supabase.from('challenges').upsert(rows);
+      if (error) {
+        report.errors.push(`Challenges migration error: ${error.message}`);
+      } else {
+        report.counts.challenges = challenges.length;
+      }
+    }
+
+    // 6. Migrate Resources
     const resources = resourcesRepository.getAll();
     if (resources.length > 0) {
-      const rows = resources.map((res) => ({
-        id: res.id,
-        title: res.title,
-        category: res.category,
-        description: res.description,
-        download_url: res.downloadUrl,
-        file_type: res.fileType,
-        uipath_version: res.uipathVersion,
-        tags: res.tags,
-        download_count: res.downloadCount
-      }));
-
+      const rows = resources.map(mapResourceEntityToRow);
       const { error } = await supabase.from('resources').upsert(rows);
       if (error) {
         report.errors.push(`Resources migration error: ${error.message}`);
@@ -123,15 +130,33 @@ export async function migrateLocalToSupabase(): Promise<MigrationReport> {
       }
     }
 
-    // 4. Migrate Drafts
+    // 7. Migrate Leadership
+    const leadership = localDatabase.getLeadership();
+    if (leadership.length > 0) {
+      const rows = leadership.map(mapLeadershipEntityToRow);
+      const { error } = await supabase.from('leadership').upsert(rows);
+      if (error) {
+        report.errors.push(`Leadership migration error: ${error.message}`);
+      } else {
+        report.counts.leadership = leadership.length;
+      }
+    }
+
+    // 8. Migrate Activity Drafts
     const drafts = activityDraftsRepository.getAll();
     if (drafts.length > 0) {
-      report.counts.drafts = drafts.length;
+      const rows = drafts.map(mapActivityDraftEntityToRow);
+      const { error } = await supabase.from('activity_drafts').upsert(rows);
+      if (error) {
+        report.errors.push(`Activity Drafts migration error: ${error.message}`);
+      } else {
+        report.counts.drafts = drafts.length;
+      }
     }
 
     report.success = report.errors.length === 0;
     report.message = report.success 
-      ? `Successfully migrated local dataset to Supabase (${report.counts.activities} activities, ${report.counts.projects} projects, ${report.counts.resources} resources).`
+      ? `Successfully migrated local dataset to Supabase (${report.counts.activities} activities, ${report.counts.projects} projects, ${report.counts.resources} resources, ${report.counts.learningPaths} paths, ${report.counts.challenges} challenges).`
       : `Migration completed with ${report.errors.length} warning(s).`;
 
     localDatabase.addAuditLog({

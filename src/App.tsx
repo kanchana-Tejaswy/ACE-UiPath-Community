@@ -27,6 +27,9 @@ import { AboutPage } from './pages/AboutPage';
 import { JoinPage } from './pages/JoinPage';
 import { AdminPage } from './pages/AdminPage';
 import { CoreTeamPage } from './pages/CoreTeamPage';
+import { BlogsPage } from './pages/BlogsPage';
+import { BlogDetailPage } from './pages/BlogDetailPage';
+import { ArticleEditorPage } from './pages/ArticleEditorPage';
 
 export function App() {
   const store = useCommunityStore();
@@ -54,10 +57,16 @@ export function App() {
         if (pathname.startsWith('resources/')) {
           return { view: 'resources', detailId: pathname.replace('resources/', '') };
         }
+        if (pathname.startsWith('blogs/') || pathname.startsWith('blog/')) {
+          return { view: 'blog_detail', detailId: pathname.replace(/^blogs?\//, '') };
+        }
+        if (pathname.startsWith('admin/article/')) {
+          return { view: 'article_editor', detailId: pathname.replace('admin/article/', '') };
+        }
         if (pathname.startsWith('core/draft/')) {
           return { view: 'core', detailId: pathname.replace('core/draft/', '') };
         }
-        if (['home', 'activities', 'learn', 'projects', 'challenges', 'resources', 'about', 'join', 'admin', 'core'].includes(pathname)) {
+        if (['home', 'activities', 'learn', 'projects', 'challenges', 'resources', 'about', 'join', 'admin', 'core', 'blogs', 'article_editor'].includes(pathname)) {
           return { view: pathname, detailId: undefined };
         }
       }
@@ -90,11 +99,19 @@ export function App() {
       const slug = path.replace('resources/', '');
       return { view: 'resources', detailId: slug };
     }
+    if (path.startsWith('blogs/') || path.startsWith('blog/')) {
+      const slug = path.replace(/^blogs?\//, '');
+      return { view: 'blog_detail', detailId: slug };
+    }
+    if (path.startsWith('admin/article/')) {
+      const artId = path.replace('admin/article/', '');
+      return { view: 'article_editor', detailId: artId };
+    }
     if (path.startsWith('core/draft/')) {
       const draftId = path.replace('core/draft/', '');
       return { view: 'core', detailId: draftId };
     }
-    if (['activities', 'learn', 'projects', 'challenges', 'resources', 'about', 'join', 'admin', 'core'].includes(path)) {
+    if (['activities', 'learn', 'projects', 'challenges', 'resources', 'about', 'join', 'admin', 'core', 'blogs', 'article_editor'].includes(path)) {
       return { view: path, detailId: undefined };
     }
     return { view: 'home', detailId: undefined };
@@ -114,6 +131,7 @@ export function App() {
 
   const handleAuthSuccess = (role: UserRole) => {
     const norm = normalizeRole(role);
+    store.setCurrentRole(norm as UserRole);
     if (norm === 'ADMIN') {
       navigateTo('admin');
     } else if (norm === 'CORE_TEAM') {
@@ -159,6 +177,10 @@ export function App() {
         targetHash = `#challenges/${detailId}`;
       } else if (view === 'resources' && detailId) {
         targetHash = `#resources/${detailId}`;
+      } else if (view === 'blog_detail' && detailId) {
+        targetHash = `#blogs/${detailId}`;
+      } else if (view === 'article_editor' && detailId) {
+        targetHash = `#admin/article/${detailId}`;
       } else if (view === 'core' && detailId) {
         targetHash = `#core/draft/${detailId}`;
       }
@@ -232,6 +254,7 @@ export function App() {
             challenges={store.challenges}
             settings={store.settings}
             currentUser={store.currentUser}
+            articles={store.articles}
             onNavigate={navigateTo}
           />
         )}
@@ -337,6 +360,9 @@ export function App() {
               completedModuleIds={store.completedModuleIds}
               settings={store.settings}
               currentUser={activeUser}
+              articles={store.articles}
+              onSaveArticle={store.saveArticle}
+              onDeleteArticle={store.deleteArticle}
               onSaveActivity={store.saveActivity}
               onDeleteActivity={store.deleteActivity}
               onSaveProject={store.saveProject}
@@ -435,6 +461,49 @@ export function App() {
             </div>
           )
         )}
+
+        {currentView === 'blogs' && (
+          <BlogsPage
+            articles={store.articles}
+            currentUser={activeUser}
+            onNavigate={navigateTo}
+          />
+        )}
+
+        {currentView === 'blog_detail' && selectedDetailId && (
+          <BlogDetailPage
+            slugOrId={selectedDetailId}
+            articles={store.articles}
+            currentUser={activeUser}
+            onNavigate={navigateTo}
+            onIncrementViews={store.incrementArticleViews}
+          />
+        )}
+
+        {currentView === 'article_editor' && (
+          hasPermission(activeUser.role, 'CORE_TEAM') ? (
+            <ArticleEditorPage
+              currentUser={activeUser}
+              articleId={selectedDetailId === 'new' ? null : selectedDetailId}
+              articles={store.articles}
+              onSaveArticle={store.saveArticle}
+              onNavigate={navigateTo}
+            />
+          ) : (
+            <div className="container" style={{ paddingTop: '5rem', paddingBottom: '6rem', textAlign: 'center' }}>
+              <div className="glass-panel" style={{ padding: '3.5rem 2rem', maxWidth: '560px', margin: '0 auto', border: '1px solid var(--border-glow)' }}>
+                <div style={{ fontSize: '3rem', marginBottom: '0.75rem' }}>🔒</div>
+                <h2 style={{ fontSize: '1.6rem', marginBottom: '0.5rem', color: '#FFF' }}>Access Restricted — Authorized Team Only</h2>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: 1.5, marginBottom: '1.5rem' }}>
+                  Creating and editing technical articles is restricted to Administrators and ACE Core Team members.
+                </p>
+                <button onClick={() => navigateTo('blogs')} className="btn btn-secondary btn-sm">
+                  Return to Blogs & Articles
+                </button>
+              </div>
+            </div>
+          )
+        )}
       </main>
 
       {/* Global Footer */}
@@ -493,6 +562,7 @@ export function App() {
         projects={store.projects}
         challenges={store.challenges}
         resources={store.resources}
+        articles={store.articles}
         onNavigate={navigateTo}
         onRecordAnalytics={store.recordAnalyticsEvent}
       />

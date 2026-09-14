@@ -9,7 +9,8 @@ import {
   User,
   CommunityStatistic,
   Announcement,
-  TimelineMilestone
+  TimelineMilestone,
+  Article
 } from '../types';
 
 export const INITIAL_STATISTICS: CommunityStatistic[] = [
@@ -918,5 +919,276 @@ export const INITIAL_LEADERSHIP: LeadershipMember[] = [
     bio: 'Currently Senior RPA Consultant at Cognizant. Founded the ACE UiPath student chapter in 2022.',
     contributions: ['Founded the chapter in 2022', 'Organized first 50-student boot-camp'],
     orderIndex: 4
+  }
+];
+
+export const INITIAL_ARTICLES: Article[] = [
+  {
+    id: 'art_1',
+    slug: 'what-are-activities-in-uipath',
+    title: 'What Are Activities in UiPath? The Foundation of Workflow Automation',
+    excerpt: 'A deep dive into UiPath activities, how they form the fundamental building blocks of workflow automation, and how to select the right activities for enterprise projects.',
+    category: 'Tutorial',
+    authorName: 'Tejaswy',
+    authorRole: 'UiPath Student Developer Champion',
+    status: 'PUBLISHED',
+    publishedAt: '2026-09-14T08:00:00.000Z',
+    isFeatured: true,
+    views: 142,
+    coverImage: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=1200&auto=format&fit=crop&q=80',
+    createdAt: '2026-09-14T07:30:00.000Z',
+    updatedAt: '2026-09-14T08:00:00.000Z',
+    createdBy: 'Tejaswy',
+    content: `# What Are Activities in UiPath?
+
+In robotic process automation (RPA), **Activities** are the essential building blocks that perform individual discrete actions within a software workflow. From clicking a UI button to querying a SQL database, reading an Excel cell, or classifying an invoice with AI, everything in UiPath executes through an activity.
+
+---
+
+## The Core Concept
+
+Imagine writing code in Python or C#. You define methods like \`click()\`, \`read_csv()\`, or \`send_email()\`. In UiPath Studio, these methods are packaged as visual, reusable drag-and-drop components known as **Activities**.
+
+Each activity possesses:
+- **Inputs**: Data passed into the activity (e.g., file path, selector, timeout).
+- **Outputs**: Results produced by the action (e.g., extracted text, HTTP response code).
+- **Properties**: Configuration parameters such as *ContinueOnError*, *DelayBefore*, and *TimeoutMS*.
+
+> [!TIP]
+> Always rename your activity titles in UiPath Studio to reflect business intent rather than keeping defaults like \`Click 'Button'\` or \`Assign\`. For instance, use \`Click 'Submit ERP Invoice'\`.
+
+---
+
+## Activity Categories in Modern UiPath Studio
+
+UiPath groups activities into logical packages and categories:
+
+| Category | Typical Activities | Primary Use Case |
+| :--- | :--- | :--- |
+| **UI Automation** | Use Application/Browser, Click, Type Into, Get Text | Interacting with legacy desktop and web applications |
+| **Data & Files** | Read Range, Write Cell, Read PDF, Read CSV | Spreadsheet and structured document extraction |
+| **Control Flow** | If, Switch, For Each, While, Retry Scope | Conditional branching and loops in sequence |
+| **Integrations** | HTTP Request, Send Outlook Mail, Query Database | Headless API and database connectivity |
+| **System & Orchestrator** | Get Transaction Item, Set Asset, Log Message | Enterprise coordination and telemetry |
+
+---
+
+## Example: Working with UI Activities in Workflow XAML
+
+Under the hood, every UiPath workflow is serialized into standard Windows Workflow Foundation (\`XAML\`). Here is what a simple Click and Type sequence looks like:
+
+\`\`\`xml
+<Sequence DisplayName="Process Employee Record" sap:VirtualizedContainerService.HintSize="450,320">
+  <!-- Launch and Attach to Web ERP -->
+  <uix:NApplicationCard AttachMode="ByInstance" DisplayName="Use ERP Portal" ScopeGuid="a1b2c3d4">
+    <uix:NApplicationCard.Body>
+      <ActivityAction x:TypeArguments="x:Object">
+        <Sequence DisplayName="Execute Data Entry">
+          <uix:NTypeInto DisplayName="Type Employee ID" Text="[in_EmployeeId]" />
+          <uix:NClick DisplayName="Click Query Button" ClickType="Single" MouseButton="BTN_LEFT" />
+        </Sequence>
+      </ActivityAction>
+    </uix:NApplicationCard.Body>
+  </uix:NApplicationCard>
+</Sequence>
+\`\`\`
+
+---
+
+## 3 Best Practices When Choosing Activities
+
+### 1. Modern Experience Over Classic
+Always prefer modern activities under \`UiPath.UIAutomation.Activities\` with unified target resolution (Fuzzy selector + Strict selector + Image anchor). They drastically reduce workflow flakiness caused by subtle web CSS updates.
+
+### 2. Guard Critical Calls with Retry Scope
+Network requests and web navigation can intermittently time out. Enclose them in a **Retry Scope** with an explicit condition (like element existence check) rather than arbitrary hardcoded sleep delays:
+
+\`\`\`csharp
+// Retry Scope evaluation logic
+int maxRetries = 3;
+TimeSpan retryInterval = TimeSpan.FromSeconds(5);
+// Executes action and asserts Element Exists condition
+\`\`\`
+
+### 3. Log Meaningful Messages
+Use the \`Log Message\` activity with severity levels:
+- **Trace/Debug**: Detailed variable values for developer inspection.
+- **Info**: Milestone progress (e.g., *"Processing invoice #8921"*).
+- **Warn/Error**: Handled recovery paths and business exceptions.
+
+---
+
+## Summary
+
+Activities are what make UiPath intuitive yet deeply powerful. By mastering how to search the Activities panel, configure properties cleanly, and adhere to community naming conventions, you set a solid foundation for your UiPath Associate Certification journey.`
+  },
+  {
+    id: 'art_2',
+    slug: 'mastering-reframework-guide',
+    title: "Mastering Robotic Enterprise Framework (REFramework): A Student's Guide",
+    excerpt: 'How to use the standard State Machine architecture in UiPath Studio to build fault-tolerant, transaction-based automation bots with retry logic.',
+    category: 'Associate Developer',
+    authorName: 'Rohit Varma',
+    authorRole: 'Technical & Lab Lead',
+    status: 'PUBLISHED',
+    publishedAt: '2026-09-10T10:30:00.000Z',
+    isFeatured: false,
+    views: 98,
+    coverImage: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1200&auto=format&fit=crop&q=80',
+    createdAt: '2026-09-10T09:00:00.000Z',
+    updatedAt: '2026-09-10T10:30:00.000Z',
+    createdBy: 'Rohit Varma',
+    content: `# Mastering REFramework (Robotic Enterprise Framework)
+
+Every student preparing for enterprise automation roles or the **UiPath Certified Associate** exam must thoroughly understand the **Robotic Enterprise Framework (REFramework)**.
+
+REFramework is a standardized template built on a State Machine architecture. It provides built-in logging, exception handling, retry mechanisms, and transaction queue management right out of the box.
+
+---
+
+## The Four Core States of REFramework
+
+1. **Init (Initialization)**:
+   - Reads \`Config.xlsx\` (Settings, Constants, Assets).
+   - Initializes applications and closes legacy sessions.
+   - Throws a system error if critical systems are unreachable.
+
+2. **Get Transaction Data**:
+   - Queries an Orchestrator Queue or local datatable for the next item.
+   - Sets \`TransactionItem\` for downstream processing.
+   - Stops the process gracefully when queue is empty or stop signal received.
+
+3. **Process Transaction**:
+   - Executes the core business automation.
+   - Handles two distinct exception classifications:
+     - **Business Rule Exception**: Invalid input data (no retry).
+     - **System Exception**: Network failure, application freeze (triggers retry).
+
+4. **End Process**:
+   - Safely logs out and closes all open applications.
+   - Sends notification telemetry.
+
+---
+
+## State Transition Diagram
+
+\`\`\`
+  [Init] ── Success ──> [Get Transaction] <── Next Item ── [Process Transaction]
+    │                         │                                  │
+    │ Fatal Error             │ No More Items                    │ System Exception
+    ▼                         ▼                                  ▼
+[End Process] <────────────────────────────────────────── [Init State (Retry)]
+\`\`\`
+
+---
+
+## Pro Tip for ACE Students
+
+When customizing REFramework for college projects or hackathons, isolate your business logic inside a clean subfolder:
+\`\`\`
+📁 Framework/
+   ├── InitAllSettings.xaml
+   ├── InitAllApplications.xaml
+   ├── CloseAllApplications.xaml
+   └── SetTransactionStatus.xaml
+📁 Workflows/
+   ├── ERP_NavigateToInvoices.xaml
+   ├── ERP_ExtractInvoiceData.xaml
+   └── ERP_SubmitApproval.xaml
+\`\`\`
+
+This modularity keeps your project clean, testable, and ready for code review!`
+  },
+  {
+    id: 'art_3',
+    slug: 'automating-college-attendance-reporting',
+    title: 'How We Automated College Attendance Reporting at ACE',
+    excerpt: 'A case study on developing an unattended RPA bot that extracts biometric logs, generates departmental shortage reports, and saves 40+ faculty hours weekly.',
+    category: 'Student Project Story',
+    authorName: 'Tejaswy',
+    authorRole: 'UiPath Student Developer Champion',
+    status: 'PUBLISHED',
+    publishedAt: '2026-09-02T14:15:00.000Z',
+    isFeatured: false,
+    views: 215,
+    coverImage: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=1200&auto=format&fit=crop&q=80',
+    createdAt: '2026-09-02T12:00:00.000Z',
+    updatedAt: '2026-09-02T14:15:00.000Z',
+    createdBy: 'Tejaswy',
+    content: `# How We Automated College Attendance Reporting at ACE
+
+Every Friday at ACE Engineering College, academic coordinators used to spend 3 to 4 hours per department reconciling biometric check-ins with class attendance logs.
+
+Here is how the ACE UiPath Community built and deployed an unattended software bot that fully eliminated this manual burden.
+
+---
+
+## The Problem Statement
+
+- **Data Sources**: Biometric turnstile SQL database + College ERP portal.
+- **Pain Points**: Manual Excel merges, human calculation errors in calculating percentage thresholds (e.g., <75% attendance warning letters).
+- **Time Spent**: Over 40 cumulative faculty hours every single week.
+
+---
+
+## The Technical Solution Architecture
+
+1. **Scheduled Trigger**:
+   - UiPath Orchestrator triggers the bot unattended every Friday at 5:00 PM.
+2. **Data Extraction**:
+   - Executes parameterized stored procedures against the biometric server.
+   - Downloads weekly lecture attendance sheets via Modern Web Automation.
+3. **Data Processing via LINQ**:
+   - Merges datasets in memory using optimized C# LINQ queries instead of slow spreadsheet loops.
+4. **Report Distribution**:
+   - Generates formatted Excel pivot sheets with color-coded alerts.
+   - Automatically drafts and sends emails to Head of Department (HoD) with PDF attachments.
+
+---
+
+## Measurable Community ROI
+
+- **Time Saved**: 42 hours / week across 6 academic departments.
+- **Accuracy**: 100% calculation consistency.
+- **Deployment Status**: Production active on college server.`
+  },
+  {
+    id: 'art_4',
+    slug: 'modern-vs-classic-experience-uipath',
+    title: 'Modern Design vs Classic Experience in UiPath Studio',
+    excerpt: 'Understanding Unified Target Technology, App/Web Recorder, and why every new automation project at ACE should default to the Modern Experience.',
+    category: 'UiPath Tips & Tricks',
+    authorName: 'Siddharth Rao',
+    authorRole: 'Founding Lead & RPA Consultant',
+    status: 'PUBLISHED',
+    publishedAt: '2026-08-25T09:00:00.000Z',
+    isFeatured: false,
+    views: 76,
+    coverImage: 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=1200&auto=format&fit=crop&q=80',
+    createdAt: '2026-08-25T08:00:00.000Z',
+    updatedAt: '2026-08-25T09:00:00.000Z',
+    createdBy: 'Siddharth Rao',
+    content: `# Modern vs Classic Design Experience in UiPath Studio
+
+When starting a new UiPath automation project, one of the first configuration choices you encounter in Project Settings is whether to enable the **Modern Design Experience**.
+
+Here is why all community students should build modern:
+
+---
+
+## Key Differences
+
+| Feature | Classic Experience | Modern Experience |
+| :--- | :--- | :--- |
+| **Targeting Method** | Single Selector (Strict) | Unified (Strict + Fuzzy + Image + Computer Vision fallback) |
+| **Application Scopes** | \`Attach Browser\` / \`Open Browser\` | \`Use Application/Browser\` with unified scope |
+| **Object Repository** | Limited | Fully integrated UI element library across projects |
+| **Recording Tool** | Basic Web/Desktop recorder | Unified App/Web Recorder |
+
+---
+
+## Why Modern Experience Wins in Hackathons
+
+During hackathons, applications under test often update dynamically. With Classic selectors, a single attribute change breaks the bot. Modern Unified Targeting automatically falls back to fuzzy matching and anchor imagery, keeping your automation resilient during live demonstrations!`
   }
 ];

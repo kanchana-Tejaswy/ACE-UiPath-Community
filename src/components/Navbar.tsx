@@ -10,7 +10,8 @@ import {
   Compass, 
   Trophy, 
   FileCode,
-  ChevronDown
+  ChevronDown,
+  Newspaper
 } from 'lucide-react';
 import { User } from '../types';
 
@@ -74,6 +75,12 @@ export const Navbar: React.FC<Props> = ({
       icon: GraduationCap 
     },
     { 
+      id: 'blogs', 
+      label: 'Blogs & Articles', 
+      description: 'Technical write-ups, architecture blueprints & RPA guides', 
+      icon: Newspaper 
+    },
+    { 
       id: 'resources', 
       label: 'Resources Vault', 
       description: 'Starter kits, cheat sheets, code templates & exam prep', 
@@ -82,7 +89,7 @@ export const Navbar: React.FC<Props> = ({
   ];
 
   const isEventsActive = ['activities', 'projects', 'challenges', 'activity_detail'].includes(currentView);
-  const isResourcesActive = ['learn', 'resources'].includes(currentView);
+  const isResourcesActive = ['learn', 'resources', 'blogs', 'blog_detail', 'article_editor'].includes(currentView);
   const isHomeActive = currentView === 'home';
   const isAboutActive = currentView === 'about';
 

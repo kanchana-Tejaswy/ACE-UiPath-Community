@@ -5,12 +5,14 @@ import {
   ProjectShowcase, 
   Challenge, 
   CommunityResource, 
+  LeadershipMember,
   SiteSettings, 
   AuditLogEntry, 
   ActivityDraft, 
   DraftStatus,
   AnalyticsEvent,
-  AnalyticsEventType
+  AnalyticsEventType,
+  Article
 } from '../../types';
 import { localDatabase } from '../local/localDatabase';
 import { activitiesRepository } from '../repositories/activitiesRepository';
@@ -20,6 +22,7 @@ import { resourcesRepository } from '../repositories/resourcesRepository';
 import { settingsRepository } from '../repositories/settingsRepository';
 import { activityDraftsRepository } from '../repositories/activityDraftsRepository';
 import { analyticsRepository } from '../repositories/analyticsRepository';
+import { articlesRepository } from '../repositories/articlesRepository';
 
 export const localAdapter: DataAdapter = {
   isCloudConnected: () => false,
@@ -56,12 +59,48 @@ export const localAdapter: DataAdapter = {
     return learningRepository.getAll();
   },
 
+  saveLearningPath: async (path: LearningPath): Promise<LearningPath[]> => {
+    return learningRepository.save(path);
+  },
+
+  deleteLearningPath: async (id: string): Promise<LearningPath[]> => {
+    const paths = localDatabase.getLearningPaths();
+    const updated = paths.filter((p) => p.id !== id);
+    localDatabase.saveLearningPaths(updated);
+    return updated;
+  },
+
   getCompletedModules: async (): Promise<string[]> => {
     return localDatabase.getCompletedModules();
   },
 
   toggleModuleCompletion: async (moduleId: string): Promise<string[]> => {
     return localDatabase.toggleModuleCompletion(moduleId);
+  },
+
+  getChallenges: async (): Promise<Challenge[]> => {
+    return localDatabase.getChallenges();
+  },
+
+  saveChallenge: async (challenge: Challenge): Promise<Challenge[]> => {
+    const challenges = localDatabase.getChallenges();
+    const idx = challenges.findIndex((c) => c.id === challenge.id);
+    let updated: Challenge[];
+    if (idx >= 0) {
+      updated = [...challenges];
+      updated[idx] = challenge;
+    } else {
+      updated = [challenge, ...challenges];
+    }
+    localDatabase.saveChallenges(updated);
+    return updated;
+  },
+
+  deleteChallenge: async (id: string): Promise<Challenge[]> => {
+    const challenges = localDatabase.getChallenges();
+    const updated = challenges.filter((c) => c.id !== id);
+    localDatabase.saveChallenges(updated);
+    return updated;
   },
 
   getResources: async (): Promise<CommunityResource[]> => {
@@ -80,6 +119,31 @@ export const localAdapter: DataAdapter = {
     return resourcesRepository.incrementDownloads(id);
   },
 
+  getLeadership: async (): Promise<LeadershipMember[]> => {
+    return localDatabase.getLeadership();
+  },
+
+  saveLeadership: async (member: LeadershipMember): Promise<LeadershipMember[]> => {
+    const list = localDatabase.getLeadership();
+    const idx = list.findIndex((m) => m.id === member.id);
+    let updated: LeadershipMember[];
+    if (idx >= 0) {
+      updated = [...list];
+      updated[idx] = member;
+    } else {
+      updated = [...list, member];
+    }
+    localDatabase.saveLeadership(updated);
+    return updated;
+  },
+
+  deleteLeadership: async (id: string): Promise<LeadershipMember[]> => {
+    const list = localDatabase.getLeadership();
+    const updated = list.filter((m) => m.id !== id);
+    localDatabase.saveLeadership(updated);
+    return updated;
+  },
+
   getActivityDrafts: async (): Promise<ActivityDraft[]> => {
     return activityDraftsRepository.getAll();
   },
@@ -94,6 +158,23 @@ export const localAdapter: DataAdapter = {
 
   updateDraftStatus: async (id: string, status: DraftStatus, notes?: string): Promise<ActivityDraft[]> => {
     return activityDraftsRepository.updateStatus(id, status, notes);
+  },
+
+  // Articles
+  getArticles: async (): Promise<Article[]> => {
+    return articlesRepository.getAll();
+  },
+
+  saveArticle: async (article: Article): Promise<Article[]> => {
+    return articlesRepository.save(article);
+  },
+
+  deleteArticle: async (id: string): Promise<Article[]> => {
+    return articlesRepository.delete(id);
+  },
+
+  incrementArticleViews: async (id: string): Promise<Article[]> => {
+    return articlesRepository.incrementViews(id);
   },
 
   getSettings: async (): Promise<SiteSettings> => {

@@ -9,7 +9,8 @@ import {
   User,
   AuditLogEntry,
   AnalyticsEvent,
-  ActivityDraft
+  ActivityDraft,
+  Article
 } from '../../types';
 import {
   INITIAL_ACTIVITIES,
@@ -19,7 +20,8 @@ import {
   INITIAL_RESOURCES,
   INITIAL_LEADERSHIP,
   INITIAL_SETTINGS,
-  INITIAL_USERS
+  INITIAL_USERS,
+  INITIAL_ARTICLES
 } from '../initialData';
 
 const STORAGE_KEYS = {
@@ -36,7 +38,8 @@ const STORAGE_KEYS = {
   COMPLETED_MODULES: 'ace_uipath_completed_modules_v2',
   ACTIVITY_DRAFTS: 'ace_uipath_activity_drafts_v2',
   ANALYTICS_EVENTS: 'ace_uipath_analytics_events_v2',
-  USER_PASSWORDS: 'ace_uipath_user_passwords_v2'
+  USER_PASSWORDS: 'ace_uipath_user_passwords_v2',
+  ARTICLES: 'ace_uipath_articles_v2'
 };
 
 const MAX_ANALYTICS_EVENTS = 500;
@@ -79,6 +82,9 @@ export const localDatabase = {
 
   getLeadership: (): LeadershipMember[] => getItem(STORAGE_KEYS.LEADERSHIP, INITIAL_LEADERSHIP),
   saveLeadership: (data: LeadershipMember[]): void => setItem(STORAGE_KEYS.LEADERSHIP, data),
+
+  getArticles: (): Article[] => getItem(STORAGE_KEYS.ARTICLES, INITIAL_ARTICLES),
+  saveArticles: (data: Article[]): void => setItem(STORAGE_KEYS.ARTICLES, data),
 
   getSettings: (): SiteSettings => {
     const loaded = getItem<SiteSettings>(STORAGE_KEYS.SETTINGS, INITIAL_SETTINGS);
@@ -249,6 +255,7 @@ export const localDatabase = {
     setItem(STORAGE_KEYS.RESOURCES, INITIAL_RESOURCES);
     setItem(STORAGE_KEYS.LEADERSHIP, INITIAL_LEADERSHIP);
     setItem(STORAGE_KEYS.SETTINGS, INITIAL_SETTINGS);
+    setItem(STORAGE_KEYS.ARTICLES, INITIAL_ARTICLES);
     setItem(STORAGE_KEYS.USERS, INITIAL_USERS);
     setItem(STORAGE_KEYS.CURRENT_USER_ID, 'user_student_1');
     setItem(STORAGE_KEYS.AUDIT_LOGS, []);
