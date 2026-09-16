@@ -75,25 +75,23 @@ export const supabaseAdapter: DataAdapter = {
   },
 
   saveActivity: async (activity: Activity): Promise<Activity[]> => {
-    const local = await localAdapter.saveActivity(activity);
-    if (!isSupabaseConfigured()) return local;
-    try {
-      await saveActivityToSupabase(activity);
-    } catch (e) {
-      console.warn('Supabase activity save fallback to local:', e);
+    if (isSupabaseConfigured()) {
+      const res = await saveActivityToSupabase(activity);
+      if (!res.success) {
+        throw new Error(res.error || 'Failed to save activity to Supabase database.');
+      }
     }
-    return local;
+    return localAdapter.saveActivity(activity);
   },
 
   deleteActivity: async (id: string): Promise<Activity[]> => {
-    const local = await localAdapter.deleteActivity(id);
-    if (!isSupabaseConfigured()) return local;
-    try {
-      await deleteActivityFromSupabase(id);
-    } catch (e) {
-      console.warn('Supabase activity delete fallback to local:', e);
+    if (isSupabaseConfigured()) {
+      const res = await deleteActivityFromSupabase(id);
+      if (!res.success) {
+        throw new Error(res.error || 'Failed to delete activity from Supabase database.');
+      }
     }
-    return local;
+    return localAdapter.deleteActivity(id);
   },
 
   // ==================================================================
@@ -114,25 +112,23 @@ export const supabaseAdapter: DataAdapter = {
   },
 
   saveProject: async (project: ProjectShowcase): Promise<ProjectShowcase[]> => {
-    const local = await localAdapter.saveProject(project);
-    if (!isSupabaseConfigured()) return local;
-    try {
-      await saveProjectToSupabase(project);
-    } catch (e) {
-      console.warn('Supabase project save fallback to local:', e);
+    if (isSupabaseConfigured()) {
+      const res = await saveProjectToSupabase(project);
+      if (!res.success) {
+        throw new Error(res.error || 'Failed to save project to Supabase database.');
+      }
     }
-    return local;
+    return localAdapter.saveProject(project);
   },
 
   deleteProject: async (id: string): Promise<ProjectShowcase[]> => {
-    const local = await localAdapter.deleteProject(id);
-    if (!isSupabaseConfigured()) return local;
-    try {
-      await deleteProjectFromSupabase(id);
-    } catch (e) {
-      console.warn('Supabase project delete fallback to local:', e);
+    if (isSupabaseConfigured()) {
+      const res = await deleteProjectFromSupabase(id);
+      if (!res.success) {
+        throw new Error(res.error || 'Failed to delete project from Supabase database.');
+      }
     }
-    return local;
+    return localAdapter.deleteProject(id);
   },
 
   upvoteProject: async (id: string): Promise<ProjectShowcase[]> => {
@@ -141,7 +137,10 @@ export const supabaseAdapter: DataAdapter = {
     try {
       const proj = local.find((p) => p.id === id);
       if (proj) {
-        await upvoteProjectInSupabase(id, proj.upvotes);
+        const res = await upvoteProjectInSupabase(id, proj.upvotes);
+        if (!res.success) {
+          console.warn('Supabase project upvote warning:', res.error);
+        }
       }
     } catch (e) {
       console.warn('Supabase project upvote fallback to local:', e);
@@ -167,25 +166,23 @@ export const supabaseAdapter: DataAdapter = {
   },
 
   saveLearningPath: async (path: LearningPath): Promise<LearningPath[]> => {
-    const local = await localAdapter.saveLearningPath(path);
-    if (!isSupabaseConfigured()) return local;
-    try {
-      await saveLearningPathToSupabase(path);
-    } catch (e) {
-      console.warn('Supabase learning path save fallback to local:', e);
+    if (isSupabaseConfigured()) {
+      const res = await saveLearningPathToSupabase(path);
+      if (!res.success) {
+        throw new Error(res.error || 'Failed to save learning path to Supabase database.');
+      }
     }
-    return local;
+    return localAdapter.saveLearningPath(path);
   },
 
   deleteLearningPath: async (id: string): Promise<LearningPath[]> => {
-    const local = await localAdapter.deleteLearningPath(id);
-    if (!isSupabaseConfigured()) return local;
-    try {
-      await deleteLearningPathFromSupabase(id);
-    } catch (e) {
-      console.warn('Supabase learning path delete fallback to local:', e);
+    if (isSupabaseConfigured()) {
+      const res = await deleteLearningPathFromSupabase(id);
+      if (!res.success) {
+        throw new Error(res.error || 'Failed to delete learning path from Supabase database.');
+      }
     }
-    return local;
+    return localAdapter.deleteLearningPath(id);
   },
 
   getCompletedModules: async (): Promise<string[]> => {
@@ -214,25 +211,23 @@ export const supabaseAdapter: DataAdapter = {
   },
 
   saveChallenge: async (challenge: Challenge): Promise<Challenge[]> => {
-    const local = await localAdapter.saveChallenge(challenge);
-    if (!isSupabaseConfigured()) return local;
-    try {
-      await saveChallengeToSupabase(challenge);
-    } catch (e) {
-      console.warn('Supabase challenge save fallback to local:', e);
+    if (isSupabaseConfigured()) {
+      const res = await saveChallengeToSupabase(challenge);
+      if (!res.success) {
+        throw new Error(res.error || 'Failed to save challenge to Supabase database.');
+      }
     }
-    return local;
+    return localAdapter.saveChallenge(challenge);
   },
 
   deleteChallenge: async (id: string): Promise<Challenge[]> => {
-    const local = await localAdapter.deleteChallenge(id);
-    if (!isSupabaseConfigured()) return local;
-    try {
-      await deleteChallengeFromSupabase(id);
-    } catch (e) {
-      console.warn('Supabase challenge delete fallback to local:', e);
+    if (isSupabaseConfigured()) {
+      const res = await deleteChallengeFromSupabase(id);
+      if (!res.success) {
+        throw new Error(res.error || 'Failed to delete challenge from Supabase database.');
+      }
     }
-    return local;
+    return localAdapter.deleteChallenge(id);
   },
 
   // ==================================================================
@@ -253,25 +248,23 @@ export const supabaseAdapter: DataAdapter = {
   },
 
   saveResource: async (resource: CommunityResource): Promise<CommunityResource[]> => {
-    const local = await localAdapter.saveResource(resource);
-    if (!isSupabaseConfigured()) return local;
-    try {
-      await saveResourceToSupabase(resource);
-    } catch (e) {
-      console.warn('Supabase resource save fallback to local:', e);
+    if (isSupabaseConfigured()) {
+      const res = await saveResourceToSupabase(resource);
+      if (!res.success) {
+        throw new Error(res.error || 'Failed to save resource to Supabase database.');
+      }
     }
-    return local;
+    return localAdapter.saveResource(resource);
   },
 
   deleteResource: async (id: string): Promise<CommunityResource[]> => {
-    const local = await localAdapter.deleteResource(id);
-    if (!isSupabaseConfigured()) return local;
-    try {
-      await deleteResourceFromSupabase(id);
-    } catch (e) {
-      console.warn('Supabase resource delete fallback to local:', e);
+    if (isSupabaseConfigured()) {
+      const res = await deleteResourceFromSupabase(id);
+      if (!res.success) {
+        throw new Error(res.error || 'Failed to delete resource from Supabase database.');
+      }
     }
-    return local;
+    return localAdapter.deleteResource(id);
   },
 
   incrementResourceDownloads: async (id: string): Promise<CommunityResource[]> => {
@@ -280,7 +273,10 @@ export const supabaseAdapter: DataAdapter = {
     try {
       const res = local.find((r) => r.id === id);
       if (res) {
-        await incrementResourceDownloadsInSupabase(id, res.downloadCount);
+        const cloudRes = await incrementResourceDownloadsInSupabase(id, res.downloadCount);
+        if (!cloudRes.success) {
+          console.warn('Supabase download increment warning:', cloudRes.error);
+        }
       }
     } catch (e) {
       console.warn('Supabase download increment fallback to local:', e);
@@ -343,36 +339,33 @@ export const supabaseAdapter: DataAdapter = {
   },
 
   saveActivityDraft: async (draft: ActivityDraft): Promise<ActivityDraft[]> => {
-    const local = await localAdapter.saveActivityDraft(draft);
-    if (!isSupabaseConfigured()) return local;
-    try {
-      await saveActivityDraftToSupabase(draft);
-    } catch (e) {
-      console.warn('Supabase activity draft save fallback to local:', e);
+    if (isSupabaseConfigured()) {
+      const res = await saveActivityDraftToSupabase(draft);
+      if (!res.success) {
+        throw new Error(res.error || 'Failed to save activity draft to Supabase database.');
+      }
     }
-    return local;
+    return localAdapter.saveActivityDraft(draft);
   },
 
   deleteActivityDraft: async (id: string): Promise<ActivityDraft[]> => {
-    const local = await localAdapter.deleteActivityDraft(id);
-    if (!isSupabaseConfigured()) return local;
-    try {
-      await deleteActivityDraftFromSupabase(id);
-    } catch (e) {
-      console.warn('Supabase activity draft delete fallback to local:', e);
+    if (isSupabaseConfigured()) {
+      const res = await deleteActivityDraftFromSupabase(id);
+      if (!res.success) {
+        throw new Error(res.error || 'Failed to delete activity draft from Supabase database.');
+      }
     }
-    return local;
+    return localAdapter.deleteActivityDraft(id);
   },
 
   updateDraftStatus: async (id: string, status: DraftStatus, notes?: string): Promise<ActivityDraft[]> => {
-    const local = await localAdapter.updateDraftStatus(id, status, notes);
-    if (!isSupabaseConfigured()) return local;
-    try {
-      await updateDraftStatusInSupabase(id, status, notes);
-    } catch (e) {
-      console.warn('Supabase update draft status fallback to local:', e);
+    if (isSupabaseConfigured()) {
+      const res = await updateDraftStatusInSupabase(id, status, notes);
+      if (!res.success) {
+        throw new Error(res.error || 'Failed to update activity draft status in Supabase database.');
+      }
     }
-    return local;
+    return localAdapter.updateDraftStatus(id, status, notes);
   },
 
   // ==================================================================
@@ -393,32 +386,33 @@ export const supabaseAdapter: DataAdapter = {
   },
 
   saveArticle: async (article: Article): Promise<Article[]> => {
-    const local = await localAdapter.saveArticle(article);
-    if (!isSupabaseConfigured()) return local;
-    try {
-      await saveArticleToSupabase(article);
-    } catch (e) {
-      console.warn('Supabase article save fallback to local:', e);
+    if (isSupabaseConfigured()) {
+      const res = await saveArticleToSupabase(article);
+      if (!res.success) {
+        throw new Error(res.error || 'Failed to save article to Supabase database.');
+      }
     }
-    return local;
+    return localAdapter.saveArticle(article);
   },
 
   deleteArticle: async (id: string): Promise<Article[]> => {
-    const local = await localAdapter.deleteArticle(id);
-    if (!isSupabaseConfigured()) return local;
-    try {
-      await deleteArticleFromSupabase(id);
-    } catch (e) {
-      console.warn('Supabase article delete fallback to local:', e);
+    if (isSupabaseConfigured()) {
+      const res = await deleteArticleFromSupabase(id);
+      if (!res.success) {
+        throw new Error(res.error || 'Failed to delete article from Supabase database.');
+      }
     }
-    return local;
+    return localAdapter.deleteArticle(id);
   },
 
   incrementArticleViews: async (id: string): Promise<Article[]> => {
     const local = await localAdapter.incrementArticleViews(id);
     if (!isSupabaseConfigured()) return local;
     try {
-      await incrementArticleViewsInSupabase(id);
+      const res = await incrementArticleViewsInSupabase(id);
+      if (!res.success) {
+        console.warn('Supabase increment article views warning:', res.error);
+      }
     } catch (e) {
       console.warn('Supabase increment article views fallback to local:', e);
     }
@@ -443,14 +437,18 @@ export const supabaseAdapter: DataAdapter = {
   },
 
   updateSettings: async (newSettings: Partial<SiteSettings>): Promise<SiteSettings> => {
-    const updated = await localAdapter.updateSettings(newSettings);
-    if (!isSupabaseConfigured()) return updated;
-    try {
-      await saveSettingsToSupabase(updated);
-    } catch (e) {
-      console.warn('Supabase updateSettings fallback to local:', e);
+    const currentSettings = await localAdapter.getSettings();
+    const mergedSettings: SiteSettings = {
+      ...currentSettings,
+      ...newSettings
+    };
+    if (isSupabaseConfigured()) {
+      const res = await saveSettingsToSupabase(mergedSettings);
+      if (!res.success) {
+        throw new Error(res.error || 'Failed to save site settings to Supabase database.');
+      }
     }
-    return updated;
+    return localAdapter.updateSettings(newSettings);
   },
 
   // ==================================================================
@@ -470,14 +468,13 @@ export const supabaseAdapter: DataAdapter = {
   },
 
   addAuditLog: async (entry: Omit<AuditLogEntry, 'id' | 'timestamp'>): Promise<AuditLogEntry[]> => {
-    const local = await localAdapter.addAuditLog(entry);
-    if (!isSupabaseConfigured()) return local;
-    try {
-      await saveAuditLogToSupabase(entry);
-    } catch (e) {
-      console.warn('Supabase addAuditLog fallback to local:', e);
+    if (isSupabaseConfigured()) {
+      const res = await saveAuditLogToSupabase(entry);
+      if (!res.success) {
+        console.warn('Supabase addAuditLog warning:', res.error);
+      }
     }
-    return local;
+    return localAdapter.addAuditLog(entry);
   },
 
   // ==================================================================
@@ -497,14 +494,13 @@ export const supabaseAdapter: DataAdapter = {
   },
 
   recordAnalyticsEvent: async (event: Omit<AnalyticsEvent, 'id' | 'timestamp'>): Promise<AnalyticsEvent[]> => {
-    const local = await localAdapter.recordAnalyticsEvent(event);
-    if (!isSupabaseConfigured()) return local;
-    try {
-      await recordAnalyticsEventToSupabase(event);
-    } catch (e) {
-      console.warn('Supabase recordAnalyticsEvent fallback to local:', e);
+    if (isSupabaseConfigured()) {
+      const res = await recordAnalyticsEventToSupabase(event);
+      if (!res.success) {
+        console.warn('Supabase recordAnalyticsEvent warning:', res.error);
+      }
     }
-    return local;
+    return localAdapter.recordAnalyticsEvent(event);
   },
 
   getEventsByType: async (type: AnalyticsEventType): Promise<AnalyticsEvent[]> => {

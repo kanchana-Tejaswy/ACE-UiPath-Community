@@ -463,9 +463,15 @@ export const AdminPage: React.FC<Props> = ({
   const [isSavingMember, setIsSavingMember] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [avatarError, setAvatarError] = useState<string | null>(null);
+  const [selectedAvatarFile, setSelectedAvatarFile] = useState<File | null>(null);
+  const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | null>(null);
   const avatarFileInputRef = useRef<HTMLInputElement>(null);
 
   const handleOpenMemberModal = (member?: LeadershipMember) => {
+    setSelectedAvatarFile(null);
+    setAvatarPreviewUrl(null);
+    setAvatarError(null);
+
     if (member) {
       const isAlum = member.category === 'Alumni Mentor' || (member.category as string) === 'Alumni';
       const parsedStart = member.startYear ?? (member.academicYear ? parseInt(member.academicYear.split('-')[0]) || new Date().getFullYear() : new Date().getFullYear());
@@ -508,16 +514,15 @@ export const AdminPage: React.FC<Props> = ({
         orderIndex: leadership.length + 1
       });
     }
-    setAvatarError(null);
     setIsMemberModalOpen(true);
   };
 
-  const handleAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 5 * 1024 * 1024) {
-      setAvatarError('Image size exceeds 5MB limit.');
+    if (file.size > 10 * 1024 * 1024) {
+      setAvatarError('Image size exceeds 10MB limit.');
       return;
     }
 
@@ -527,27 +532,22 @@ export const AdminPage: React.FC<Props> = ({
       return;
     }
 
-    setAvatarUploading(true);
+    setSelectedAvatarFile(file);
+    const objectUrl = URL.createObjectURL(file);
+    setAvatarPreviewUrl(objectUrl);
     setAvatarError(null);
-    try {
-      const res = await uploadMemberAvatarImage(file);
-      if (res.error) {
-        setAvatarError(res.error);
-        return;
-      }
-      if (res.url && editingMember) {
-        setEditingMember({ ...editingMember, avatarUrl: res.url });
-      }
-      showToast('Profile photo uploaded.');
-    } catch (err: any) {
-      console.error('Avatar upload failed:', err);
-      setAvatarError(err?.message || 'Failed to upload photo to storage.');
-    } finally {
-      setAvatarUploading(false);
-      if (avatarFileInputRef.current) {
-        avatarFileInputRef.current.value = '';
-      }
+    if (avatarFileInputRef.current) {
+      avatarFileInputRef.current.value = '';
     }
+  };
+
+  const handleRemoveAvatar = () => {
+    setSelectedAvatarFile(null);
+    setAvatarPreviewUrl(null);
+    if (editingMember) {
+      setEditingMember({ ...editingMember, avatarUrl: '' });
+    }
+    setAvatarError(null);
   };
 
   const handleSaveMemberSubmit = async (e: React.FormEvent) => {
@@ -574,6 +574,41 @@ export const AdminPage: React.FC<Props> = ({
       ? `${start} - Present`
       : `${start} - ${editingMember.endYear || start}`;
 
+    let finalAvatarUrl = editingMember.avatarUrl?.trim() || '';
+
+    // If a new local image was selected, upload to Supabase Storage before database write
+    if (selectedAvatarFile) {
+      setIsSavingMember(true);
+      setAvatarUploading(true);
+      setAvatarError(null);
+      try {
+        const uploadRes = await uploadMemberAvatarImage(selectedAvatarFile, editingMember.id);
+        if (uploadRes.error || !uploadRes.url) {
+          const err = uploadRes.error || 'Failed to upload photo to Supabase storage.';
+          setAvatarError(err);
+          showToast(err);
+          setIsSavingMember(false);
+          setAvatarUploading(false);
+          return;
+        }
+        finalAvatarUrl = uploadRes.url;
+      } catch (uploadErr: any) {
+        const err = uploadErr?.message || 'Error occurred during image upload.';
+        setAvatarError(err);
+        showToast(err);
+        setIsSavingMember(false);
+        setAvatarUploading(false);
+        return;
+      } finally {
+        setAvatarUploading(false);
+      }
+    } else {
+      // Disallow non-persistent transient URLs
+      if (finalAvatarUrl.startsWith('blob:') || finalAvatarUrl.startsWith('data:') || finalAvatarUrl.startsWith('file:')) {
+        finalAvatarUrl = '';
+      }
+    }
+
     const memberToSave: LeadershipMember = {
       ...editingMember,
       name: editingMember.name.trim(),
@@ -585,7 +620,7 @@ export const AdminPage: React.FC<Props> = ({
       endYear: isActive ? undefined : (editingMember.endYear || start),
       isActive,
       academicYear: computedAcademicYear,
-      avatarUrl: editingMember.avatarUrl?.trim() || '',
+      avatarUrl: finalAvatarUrl,
       bio: editingMember.bio?.trim() || '',
       linkedinUrl: editingMember.linkedinUrl?.trim() || undefined,
       githubUrl: editingMember.githubUrl?.trim() || undefined,
@@ -600,6 +635,8 @@ export const AdminPage: React.FC<Props> = ({
           showToast(res.error || 'Failed to save team member to Supabase.');
           return;
         }
+        setSelectedAvatarFile(null);
+        setAvatarPreviewUrl(null);
         setIsMemberModalOpen(false);
         showToast(`Team member "${memberToSave.name}" saved.`);
       } catch (err: any) {
@@ -2611,9 +2648,9 @@ export const AdminPage: React.FC<Props> = ({
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mt-2">
                   {/* Circular Preview Image */}
                   <div className="w-16 h-16 rounded-full object-cover border border-neutral-700 bg-neutral-800 flex-shrink-0 flex items-center justify-center text-neutral-300 font-bold text-lg overflow-hidden">
-                    {editingMember.avatarUrl ? (
+                    {(avatarPreviewUrl || (editingMember.avatarUrl && !editingMember.avatarUrl.startsWith('blob:'))) ? (
                       <img
-                        src={editingMember.avatarUrl}
+                        src={avatarPreviewUrl || editingMember.avatarUrl}
                         alt={editingMember.name || 'Avatar Preview'}
                         className="w-full h-full object-cover rounded-full"
                         onError={(e) => {
@@ -2629,10 +2666,15 @@ export const AdminPage: React.FC<Props> = ({
                   <div className="flex-1 w-full space-y-2.5">
                     <input
                       type="url"
-                      value={editingMember.avatarUrl || ''}
-                      onChange={(e) => setEditingMember({ ...editingMember, avatarUrl: e.target.value })}
+                      value={avatarPreviewUrl ? '(New image selected from computer)' : (editingMember.avatarUrl || '')}
+                      onChange={(e) => {
+                        if (!avatarPreviewUrl) {
+                          setEditingMember({ ...editingMember, avatarUrl: e.target.value });
+                        }
+                      }}
+                      disabled={!!avatarPreviewUrl}
                       placeholder="Paste image URL (https://...)"
-                      className="w-full bg-neutral-900 border border-neutral-850 rounded-xl px-3.5 py-2.5 text-sm text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all"
+                      className="w-full bg-neutral-900 border border-neutral-850 rounded-xl px-3.5 py-2.5 text-sm text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all disabled:opacity-60"
                     />
 
                     <div className="flex flex-wrap items-center gap-2">
@@ -2646,36 +2688,25 @@ export const AdminPage: React.FC<Props> = ({
                       <button
                         type="button"
                         onClick={() => avatarFileInputRef.current?.click()}
-                        className="text-xs px-3 py-1.5 bg-neutral-850 hover:bg-neutral-800 border border-neutral-700 rounded-lg text-neutral-300 transition-colors cursor-pointer"
+                        className="text-xs px-3 py-1.5 bg-neutral-850 hover:bg-neutral-800 border border-neutral-700 rounded-lg text-neutral-300 transition-colors cursor-pointer flex items-center gap-1.5"
                       >
-                        Choose File
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => avatarFileInputRef.current?.click()}
-                        disabled={avatarUploading}
-                        className="text-xs px-3 py-1.5 bg-neutral-850 hover:bg-neutral-800 border border-neutral-700 rounded-lg text-neutral-300 transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
-                      >
-                        {avatarUploading ? (
-                          <>
-                            <Loader2 size={13} className="animate-spin text-orange-500" />
-                            <span>Uploading...</span>
-                          </>
-                        ) : (
-                          <>
-                            <Upload size={13} className="text-orange-500" />
-                            <span>Upload</span>
-                          </>
-                        )}
+                        <Upload size={13} className="text-orange-500" />
+                        <span>{selectedAvatarFile ? 'Change Photo' : 'Choose Photo'}</span>
                       </button>
 
-                      {editingMember.avatarUrl && (
+                      {selectedAvatarFile && (
+                        <span className="text-xs text-neutral-400 font-mono truncate max-w-[150px]">
+                          {selectedAvatarFile.name}
+                        </span>
+                      )}
+
+                      {(avatarPreviewUrl || editingMember.avatarUrl) && (
                         <button
                           type="button"
-                          onClick={() => setEditingMember({ ...editingMember, avatarUrl: '' })}
+                          onClick={handleRemoveAvatar}
                           className="text-xs px-3 py-1.5 bg-neutral-850 hover:bg-neutral-800 border border-neutral-700 rounded-lg text-neutral-300 hover:text-red-300 transition-colors cursor-pointer"
                         >
-                          Remove
+                          Remove Photo
                         </button>
                       )}
                     </div>

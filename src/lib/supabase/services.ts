@@ -65,8 +65,8 @@ export async function fetchSettingsFromSupabase(): Promise<SiteSettings | null> 
   }
 }
 
-export async function saveSettingsToSupabase(settings: SiteSettings): Promise<boolean> {
-  if (!isSupabaseConfigured()) return false;
+export async function saveSettingsToSupabase(settings: SiteSettings): Promise<{ success: boolean; error?: string }> {
+  if (!isSupabaseConfigured()) return { success: true };
   try {
     const { error } = await supabase
       .from('site_settings')
@@ -76,13 +76,13 @@ export async function saveSettingsToSupabase(settings: SiteSettings): Promise<bo
         updated_at: new Date().toISOString()
       });
     if (error) {
-      console.warn('Supabase site_settings save warning:', error);
-      return false;
+      console.error('Supabase site_settings save failed:', error);
+      return { success: false, error: error.message || 'Failed to save site settings to Supabase.' };
     }
-    return true;
-  } catch (err) {
+    return { success: true };
+  } catch (err: any) {
     console.error('Failed to save settings to Supabase:', err);
-    return false;
+    return { success: false, error: err?.message || 'Network error occurred while saving site settings.' };
   }
 }
 
@@ -107,30 +107,34 @@ export async function fetchActivitiesFromSupabase(): Promise<Activity[] | null> 
   }
 }
 
-export async function saveActivityToSupabase(activity: Activity): Promise<boolean> {
-  if (!isSupabaseConfigured()) return false;
+export async function saveActivityToSupabase(activity: Activity): Promise<{ success: boolean; error?: string }> {
+  if (!isSupabaseConfigured()) return { success: true };
   try {
     const row = mapActivityEntityToRow(activity);
     const { error } = await supabase.from('activities').upsert(row);
     if (error) {
-      console.warn('Supabase activity save warning:', error);
-      return false;
+      console.error('Supabase activity save failed:', error);
+      return { success: false, error: error.message || 'Failed to save activity to Supabase.' };
     }
-    return true;
-  } catch (err) {
+    return { success: true };
+  } catch (err: any) {
     console.error('Failed to save activity to Supabase:', err);
-    return false;
+    return { success: false, error: err?.message || 'Network error occurred while saving activity.' };
   }
 }
 
-export async function deleteActivityFromSupabase(id: string): Promise<boolean> {
-  if (!isSupabaseConfigured()) return false;
+export async function deleteActivityFromSupabase(id: string): Promise<{ success: boolean; error?: string }> {
+  if (!isSupabaseConfigured()) return { success: true };
   try {
     const { error } = await supabase.from('activities').delete().eq('id', id);
-    return !error;
-  } catch (err) {
+    if (error) {
+      console.error('Supabase activity delete failed:', error);
+      return { success: false, error: error.message || 'Failed to delete activity from Supabase.' };
+    }
+    return { success: true };
+  } catch (err: any) {
     console.error('Failed to delete activity from Supabase:', err);
-    return false;
+    return { success: false, error: err?.message || 'Network error occurred while deleting activity.' };
   }
 }
 
@@ -155,41 +159,49 @@ export async function fetchProjectsFromSupabase(): Promise<ProjectShowcase[] | n
   }
 }
 
-export async function saveProjectToSupabase(project: ProjectShowcase): Promise<boolean> {
-  if (!isSupabaseConfigured()) return false;
+export async function saveProjectToSupabase(project: ProjectShowcase): Promise<{ success: boolean; error?: string }> {
+  if (!isSupabaseConfigured()) return { success: true };
   try {
     const row = mapProjectEntityToRow(project);
     const { error } = await supabase.from('projects').upsert(row);
     if (error) {
-      console.warn('Supabase project save warning:', error);
-      return false;
+      console.error('Supabase project save failed:', error);
+      return { success: false, error: error.message || 'Failed to save project to Supabase.' };
     }
-    return true;
-  } catch (err) {
+    return { success: true };
+  } catch (err: any) {
     console.error('Failed to save project to Supabase:', err);
-    return false;
+    return { success: false, error: err?.message || 'Network error occurred while saving project.' };
   }
 }
 
-export async function deleteProjectFromSupabase(id: string): Promise<boolean> {
-  if (!isSupabaseConfigured()) return false;
+export async function deleteProjectFromSupabase(id: string): Promise<{ success: boolean; error?: string }> {
+  if (!isSupabaseConfigured()) return { success: true };
   try {
     const { error } = await supabase.from('projects').delete().eq('id', id);
-    return !error;
-  } catch (err) {
+    if (error) {
+      console.error('Supabase project delete failed:', error);
+      return { success: false, error: error.message || 'Failed to delete project from Supabase.' };
+    }
+    return { success: true };
+  } catch (err: any) {
     console.error('Failed to delete project from Supabase:', err);
-    return false;
+    return { success: false, error: err?.message || 'Network error occurred while deleting project.' };
   }
 }
 
-export async function upvoteProjectInSupabase(id: string, newCount: number): Promise<boolean> {
-  if (!isSupabaseConfigured()) return false;
+export async function upvoteProjectInSupabase(id: string, newCount: number): Promise<{ success: boolean; error?: string }> {
+  if (!isSupabaseConfigured()) return { success: true };
   try {
     const { error } = await supabase.from('projects').update({ upvotes: newCount }).eq('id', id);
-    return !error;
-  } catch (err) {
+    if (error) {
+      console.error('Supabase project upvote failed:', error);
+      return { success: false, error: error.message || 'Failed to upvote project in Supabase.' };
+    }
+    return { success: true };
+  } catch (err: any) {
     console.error('Failed to upvote project in Supabase:', err);
-    return false;
+    return { success: false, error: err?.message || 'Network error occurred while upvoting project.' };
   }
 }
 
@@ -214,41 +226,49 @@ export async function fetchResourcesFromSupabase(): Promise<CommunityResource[] 
   }
 }
 
-export async function saveResourceToSupabase(resource: CommunityResource): Promise<boolean> {
-  if (!isSupabaseConfigured()) return false;
+export async function saveResourceToSupabase(resource: CommunityResource): Promise<{ success: boolean; error?: string }> {
+  if (!isSupabaseConfigured()) return { success: true };
   try {
     const row = mapResourceEntityToRow(resource);
     const { error } = await supabase.from('resources').upsert(row);
     if (error) {
-      console.warn('Supabase resource save warning:', error);
-      return false;
+      console.error('Supabase resource save failed:', error);
+      return { success: false, error: error.message || 'Failed to save resource to Supabase.' };
     }
-    return true;
-  } catch (err) {
+    return { success: true };
+  } catch (err: any) {
     console.error('Failed to save resource to Supabase:', err);
-    return false;
+    return { success: false, error: err?.message || 'Network error occurred while saving resource.' };
   }
 }
 
-export async function deleteResourceFromSupabase(id: string): Promise<boolean> {
-  if (!isSupabaseConfigured()) return false;
+export async function deleteResourceFromSupabase(id: string): Promise<{ success: boolean; error?: string }> {
+  if (!isSupabaseConfigured()) return { success: true };
   try {
     const { error } = await supabase.from('resources').delete().eq('id', id);
-    return !error;
-  } catch (err) {
+    if (error) {
+      console.error('Supabase resource delete failed:', error);
+      return { success: false, error: error.message || 'Failed to delete resource from Supabase.' };
+    }
+    return { success: true };
+  } catch (err: any) {
     console.error('Failed to delete resource from Supabase:', err);
-    return false;
+    return { success: false, error: err?.message || 'Network error occurred while deleting resource.' };
   }
 }
 
-export async function incrementResourceDownloadsInSupabase(id: string, newCount: number): Promise<boolean> {
-  if (!isSupabaseConfigured()) return false;
+export async function incrementResourceDownloadsInSupabase(id: string, newCount: number): Promise<{ success: boolean; error?: string }> {
+  if (!isSupabaseConfigured()) return { success: true };
   try {
     const { error } = await supabase.from('resources').update({ download_count: newCount }).eq('id', id);
-    return !error;
-  } catch (err) {
+    if (error) {
+      console.error('Supabase download increment failed:', error);
+      return { success: false, error: error.message || 'Failed to increment download count in Supabase.' };
+    }
+    return { success: true };
+  } catch (err: any) {
     console.error('Failed to increment download count in Supabase:', err);
-    return false;
+    return { success: false, error: err?.message || 'Network error occurred while incrementing downloads.' };
   }
 }
 
@@ -273,30 +293,34 @@ export async function fetchLearningPathsFromSupabase(): Promise<LearningPath[] |
   }
 }
 
-export async function saveLearningPathToSupabase(path: LearningPath): Promise<boolean> {
-  if (!isSupabaseConfigured()) return false;
+export async function saveLearningPathToSupabase(path: LearningPath): Promise<{ success: boolean; error?: string }> {
+  if (!isSupabaseConfigured()) return { success: true };
   try {
     const row = mapLearningPathEntityToRow(path);
     const { error } = await supabase.from('learning_paths').upsert(row);
     if (error) {
-      console.warn('Supabase learning path save warning:', error);
-      return false;
+      console.error('Supabase learning path save failed:', error);
+      return { success: false, error: error.message || 'Failed to save learning path to Supabase.' };
     }
-    return true;
-  } catch (err) {
+    return { success: true };
+  } catch (err: any) {
     console.error('Failed to save learning path to Supabase:', err);
-    return false;
+    return { success: false, error: err?.message || 'Network error occurred while saving learning path.' };
   }
 }
 
-export async function deleteLearningPathFromSupabase(id: string): Promise<boolean> {
-  if (!isSupabaseConfigured()) return false;
+export async function deleteLearningPathFromSupabase(id: string): Promise<{ success: boolean; error?: string }> {
+  if (!isSupabaseConfigured()) return { success: true };
   try {
     const { error } = await supabase.from('learning_paths').delete().eq('id', id);
-    return !error;
-  } catch (err) {
+    if (error) {
+      console.error('Supabase learning path delete failed:', error);
+      return { success: false, error: error.message || 'Failed to delete learning path from Supabase.' };
+    }
+    return { success: true };
+  } catch (err: any) {
     console.error('Failed to delete learning path from Supabase:', err);
-    return false;
+    return { success: false, error: err?.message || 'Network error occurred while deleting learning path.' };
   }
 }
 
@@ -321,30 +345,34 @@ export async function fetchChallengesFromSupabase(): Promise<Challenge[] | null>
   }
 }
 
-export async function saveChallengeToSupabase(challenge: Challenge): Promise<boolean> {
-  if (!isSupabaseConfigured()) return false;
+export async function saveChallengeToSupabase(challenge: Challenge): Promise<{ success: boolean; error?: string }> {
+  if (!isSupabaseConfigured()) return { success: true };
   try {
     const row = mapChallengeEntityToRow(challenge);
     const { error } = await supabase.from('challenges').upsert(row);
     if (error) {
-      console.warn('Supabase challenge save warning:', error);
-      return false;
+      console.error('Supabase challenge save failed:', error);
+      return { success: false, error: error.message || 'Failed to save challenge to Supabase.' };
     }
-    return true;
-  } catch (err) {
+    return { success: true };
+  } catch (err: any) {
     console.error('Failed to save challenge to Supabase:', err);
-    return false;
+    return { success: false, error: err?.message || 'Network error occurred while saving challenge.' };
   }
 }
 
-export async function deleteChallengeFromSupabase(id: string): Promise<boolean> {
-  if (!isSupabaseConfigured()) return false;
+export async function deleteChallengeFromSupabase(id: string): Promise<{ success: boolean; error?: string }> {
+  if (!isSupabaseConfigured()) return { success: true };
   try {
     const { error } = await supabase.from('challenges').delete().eq('id', id);
-    return !error;
-  } catch (err) {
+    if (error) {
+      console.error('Supabase challenge delete failed:', error);
+      return { success: false, error: error.message || 'Failed to delete challenge from Supabase.' };
+    }
+    return { success: true };
+  } catch (err: any) {
     console.error('Failed to delete challenge from Supabase:', err);
-    return false;
+    return { success: false, error: err?.message || 'Network error occurred while deleting challenge.' };
   }
 }
 
@@ -438,35 +466,39 @@ export async function fetchActivityDraftsFromSupabase(): Promise<ActivityDraft[]
   }
 }
 
-export async function saveActivityDraftToSupabase(draft: ActivityDraft): Promise<boolean> {
-  if (!isSupabaseConfigured()) return false;
+export async function saveActivityDraftToSupabase(draft: ActivityDraft): Promise<{ success: boolean; error?: string }> {
+  if (!isSupabaseConfigured()) return { success: true };
   try {
     const row = mapActivityDraftEntityToRow(draft);
     const { error } = await supabase.from('activity_drafts').upsert(row);
     if (error) {
-      console.warn('Supabase draft save warning:', error);
-      return false;
+      console.error('Supabase draft save failed:', error);
+      return { success: false, error: error.message || 'Failed to save activity draft to Supabase.' };
     }
-    return true;
-  } catch (err) {
+    return { success: true };
+  } catch (err: any) {
     console.error('Failed to save activity draft to Supabase:', err);
-    return false;
+    return { success: false, error: err?.message || 'Network error occurred while saving activity draft.' };
   }
 }
 
-export async function deleteActivityDraftFromSupabase(id: string): Promise<boolean> {
-  if (!isSupabaseConfigured()) return false;
+export async function deleteActivityDraftFromSupabase(id: string): Promise<{ success: boolean; error?: string }> {
+  if (!isSupabaseConfigured()) return { success: true };
   try {
     const { error } = await supabase.from('activity_drafts').delete().eq('id', id);
-    return !error;
-  } catch (err) {
+    if (error) {
+      console.error('Supabase draft delete failed:', error);
+      return { success: false, error: error.message || 'Failed to delete activity draft from Supabase.' };
+    }
+    return { success: true };
+  } catch (err: any) {
     console.error('Failed to delete activity draft from Supabase:', err);
-    return false;
+    return { success: false, error: err?.message || 'Network error occurred while deleting activity draft.' };
   }
 }
 
-export async function updateDraftStatusInSupabase(id: string, status: DraftStatus, notes?: string): Promise<boolean> {
-  if (!isSupabaseConfigured()) return false;
+export async function updateDraftStatusInSupabase(id: string, status: DraftStatus, notes?: string): Promise<{ success: boolean; error?: string }> {
+  if (!isSupabaseConfigured()) return { success: true };
   try {
     const now = new Date().toISOString();
     const payload: Record<string, any> = {
@@ -478,10 +510,14 @@ export async function updateDraftStatusInSupabase(id: string, status: DraftStatu
     if (notes) payload.review_notes = notes;
 
     const { error } = await supabase.from('activity_drafts').update(payload).eq('id', id);
-    return !error;
-  } catch (err) {
+    if (error) {
+      console.error('Supabase draft status update failed:', error);
+      return { success: false, error: error.message || 'Failed to update draft status in Supabase.' };
+    }
+    return { success: true };
+  } catch (err: any) {
     console.error('Failed to update draft status in Supabase:', err);
-    return false;
+    return { success: false, error: err?.message || 'Network error occurred while updating draft status.' };
   }
 }
 
@@ -515,8 +551,8 @@ export async function fetchAuditLogsFromSupabase(): Promise<AuditLogEntry[] | nu
   }
 }
 
-export async function saveAuditLogToSupabase(entry: Omit<AuditLogEntry, 'id' | 'timestamp'>): Promise<boolean> {
-  if (!isSupabaseConfigured()) return false;
+export async function saveAuditLogToSupabase(entry: Omit<AuditLogEntry, 'id' | 'timestamp'>): Promise<{ success: boolean; error?: string }> {
+  if (!isSupabaseConfigured()) return { success: true };
   try {
     const { error } = await supabase.from('audit_logs').insert({
       action: entry.action,
@@ -525,10 +561,14 @@ export async function saveAuditLogToSupabase(entry: Omit<AuditLogEntry, 'id' | '
       description: entry.description,
       performed_by: entry.performedBy
     });
-    return !error;
-  } catch (err) {
+    if (error) {
+      console.warn('Supabase audit log insert failed:', error);
+      return { success: false, error: error.message || 'Failed to insert audit log in Supabase.' };
+    }
+    return { success: true };
+  } catch (err: any) {
     console.warn('Failed to insert audit log in Supabase:', err);
-    return false;
+    return { success: false, error: err?.message || 'Network error occurred while saving audit log.' };
   }
 }
 
@@ -563,8 +603,8 @@ export async function fetchAnalyticsEventsFromSupabase(): Promise<AnalyticsEvent
   }
 }
 
-export async function recordAnalyticsEventToSupabase(event: Omit<AnalyticsEvent, 'id' | 'timestamp'>): Promise<boolean> {
-  if (!isSupabaseConfigured()) return false;
+export async function recordAnalyticsEventToSupabase(event: Omit<AnalyticsEvent, 'id' | 'timestamp'>): Promise<{ success: boolean; error?: string }> {
+  if (!isSupabaseConfigured()) return { success: true };
   try {
     const { error } = await supabase.from('analytics_events').insert({
       event_type: event.eventType,
@@ -574,10 +614,14 @@ export async function recordAnalyticsEventToSupabase(event: Omit<AnalyticsEvent,
       entity_id: event.entityId,
       metadata: event.metadata
     });
-    return !error;
-  } catch (err) {
+    if (error) {
+      console.warn('Supabase analytics event insert failed:', error);
+      return { success: false, error: error.message || 'Failed to record analytics event in Supabase.' };
+    }
+    return { success: true };
+  } catch (err: any) {
     console.warn('Failed to record analytics event in Supabase:', err);
-    return false;
+    return { success: false, error: err?.message || 'Network error occurred while recording analytics event.' };
   }
 }
 
@@ -602,8 +646,8 @@ export async function fetchArticlesFromSupabase(): Promise<Article[] | null> {
   }
 }
 
-export async function saveArticleToSupabase(article: Article): Promise<boolean> {
-  if (!isSupabaseConfigured()) return false;
+export async function saveArticleToSupabase(article: Article): Promise<{ success: boolean; error?: string }> {
+  if (!isSupabaseConfigured()) return { success: true };
   try {
     const row = mapArticleEntityToRow(article);
 
@@ -627,18 +671,18 @@ export async function saveArticleToSupabase(article: Article): Promise<boolean> 
       });
 
     if (error) {
-      console.warn('Supabase article upsert error:', error);
-      return false;
+      console.error('Supabase article upsert error:', error);
+      return { success: false, error: error.message || 'Failed to save article to Supabase.' };
     }
-    return true;
-  } catch (err) {
+    return { success: true };
+  } catch (err: any) {
     console.error('Failed to save article to Supabase:', err);
-    return false;
+    return { success: false, error: err?.message || 'Network error occurred while saving article.' };
   }
 }
 
-export async function deleteArticleFromSupabase(id: string): Promise<boolean> {
-  if (!isSupabaseConfigured()) return false;
+export async function deleteArticleFromSupabase(id: string): Promise<{ success: boolean; error?: string }> {
+  if (!isSupabaseConfigured()) return { success: true };
   try {
     const { error } = await supabase
       .from('articles')
@@ -646,22 +690,22 @@ export async function deleteArticleFromSupabase(id: string): Promise<boolean> {
       .eq('id', id);
 
     if (error) {
-      console.warn('Supabase article delete error:', error);
-      return false;
+      console.error('Supabase article delete error:', error);
+      return { success: false, error: error.message || 'Failed to delete article from Supabase.' };
     }
-    return true;
-  } catch (err) {
+    return { success: true };
+  } catch (err: any) {
     console.error('Failed to delete article from Supabase:', err);
-    return false;
+    return { success: false, error: err?.message || 'Network error occurred while deleting article.' };
   }
 }
 
-export async function incrementArticleViewsInSupabase(id: string): Promise<boolean> {
-  if (!isSupabaseConfigured()) return false;
+export async function incrementArticleViewsInSupabase(id: string): Promise<{ success: boolean; error?: string }> {
+  if (!isSupabaseConfigured()) return { success: true };
   try {
     // Primary: Call atomic, secured RPC
     const { data, error } = await supabase.rpc('increment_article_views', { target_article_id: id });
-    if (!error) return true;
+    if (!error) return { success: true };
 
     // Fallback if RPC is not yet applied in environment
     const { data: rowData } = await supabase
@@ -676,10 +720,14 @@ export async function incrementArticleViewsInSupabase(id: string): Promise<boole
       .update({ views: currentViews + 1 })
       .eq('id', id);
 
-    return !updateError;
-  } catch (err) {
+    if (updateError) {
+      console.warn('Supabase fallback article view increment error:', updateError);
+      return { success: false, error: updateError.message || 'Failed to increment article views.' };
+    }
+    return { success: true };
+  } catch (err: any) {
     console.warn('Failed to increment article views in Supabase:', err);
-    return false;
+    return { success: false, error: err?.message || 'Network error occurred while incrementing article views.' };
   }
 }
 
@@ -740,11 +788,7 @@ export async function uploadArticleCoverImage(file: File): Promise<{ url: string
   return { url: localUrl };
 }
 
-/**
- * Upload team member avatar image to Supabase Storage ('blog-media' bucket)
- * Returns public URL, falling back to local Object URL for offline/preview.
- */
-export async function uploadMemberAvatarImage(file: File): Promise<{ url: string | null; error?: string }> {
+export async function uploadMemberAvatarImage(file: File, memberId?: string): Promise<{ url: string | null; error?: string }> {
   const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml'];
   if (!validTypes.includes(file.type)) {
     return { url: null, error: 'Unsupported file format. Please upload a PNG, JPEG, WEBP, or SVG image.' };
@@ -758,38 +802,36 @@ export async function uploadMemberAvatarImage(file: File): Promise<{ url: string
   if (isSupabaseConfigured()) {
     try {
       const sanitizedName = file.name.toLowerCase().replace(/[^a-z0-9.]/g, '-');
-      const filePath = `avatars/${Date.now()}-${sanitizedName}`;
+      const folderId = memberId ? memberId.replace(/[^a-zA-Z0-9_-]/g, '') : 'avatars';
+      const filePath = `leadership/${folderId}/${Date.now()}-${sanitizedName}`;
 
-      let uploadRes = await supabase.storage.from('blog-media').upload(filePath, file, {
+      let uploadRes = await supabase.storage.from('leadership-media').upload(filePath, file, {
         cacheControl: '3600',
         upsert: true
       });
 
-      let bucketUsed = 'blog-media';
+      let bucketUsed = 'leadership-media';
       if (uploadRes.error) {
-        uploadRes = await supabase.storage.from('activities-media').upload(filePath, file, {
+        uploadRes = await supabase.storage.from('blog-media').upload(filePath, file, {
           cacheControl: '3600',
           upsert: true
         });
-        bucketUsed = 'activities-media';
+        bucketUsed = 'blog-media';
       }
 
       if (uploadRes.error) {
-        console.warn('Supabase avatar upload warning, falling back to local preview:', uploadRes.error);
-        const localUrl = URL.createObjectURL(file);
-        return { url: localUrl };
+        console.error('Supabase avatar upload failed:', uploadRes.error);
+        return { url: null, error: uploadRes.error.message || 'Failed to upload photo to Supabase storage.' };
       }
 
       const { data: publicData } = supabase.storage.from(bucketUsed).getPublicUrl(filePath);
       return { url: publicData.publicUrl };
     } catch (err: any) {
-      console.warn('Avatar upload failed, falling back to local preview:', err);
-      const localUrl = URL.createObjectURL(file);
-      return { url: localUrl };
+      console.error('Avatar upload exception:', err);
+      return { url: null, error: err?.message || 'Network error occurred during photo upload.' };
     }
   }
 
-  const localUrl = URL.createObjectURL(file);
-  return { url: localUrl };
+  return { url: null, error: 'Supabase storage is not configured.' };
 }
 

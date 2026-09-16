@@ -206,113 +206,153 @@ export function useCommunityStore() {
     notifyDbChange();
   };
 
-  const updateUserRole = async (userId: string, newRole: UserRole) => {
-    const allUsers = localDatabase.getUsers();
-    const updated = allUsers.map((u) => (u.id === userId ? { ...u, role: newRole } : u));
-    localDatabase.saveUsers(updated);
-    setUsers(updated);
+  const updateUserRole = async (userId: string, newRole: UserRole): Promise<{ success: boolean; error?: string }> => {
+    try {
+      if (authService.isConfigured()) {
+        const res = await authService.updateUserRoleInCloud(userId, newRole);
+        if (!res.success) {
+          return { success: false, error: res.error || 'Failed to update user role in Supabase.' };
+        }
+      }
+      const allUsers = localDatabase.getUsers();
+      const updated = allUsers.map((u) => (u.id === userId ? { ...u, role: newRole } : u));
+      localDatabase.saveUsers(updated);
+      setUsers(updated);
 
-    if (authService.isConfigured()) {
-      await authService.updateUserRoleInCloud(userId, newRole);
+      const target = allUsers.find((u) => u.id === userId);
+      localDatabase.addAuditLog({
+        action: 'ROLE_CHANGED',
+        entityType: 'User',
+        entityId: userId,
+        description: `Role for "${target?.name || userId}" changed to ${newRole}.`,
+        performedBy: currentUser.name
+      });
+      notifyDbChange();
+      return { success: true };
+    } catch (err: any) {
+      console.error('Update user role failed:', err);
+      return { success: false, error: err?.message || 'Failed to update user role.' };
     }
-
-    const target = allUsers.find((u) => u.id === userId);
-    localDatabase.addAuditLog({
-      action: 'ROLE_CHANGED',
-      entityType: 'User',
-      entityId: userId,
-      description: `Role for "${target?.name || userId}" changed to ${newRole}.`,
-      performedBy: currentUser.name
-    });
-    notifyDbChange();
   };
 
-  const updateUserStatus = async (userId: string, newStatus: UserStatus) => {
-    const allUsers = localDatabase.getUsers();
-    const updated = allUsers.map((u) => (u.id === userId ? { ...u, status: newStatus } : u));
-    localDatabase.saveUsers(updated);
-    setUsers(updated);
+  const updateUserStatus = async (userId: string, newStatus: UserStatus): Promise<{ success: boolean; error?: string }> => {
+    try {
+      if (authService.isConfigured()) {
+        const res = await authService.updateUserStatusInCloud(userId, newStatus);
+        if (!res.success) {
+          return { success: false, error: res.error || 'Failed to update user status in Supabase.' };
+        }
+      }
+      const allUsers = localDatabase.getUsers();
+      const updated = allUsers.map((u) => (u.id === userId ? { ...u, status: newStatus } : u));
+      localDatabase.saveUsers(updated);
+      setUsers(updated);
 
-    if (authService.isConfigured()) {
-      await authService.updateUserStatusInCloud(userId, newStatus);
+      const target = allUsers.find((u) => u.id === userId);
+      const actionName = newStatus === 'INACTIVE' ? 'ACCOUNT_DEACTIVATED' : 'ACCOUNT_ACTIVATED';
+      localDatabase.addAuditLog({
+        action: actionName,
+        entityType: 'User',
+        entityId: userId,
+        description: `Account status for "${target?.name || userId}" changed to ${newStatus}.`,
+        performedBy: currentUser.name
+      });
+      notifyDbChange();
+      return { success: true };
+    } catch (err: any) {
+      console.error('Update user status failed:', err);
+      return { success: false, error: err?.message || 'Failed to update user status.' };
     }
-
-    const target = allUsers.find((u) => u.id === userId);
-    const actionName = newStatus === 'INACTIVE' ? 'ACCOUNT_DEACTIVATED' : 'ACCOUNT_ACTIVATED';
-    localDatabase.addAuditLog({
-      action: actionName,
-      entityType: 'User',
-      entityId: userId,
-      description: `Account status for "${target?.name || userId}" changed to ${newStatus}.`,
-      performedBy: currentUser.name
-    });
-    notifyDbChange();
   };
 
-  const saveActivity = (activity: Activity) => {
-    const updated = activitiesRepository.save(activity);
-    setActivities(updated);
-    if (activeAdapter.isCloudConnected()) {
-      activeAdapter.saveActivity(activity).catch((e) => console.warn('Supabase saveActivity warning:', e));
+  const saveActivity = async (activity: Activity): Promise<{ success: boolean; error?: string }> => {
+    try {
+      if (activeAdapter.isCloudConnected()) {
+        await activeAdapter.saveActivity(activity);
+      }
+      const updated = activitiesRepository.save(activity);
+      setActivities(updated);
+      localDatabase.addAuditLog({
+        action: 'ADMIN_SAVED_ACTIVITY',
+        entityType: 'ACTIVITY',
+        entityId: activity.id,
+        description: `Saved activity record "${activity.title}" (${activity.status})`,
+        performedBy: currentUser.name
+      });
+      notifyDbChange();
+      return { success: true };
+    } catch (err: any) {
+      console.error('Save activity failed:', err);
+      return { success: false, error: err?.message || 'Failed to save activity.' };
     }
-    localDatabase.addAuditLog({
-      action: 'ADMIN_SAVED_ACTIVITY',
-      entityType: 'ACTIVITY',
-      entityId: activity.id,
-      description: `Saved activity record "${activity.title}" (${activity.status})`,
-      performedBy: currentUser.name
-    });
-    notifyDbChange();
   };
 
-  const deleteActivity = (id: string) => {
-    const act = activities.find((a) => a.id === id);
-    const updated = activitiesRepository.delete(id);
-    setActivities(updated);
-    if (activeAdapter.isCloudConnected()) {
-      activeAdapter.deleteActivity(id).catch((e) => console.warn('Supabase deleteActivity warning:', e));
+  const deleteActivity = async (id: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const act = activities.find((a) => a.id === id);
+      if (activeAdapter.isCloudConnected()) {
+        await activeAdapter.deleteActivity(id);
+      }
+      const updated = activitiesRepository.delete(id);
+      setActivities(updated);
+      localDatabase.addAuditLog({
+        action: 'ADMIN_DELETED_ACTIVITY',
+        entityType: 'ACTIVITY',
+        entityId: id,
+        description: `Deleted activity record "${act?.title || id}"`,
+        performedBy: currentUser.name
+      });
+      notifyDbChange();
+      return { success: true };
+    } catch (err: any) {
+      console.error('Delete activity failed:', err);
+      return { success: false, error: err?.message || 'Failed to delete activity.' };
     }
-    localDatabase.addAuditLog({
-      action: 'ADMIN_DELETED_ACTIVITY',
-      entityType: 'ACTIVITY',
-      entityId: id,
-      description: `Deleted activity record "${act?.title || id}"`,
-      performedBy: currentUser.name
-    });
-    notifyDbChange();
   };
 
-  const saveProject = (project: ProjectShowcase) => {
-    const updated = projectsRepository.save(project);
-    setProjects(updated);
-    if (activeAdapter.isCloudConnected()) {
-      activeAdapter.saveProject(project).catch((e) => console.warn('Supabase saveProject warning:', e));
+  const saveProject = async (project: ProjectShowcase): Promise<{ success: boolean; error?: string }> => {
+    try {
+      if (activeAdapter.isCloudConnected()) {
+        await activeAdapter.saveProject(project);
+      }
+      const updated = projectsRepository.save(project);
+      setProjects(updated);
+      localDatabase.addAuditLog({
+        action: 'ADMIN_SAVED_PROJECT',
+        entityType: 'PROJECT',
+        entityId: project.id,
+        description: `Saved project showcase "${project.title}" (${project.status})`,
+        performedBy: currentUser.name
+      });
+      notifyDbChange();
+      return { success: true };
+    } catch (err: any) {
+      console.error('Save project failed:', err);
+      return { success: false, error: err?.message || 'Failed to save project.' };
     }
-    localDatabase.addAuditLog({
-      action: 'ADMIN_SAVED_PROJECT',
-      entityType: 'PROJECT',
-      entityId: project.id,
-      description: `Saved project showcase "${project.title}" (${project.status})`,
-      performedBy: currentUser.name
-    });
-    notifyDbChange();
   };
 
-  const deleteProject = (id: string) => {
-    const proj = projects.find((p) => p.id === id);
-    const updated = projectsRepository.delete(id);
-    setProjects(updated);
-    if (activeAdapter.isCloudConnected()) {
-      activeAdapter.deleteProject(id).catch((e) => console.warn('Supabase deleteProject warning:', e));
+  const deleteProject = async (id: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const proj = projects.find((p) => p.id === id);
+      if (activeAdapter.isCloudConnected()) {
+        await activeAdapter.deleteProject(id);
+      }
+      const updated = projectsRepository.delete(id);
+      setProjects(updated);
+      localDatabase.addAuditLog({
+        action: 'ADMIN_DELETED_PROJECT',
+        entityType: 'PROJECT',
+        entityId: id,
+        description: `Deleted project showcase "${proj?.title || id}"`,
+        performedBy: currentUser.name
+      });
+      notifyDbChange();
+      return { success: true };
+    } catch (err: any) {
+      console.error('Delete project failed:', err);
+      return { success: false, error: err?.message || 'Failed to delete project.' };
     }
-    localDatabase.addAuditLog({
-      action: 'ADMIN_DELETED_PROJECT',
-      entityType: 'PROJECT',
-      entityId: id,
-      description: `Deleted project showcase "${proj?.title || id}"`,
-      performedBy: currentUser.name
-    });
-    notifyDbChange();
   };
 
   const upvoteProject = (id: string) => {
@@ -329,92 +369,120 @@ export function useCommunityStore() {
     notifyDbChange();
   };
 
-  const saveResource = (res: CommunityResource) => {
-    const updated = resourcesRepository.save(res);
-    setResources(updated);
-    if (activeAdapter.isCloudConnected()) {
-      activeAdapter.saveResource(res).catch((e) => console.warn('Supabase saveResource warning:', e));
+  const saveResource = async (res: CommunityResource): Promise<{ success: boolean; error?: string }> => {
+    try {
+      if (activeAdapter.isCloudConnected()) {
+        await activeAdapter.saveResource(res);
+      }
+      const updated = resourcesRepository.save(res);
+      setResources(updated);
+      localDatabase.addAuditLog({
+        action: 'ADMIN_SAVED_RESOURCE',
+        entityType: 'RESOURCE',
+        entityId: res.id,
+        description: `Saved resource vault asset "${res.title}"`,
+        performedBy: currentUser.name
+      });
+      notifyDbChange();
+      return { success: true };
+    } catch (err: any) {
+      console.error('Save resource failed:', err);
+      return { success: false, error: err?.message || 'Failed to save resource.' };
     }
-    localDatabase.addAuditLog({
-      action: 'ADMIN_SAVED_RESOURCE',
-      entityType: 'RESOURCE',
-      entityId: res.id,
-      description: `Saved resource vault asset "${res.title}"`,
-      performedBy: currentUser.name
-    });
-    notifyDbChange();
   };
 
-  const deleteResource = (id: string) => {
-    const res = resources.find((r) => r.id === id);
-    const updated = resourcesRepository.delete(id);
-    setResources(updated);
-    if (activeAdapter.isCloudConnected()) {
-      activeAdapter.deleteResource(id).catch((e) => console.warn('Supabase deleteResource warning:', e));
+  const deleteResource = async (id: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const res = resources.find((r) => r.id === id);
+      if (activeAdapter.isCloudConnected()) {
+        await activeAdapter.deleteResource(id);
+      }
+      const updated = resourcesRepository.delete(id);
+      setResources(updated);
+      localDatabase.addAuditLog({
+        action: 'ADMIN_DELETED_RESOURCE',
+        entityType: 'RESOURCE',
+        entityId: id,
+        description: `Deleted resource vault asset "${res?.title || id}"`,
+        performedBy: currentUser.name
+      });
+      notifyDbChange();
+      return { success: true };
+    } catch (err: any) {
+      console.error('Delete resource failed:', err);
+      return { success: false, error: err?.message || 'Failed to delete resource.' };
     }
-    localDatabase.addAuditLog({
-      action: 'ADMIN_DELETED_RESOURCE',
-      entityType: 'RESOURCE',
-      entityId: id,
-      description: `Deleted resource vault asset "${res?.title || id}"`,
-      performedBy: currentUser.name
-    });
-    notifyDbChange();
   };
 
-  const saveArticle = (article: Article) => {
+  const saveArticle = async (article: Article): Promise<{ success: boolean; error?: string }> => {
     if (!hasPermission(currentUser.role, 'CORE_TEAM')) {
-      alert('Access Restricted: Only Admin and Core Team members can create or edit articles.');
-      return;
+      const msg = 'Access Restricted: Only Admin and Core Team members can create or edit articles.';
+      alert(msg);
+      return { success: false, error: msg };
     }
 
-    const updated = articlesRepository.save(article);
-    setArticles(updated);
-    if (activeAdapter.isCloudConnected()) {
-      activeAdapter.saveArticle(article).catch((e) => console.warn('Supabase saveArticle warning:', e));
-    }
+    try {
+      if (activeAdapter.isCloudConnected()) {
+        await activeAdapter.saveArticle(article);
+      }
 
-    if (article.isFeatured) {
-      updateSettings({ featuredArticleId: article.id });
-    } else if (settings.featuredArticleId === article.id) {
-      updateSettings({ featuredArticleId: undefined });
-    }
+      const updated = articlesRepository.save(article);
+      setArticles(updated);
 
-    localDatabase.addAuditLog({
-      action: 'ADMIN_SAVED_ARTICLE',
-      entityType: 'ARTICLE',
-      entityId: article.id,
-      description: `Saved article "${article.title}" (${article.status})`,
-      performedBy: currentUser.name
-    });
-    notifyDbChange();
+      if (article.isFeatured) {
+        await updateSettings({ featuredArticleId: article.id });
+      } else if (settings.featuredArticleId === article.id) {
+        await updateSettings({ featuredArticleId: undefined });
+      }
+
+      localDatabase.addAuditLog({
+        action: 'ADMIN_SAVED_ARTICLE',
+        entityType: 'ARTICLE',
+        entityId: article.id,
+        description: `Saved article "${article.title}" (${article.status})`,
+        performedBy: currentUser.name
+      });
+      notifyDbChange();
+      return { success: true };
+    } catch (err: any) {
+      console.error('Save article failed:', err);
+      return { success: false, error: err?.message || 'Failed to save article.' };
+    }
   };
 
-  const deleteArticle = (id: string) => {
+  const deleteArticle = async (id: string): Promise<{ success: boolean; error?: string }> => {
     if (!hasPermission(currentUser.role, 'CORE_TEAM')) {
-      alert('Access Restricted: Only Admin and Core Team members can delete articles.');
-      return;
+      const msg = 'Access Restricted: Only Admin and Core Team members can delete articles.';
+      alert(msg);
+      return { success: false, error: msg };
     }
 
-    const target = articles.find((a) => a.id === id);
-    const updated = articlesRepository.delete(id);
-    setArticles(updated);
-    if (activeAdapter.isCloudConnected()) {
-      activeAdapter.deleteArticle(id).catch((e) => console.warn('Supabase deleteArticle warning:', e));
-    }
+    try {
+      const target = articles.find((a) => a.id === id);
+      if (activeAdapter.isCloudConnected()) {
+        await activeAdapter.deleteArticle(id);
+      }
 
-    if (settings.featuredArticleId === id) {
-      updateSettings({ featuredArticleId: undefined });
-    }
+      const updated = articlesRepository.delete(id);
+      setArticles(updated);
 
-    localDatabase.addAuditLog({
-      action: 'ADMIN_DELETED_ARTICLE',
-      entityType: 'ARTICLE',
-      entityId: id,
-      description: `Deleted article "${target?.title || id}"`,
-      performedBy: currentUser.name
-    });
-    notifyDbChange();
+      if (settings.featuredArticleId === id) {
+        await updateSettings({ featuredArticleId: undefined });
+      }
+
+      localDatabase.addAuditLog({
+        action: 'ADMIN_DELETED_ARTICLE',
+        entityType: 'ARTICLE',
+        entityId: id,
+        description: `Deleted article "${target?.title || id}"`,
+        performedBy: currentUser.name
+      });
+      notifyDbChange();
+      return { success: true };
+    } catch (err: any) {
+      console.error('Delete article failed:', err);
+      return { success: false, error: err?.message || 'Failed to delete article.' };
+    }
   };
 
   const incrementArticleViews = (id: string) => {
@@ -425,62 +493,80 @@ export function useCommunityStore() {
     }
   };
 
-  const saveChallenge = (chal: Challenge) => {
-    const existingIndex = challenges.findIndex((c) => c.id === chal.id);
-    let updated: Challenge[];
-    if (existingIndex >= 0) {
-      updated = [...challenges];
-      updated[existingIndex] = chal;
-    } else {
-      updated = [chal, ...challenges];
+  const saveChallenge = async (chal: Challenge): Promise<{ success: boolean; error?: string }> => {
+    try {
+      if (activeAdapter.isCloudConnected()) {
+        await activeAdapter.saveChallenge(chal);
+      }
+      const existingIndex = challenges.findIndex((c) => c.id === chal.id);
+      let updated: Challenge[];
+      if (existingIndex >= 0) {
+        updated = [...challenges];
+        updated[existingIndex] = chal;
+      } else {
+        updated = [chal, ...challenges];
+      }
+      setChallenges(updated);
+      localDatabase.saveChallenges(updated);
+      localDatabase.addAuditLog({
+        action: 'ADMIN_SAVED_CHALLENGE',
+        entityType: 'CHALLENGE',
+        entityId: chal.id,
+        description: `Saved hackathon sprint "${chal.title}"`,
+        performedBy: currentUser.name
+      });
+      notifyDbChange();
+      return { success: true };
+    } catch (err: any) {
+      console.error('Save challenge failed:', err);
+      return { success: false, error: err?.message || 'Failed to save challenge.' };
     }
-    setChallenges(updated);
-    localDatabase.saveChallenges(updated);
-    if (activeAdapter.isCloudConnected()) {
-      activeAdapter.saveChallenge(chal).catch((e) => console.warn('Supabase saveChallenge warning:', e));
-    }
-    localDatabase.addAuditLog({
-      action: 'ADMIN_SAVED_CHALLENGE',
-      entityType: 'CHALLENGE',
-      entityId: chal.id,
-      description: `Saved hackathon sprint "${chal.title}"`,
-      performedBy: currentUser.name
-    });
-    notifyDbChange();
   };
 
-  const deleteChallenge = (id: string) => {
-    const chal = challenges.find((c) => c.id === id);
-    const updated = challenges.filter((c) => c.id !== id);
-    setChallenges(updated);
-    localDatabase.saveChallenges(updated);
-    if (activeAdapter.isCloudConnected()) {
-      activeAdapter.deleteChallenge(id).catch((e) => console.warn('Supabase deleteChallenge warning:', e));
+  const deleteChallenge = async (id: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const chal = challenges.find((c) => c.id === id);
+      if (activeAdapter.isCloudConnected()) {
+        await activeAdapter.deleteChallenge(id);
+      }
+      const updated = challenges.filter((c) => c.id !== id);
+      setChallenges(updated);
+      localDatabase.saveChallenges(updated);
+      localDatabase.addAuditLog({
+        action: 'ADMIN_DELETED_CHALLENGE',
+        entityType: 'CHALLENGE',
+        entityId: id,
+        description: `Deleted hackathon challenge "${chal?.title || id}"`,
+        performedBy: currentUser.name
+      });
+      notifyDbChange();
+      return { success: true };
+    } catch (err: any) {
+      console.error('Delete challenge failed:', err);
+      return { success: false, error: err?.message || 'Failed to delete challenge.' };
     }
-    localDatabase.addAuditLog({
-      action: 'ADMIN_DELETED_CHALLENGE',
-      entityType: 'CHALLENGE',
-      entityId: id,
-      description: `Deleted hackathon challenge "${chal?.title || id}"`,
-      performedBy: currentUser.name
-    });
-    notifyDbChange();
   };
 
-  const updateSettings = (newSettings: Partial<SiteSettings>) => {
-    const updated = settingsRepository.update(newSettings);
-    setSettings(updated);
-    if (activeAdapter.isCloudConnected()) {
-      activeAdapter.updateSettings(updated).catch((e) => console.warn('Supabase updateSettings warning:', e));
+  const updateSettings = async (newSettings: Partial<SiteSettings>): Promise<{ success: boolean; error?: string }> => {
+    try {
+      if (activeAdapter.isCloudConnected()) {
+        await activeAdapter.updateSettings(newSettings);
+      }
+      const updated = settingsRepository.update(newSettings);
+      setSettings(updated);
+      localDatabase.addAuditLog({
+        action: 'ADMIN_UPDATED_SETTINGS',
+        entityType: 'SETTINGS',
+        entityId: 'global_settings',
+        description: `Updated global site settings & hero tagline`,
+        performedBy: currentUser.name
+      });
+      notifyDbChange();
+      return { success: true };
+    } catch (err: any) {
+      console.error('Update settings failed:', err);
+      return { success: false, error: err?.message || 'Failed to update settings.' };
     }
-    localDatabase.addAuditLog({
-      action: 'ADMIN_UPDATED_SETTINGS',
-      entityType: 'SETTINGS',
-      entityId: 'global_settings',
-      description: `Updated global site settings & hero tagline`,
-      performedBy: currentUser.name
-    });
-    notifyDbChange();
   };
 
   const resetToDefaultData = () => {
@@ -586,7 +672,7 @@ export function useCommunityStore() {
     notifyDbChange();
   };
 
-  const saveActivityDraft = (draft: ActivityDraft) => {
+  const saveActivityDraft = async (draft: ActivityDraft): Promise<{ success: boolean; error?: string }> => {
     if (!currentUser || !hasPermission(currentUser.role, 'CoreTeam')) {
       localDatabase.addAuditLog({
         action: 'UNAUTHORIZED_ATTEMPT_BLOCKED',
@@ -595,114 +681,143 @@ export function useCommunityStore() {
         description: `Blocked unauthorized saveActivityDraft attempt by role "${currentUser?.role || 'Guest'}".`,
         performedBy: currentUser?.name || 'Guest'
       });
-      return;
+      return { success: false, error: 'Unauthorized: Core Team role required to save activity drafts.' };
     }
-    const updated = activityDraftsRepository.save(draft);
-    setActivityDrafts(updated);
-    if (activeAdapter.isCloudConnected()) {
-      activeAdapter.saveActivityDraft(draft).catch((e) => console.warn('Supabase saveActivityDraft warning:', e));
-    }
-    localDatabase.addAuditLog({
-      action: draft.createdAt === draft.updatedAt ? 'CORE_CREATED_DRAFT' : 'CORE_UPDATED_DRAFT',
-      entityType: 'ActivityDraft',
-      entityId: draft.id,
-      description: `Core Team draft "${draft.title}" saved.`,
-      performedBy: currentUser.name
-    });
-    notifyDbChange();
-  };
-
-  const deleteActivityDraft = (id: string) => {
-    if (!currentUser || !hasPermission(currentUser.role, 'CoreTeam')) return;
-    const draft = activityDraftsRepository.getById(id);
-    const updated = activityDraftsRepository.delete(id);
-    setActivityDrafts(updated);
-    if (activeAdapter.isCloudConnected()) {
-      activeAdapter.deleteActivityDraft(id).catch((e) => console.warn('Supabase deleteActivityDraft warning:', e));
-    }
-    if (draft) {
+    try {
+      if (activeAdapter.isCloudConnected()) {
+        await activeAdapter.saveActivityDraft(draft);
+      }
+      const updated = activityDraftsRepository.save(draft);
+      setActivityDrafts(updated);
       localDatabase.addAuditLog({
-        action: 'CORE_DELETED_DRAFT',
+        action: draft.createdAt === draft.updatedAt ? 'CORE_CREATED_DRAFT' : 'CORE_UPDATED_DRAFT',
         entityType: 'ActivityDraft',
-        entityId: id,
-        description: `Core Team draft "${draft.title}" deleted.`,
+        entityId: draft.id,
+        description: `Core Team draft "${draft.title}" saved.`,
         performedBy: currentUser.name
       });
+      notifyDbChange();
+      return { success: true };
+    } catch (err: any) {
+      console.error('Save activity draft failed:', err);
+      return { success: false, error: err?.message || 'Failed to save activity draft.' };
     }
-    notifyDbChange();
   };
 
-  const submitActivityDraft = (id: string) => {
-    if (!currentUser || !hasPermission(currentUser.role, 'CoreTeam')) return;
+  const deleteActivityDraft = async (id: string): Promise<{ success: boolean; error?: string }> => {
+    if (!currentUser || !hasPermission(currentUser.role, 'CoreTeam')) {
+      return { success: false, error: 'Unauthorized: Core Team role required to delete drafts.' };
+    }
+    try {
+      const draft = activityDraftsRepository.getById(id);
+      if (activeAdapter.isCloudConnected()) {
+        await activeAdapter.deleteActivityDraft(id);
+      }
+      const updated = activityDraftsRepository.delete(id);
+      setActivityDrafts(updated);
+      if (draft) {
+        localDatabase.addAuditLog({
+          action: 'CORE_DELETED_DRAFT',
+          entityType: 'ActivityDraft',
+          entityId: id,
+          description: `Core Team draft "${draft.title}" deleted.`,
+          performedBy: currentUser.name
+        });
+      }
+      notifyDbChange();
+      return { success: true };
+    } catch (err: any) {
+      console.error('Delete activity draft failed:', err);
+      return { success: false, error: err?.message || 'Failed to delete activity draft.' };
+    }
+  };
+
+  const submitActivityDraft = async (id: string): Promise<{ success: boolean; error?: string }> => {
+    if (!currentUser || !hasPermission(currentUser.role, 'CoreTeam')) {
+      return { success: false, error: 'Unauthorized: Core Team role required to submit drafts.' };
+    }
     const draft = activityDraftsRepository.getById(id);
-    if (!draft) return;
+    if (!draft) return { success: false, error: 'Draft not found.' };
 
     const check = isValidDraftStatusTransition(draft.status, 'SUBMITTED', currentUser.role);
     if (!check.valid) {
       alert(check.reason);
-      return;
+      return { success: false, error: check.reason };
     }
 
-    const updated = activityDraftsRepository.updateStatus(id, 'SUBMITTED');
-    setActivityDrafts(updated);
-    if (activeAdapter.isCloudConnected()) {
-      activeAdapter.updateDraftStatus(id, 'SUBMITTED').catch((e) => console.warn('Supabase submit draft warning:', e));
+    try {
+      if (activeAdapter.isCloudConnected()) {
+        await activeAdapter.updateDraftStatus(id, 'SUBMITTED');
+      }
+      const updated = activityDraftsRepository.updateStatus(id, 'SUBMITTED');
+      setActivityDrafts(updated);
+      localDatabase.addAuditLog({
+        action: 'CORE_SUBMITTED_DRAFT',
+        entityType: 'ActivityDraft',
+        entityId: id,
+        description: `Draft "${draft.title}" submitted for Admin review.`,
+        performedBy: currentUser.name
+      });
+      notifyDbChange();
+      return { success: true };
+    } catch (err: any) {
+      console.error('Submit draft failed:', err);
+      return { success: false, error: err?.message || 'Failed to submit draft.' };
     }
-    localDatabase.addAuditLog({
-      action: 'CORE_SUBMITTED_DRAFT',
-      entityType: 'ActivityDraft',
-      entityId: id,
-      description: `Draft "${draft.title}" submitted for Admin review.`,
-      performedBy: currentUser.name
-    });
-    notifyDbChange();
   };
 
-  const reviewActivityDraft = (id: string, status: DraftStatus, notes?: string) => {
+  const reviewActivityDraft = async (id: string, status: DraftStatus, notes?: string): Promise<{ success: boolean; error?: string }> => {
     if (!currentUser || !hasPermission(currentUser.role, 'Admin')) {
-      alert('Unauthorized: Admin role required to review Core Team drafts.');
-      return;
+      const msg = 'Unauthorized: Admin role required to review Core Team drafts.';
+      alert(msg);
+      return { success: false, error: msg };
     }
     const draft = activityDraftsRepository.getById(id);
-    if (!draft) return;
+    if (!draft) return { success: false, error: 'Draft not found.' };
 
     const check = isValidDraftStatusTransition(draft.status, status, currentUser.role);
     if (!check.valid) {
       alert(check.reason);
-      return;
+      return { success: false, error: check.reason };
     }
 
-    const updated = activityDraftsRepository.updateStatus(id, status, notes);
-    setActivityDrafts(updated);
-    if (activeAdapter.isCloudConnected()) {
-      activeAdapter.updateDraftStatus(id, status, notes).catch((e) => console.warn('Supabase review draft warning:', e));
+    try {
+      if (activeAdapter.isCloudConnected()) {
+        await activeAdapter.updateDraftStatus(id, status, notes);
+      }
+      const updated = activityDraftsRepository.updateStatus(id, status, notes);
+      setActivityDrafts(updated);
+      const actionName = status === 'CHANGES_REQUESTED' ? 'ADMIN_REQUESTED_CHANGES' : status === 'APPROVED' ? 'ADMIN_APPROVED_DRAFT' : 'ADMIN_REVIEWED_DRAFT';
+      localDatabase.addAuditLog({
+        action: actionName,
+        entityType: 'ActivityDraft',
+        entityId: id,
+        description: `Draft "${draft.title}" reviewed -> status set to ${status}. Notes: ${notes || 'None'}`,
+        performedBy: currentUser.name
+      });
+      notifyDbChange();
+      return { success: true };
+    } catch (err: any) {
+      console.error('Review draft failed:', err);
+      return { success: false, error: err?.message || 'Failed to review draft.' };
     }
-    const actionName = status === 'CHANGES_REQUESTED' ? 'ADMIN_REQUESTED_CHANGES' : status === 'APPROVED' ? 'ADMIN_APPROVED_DRAFT' : 'ADMIN_REVIEWED_DRAFT';
-    localDatabase.addAuditLog({
-      action: actionName,
-      entityType: 'ActivityDraft',
-      entityId: id,
-      description: `Draft "${draft.title}" reviewed -> status set to ${status}. Notes: ${notes || 'None'}`,
-      performedBy: currentUser.name
-    });
-    notifyDbChange();
   };
 
-  const publishActivityDraft = (id: string) => {
+  const publishActivityDraft = async (id: string): Promise<{ success: boolean; error?: string }> => {
     if (!currentUser || !hasPermission(currentUser.role, 'Admin')) {
-      alert('Unauthorized: Admin role required to publish drafts to the public timeline.');
-      return;
+      const msg = 'Unauthorized: Admin role required to publish drafts to the public timeline.';
+      alert(msg);
+      return { success: false, error: msg };
     }
     const draft = activityDraftsRepository.getById(id);
-    if (!draft) return;
+    if (!draft) return { success: false, error: 'Draft not found.' };
 
     const check = isValidDraftStatusTransition(draft.status, 'PUBLISHED', currentUser.role);
     if (!check.valid) {
       alert(check.reason);
-      return;
+      return { success: false, error: check.reason };
     }
 
-    // Promote draft to public Activity entity
     const publicActivity: Activity = {
       id: draft.id,
       slug: draft.slug,
@@ -731,28 +846,34 @@ export function useCommunityStore() {
       achievements: draft.achievements
     };
 
-    const updatedActivities = activitiesRepository.save(publicActivity);
-    setActivities(updatedActivities);
+    try {
+      if (activeAdapter.isCloudConnected()) {
+        await activeAdapter.saveActivity(publicActivity);
+        await activeAdapter.updateDraftStatus(id, 'PUBLISHED');
+      }
 
-    const updatedDrafts = activityDraftsRepository.updateStatus(id, 'PUBLISHED');
-    setActivityDrafts(updatedDrafts);
+      const updatedActivities = activitiesRepository.save(publicActivity);
+      setActivities(updatedActivities);
 
-    if (activeAdapter.isCloudConnected()) {
-      activeAdapter.saveActivity(publicActivity).catch((e) => console.warn('Supabase saveActivity on publish warning:', e));
-      activeAdapter.updateDraftStatus(id, 'PUBLISHED').catch((e) => console.warn('Supabase draft status on publish warning:', e));
+      const updatedDrafts = activityDraftsRepository.updateStatus(id, 'PUBLISHED');
+      setActivityDrafts(updatedDrafts);
+
+      localDatabase.addAuditLog({
+        action: 'ADMIN_PUBLISHED_DRAFT',
+        entityType: 'Activity',
+        entityId: draft.id,
+        description: `Draft "${draft.title}" published into public activity timeline.`,
+        performedBy: currentUser.name
+      });
+      notifyDbChange();
+      return { success: true };
+    } catch (err: any) {
+      console.error('Publish draft failed:', err);
+      return { success: false, error: err?.message || 'Failed to publish draft.' };
     }
-
-    localDatabase.addAuditLog({
-      action: 'ADMIN_PUBLISHED_DRAFT',
-      entityType: 'Activity',
-      entityId: draft.id,
-      description: `Draft "${draft.title}" published into public activity timeline.`,
-      performedBy: currentUser.name
-    });
-    notifyDbChange();
   };
 
-  const saveStatistic = (stat: CommunityStatistic) => {
+  const saveStatistic = async (stat: CommunityStatistic): Promise<{ success: boolean; error?: string }> => {
     const currentStats = settings.statistics || [];
     const idx = currentStats.findIndex((s) => s.id === stat.id);
     let updatedStats: CommunityStatistic[];
@@ -762,16 +883,16 @@ export function useCommunityStore() {
     } else {
       updatedStats = [...currentStats, stat];
     }
-    updateSettings({ statistics: updatedStats });
+    return updateSettings({ statistics: updatedStats });
   };
 
-  const deleteStatistic = (id: string) => {
+  const deleteStatistic = async (id: string): Promise<{ success: boolean; error?: string }> => {
     const currentStats = settings.statistics || [];
     const updatedStats = currentStats.filter((s) => s.id !== id);
-    updateSettings({ statistics: updatedStats });
+    return updateSettings({ statistics: updatedStats });
   };
 
-  const saveAnnouncement = (ann: Announcement) => {
+  const saveAnnouncement = async (ann: Announcement): Promise<{ success: boolean; error?: string }> => {
     const currentAnns = settings.announcements || [];
     const idx = currentAnns.findIndex((a) => a.id === ann.id);
     let updatedAnns: Announcement[];
@@ -781,16 +902,16 @@ export function useCommunityStore() {
     } else {
       updatedAnns = [ann, ...currentAnns];
     }
-    updateSettings({ announcements: updatedAnns });
+    return updateSettings({ announcements: updatedAnns });
   };
 
-  const deleteAnnouncement = (id: string) => {
+  const deleteAnnouncement = async (id: string): Promise<{ success: boolean; error?: string }> => {
     const currentAnns = settings.announcements || [];
     const updatedAnns = currentAnns.filter((a) => a.id !== id);
-    updateSettings({ announcements: updatedAnns });
+    return updateSettings({ announcements: updatedAnns });
   };
 
-  const saveTimelineMilestone = (milestone: TimelineMilestone) => {
+  const saveTimelineMilestone = async (milestone: TimelineMilestone): Promise<{ success: boolean; error?: string }> => {
     const currentMilestones = settings.timelineMilestones || [];
     const idx = currentMilestones.findIndex((m) => m.id === milestone.id);
     let updatedMilestones: TimelineMilestone[];
@@ -800,13 +921,13 @@ export function useCommunityStore() {
     } else {
       updatedMilestones = [...currentMilestones, milestone];
     }
-    updateSettings({ timelineMilestones: updatedMilestones });
+    return updateSettings({ timelineMilestones: updatedMilestones });
   };
 
-  const deleteTimelineMilestone = (id: string) => {
+  const deleteTimelineMilestone = async (id: string): Promise<{ success: boolean; error?: string }> => {
     const currentMilestones = settings.timelineMilestones || [];
     const updatedMilestones = currentMilestones.filter((m) => m.id !== id);
-    updateSettings({ timelineMilestones: updatedMilestones });
+    return updateSettings({ timelineMilestones: updatedMilestones });
   };
 
   const saveLeadership = async (member: LeadershipMember): Promise<{ success: boolean; error?: string }> => {
@@ -871,46 +992,58 @@ export function useCommunityStore() {
     }
   };
 
-  const saveLearningPath = (path: LearningPath) => {
-    const all = learningRepository.getAll();
-    const idx = all.findIndex((p) => p.id === path.id);
-    let updated: LearningPath[];
-    if (idx >= 0) {
-      updated = [...all];
-      updated[idx] = path;
-    } else {
-      updated = [...all, path];
+  const saveLearningPath = async (path: LearningPath): Promise<{ success: boolean; error?: string }> => {
+    try {
+      if (activeAdapter.isCloudConnected()) {
+        await activeAdapter.saveLearningPath(path);
+      }
+      const all = learningRepository.getAll();
+      const idx = all.findIndex((p) => p.id === path.id);
+      let updated: LearningPath[];
+      if (idx >= 0) {
+        updated = [...all];
+        updated[idx] = path;
+      } else {
+        updated = [...all, path];
+      }
+      setLearningPaths(updated);
+      localDatabase.saveLearningPaths(updated);
+      localDatabase.addAuditLog({
+        action: 'ADMIN_SAVED_LEARNING_PATH',
+        entityType: 'LEARNING_PATH',
+        entityId: path.id,
+        description: `Saved learning path "${path.title}"`,
+        performedBy: currentUser.name
+      });
+      notifyDbChange();
+      return { success: true };
+    } catch (err: any) {
+      console.error('Save learning path failed:', err);
+      return { success: false, error: err?.message || 'Failed to save learning path.' };
     }
-    setLearningPaths(updated);
-    localDatabase.saveLearningPaths(updated);
-    if (activeAdapter.isCloudConnected()) {
-      activeAdapter.saveLearningPath(path).catch((e) => console.warn('Supabase saveLearningPath warning:', e));
-    }
-    localDatabase.addAuditLog({
-      action: 'ADMIN_SAVED_LEARNING_PATH',
-      entityType: 'LEARNING_PATH',
-      entityId: path.id,
-      description: `Saved learning path "${path.title}"`,
-      performedBy: currentUser.name
-    });
-    notifyDbChange();
   };
 
-  const deleteLearningPath = (id: string) => {
-    const all = learningPaths.filter((p) => p.id !== id);
-    setLearningPaths(all);
-    localDatabase.saveLearningPaths(all);
-    if (activeAdapter.isCloudConnected()) {
-      activeAdapter.deleteLearningPath(id).catch((e) => console.warn('Supabase deleteLearningPath warning:', e));
+  const deleteLearningPath = async (id: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      if (activeAdapter.isCloudConnected()) {
+        await activeAdapter.deleteLearningPath(id);
+      }
+      const all = learningPaths.filter((p) => p.id !== id);
+      setLearningPaths(all);
+      localDatabase.saveLearningPaths(all);
+      localDatabase.addAuditLog({
+        action: 'ADMIN_DELETED_LEARNING_PATH',
+        entityType: 'LEARNING_PATH',
+        entityId: id,
+        description: `Deleted learning path ID "${id}"`,
+        performedBy: currentUser.name
+      });
+      notifyDbChange();
+      return { success: true };
+    } catch (err: any) {
+      console.error('Delete learning path failed:', err);
+      return { success: false, error: err?.message || 'Failed to delete learning path.' };
     }
-    localDatabase.addAuditLog({
-      action: 'ADMIN_DELETED_LEARNING_PATH',
-      entityType: 'LEARNING_PATH',
-      entityId: id,
-      description: `Deleted learning path ID "${id}"`,
-      performedBy: currentUser.name
-    });
-    notifyDbChange();
   };
 
   return {
