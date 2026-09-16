@@ -115,6 +115,7 @@ export interface DatabaseLeadershipRow {
   name: string;
   role_title: string;
   category: string;
+  roster_categories?: string[];
   academic_year: string;
   avatar_url: string;
   start_year?: string;

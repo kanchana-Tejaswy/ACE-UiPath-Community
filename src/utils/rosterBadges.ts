@@ -1,10 +1,11 @@
 import { LeadershipMember, RosterCategory } from '../types';
 
 export const ROSTER_CATEGORIES: RosterCategory[] = [
-  'Faculty Advisor',
-  'Current Core Lead',
-  'Technical Lead',
+  'Student Developer Champion',
+  'Core Team Member',
+  'Trainer / Technical Lead',
   'Domain Lead',
+  'Faculty Advisor',
   'Alumni Mentor',
   'Honorary Member'
 ];
@@ -20,17 +21,65 @@ export interface BadgeConfig {
 }
 
 /**
+ * Normalizes legacy or aliased category strings to official 7 roster roles.
+ */
+export function normalizeRosterCategory(category?: string): RosterCategory {
+  const norm = (category || 'Core Team Member').trim();
+  switch (norm) {
+    case 'Student Developer Champion':
+      return 'Student Developer Champion';
+    case 'Core Team Member':
+    case 'Current Core Lead':
+    case 'Community Lead':
+      return 'Core Team Member';
+    case 'Trainer / Technical Lead':
+    case 'Technical Lead':
+      return 'Trainer / Technical Lead';
+    case 'Domain Lead':
+      return 'Domain Lead';
+    case 'Faculty Advisor':
+      return 'Faculty Advisor';
+    case 'Alumni Mentor':
+    case 'Alumni':
+      return 'Alumni Mentor';
+    case 'Honorary Member':
+      return 'Honorary Member';
+    default:
+      return (ROSTER_CATEGORIES.includes(norm as RosterCategory) ? norm : 'Core Team Member') as RosterCategory;
+  }
+}
+
+/**
+ * Returns all active roster categories for a member, with fallback handling for legacy single-category records.
+ */
+export function getMemberCategories(member: Partial<LeadershipMember>): RosterCategory[] {
+  if (Array.isArray(member.rosterCategories) && member.rosterCategories.length > 0) {
+    const valid = member.rosterCategories
+      .map((c) => normalizeRosterCategory(c))
+      .filter(Boolean);
+    if (valid.length > 0) {
+      // De-duplicate while preserving order
+      return Array.from(new Set(valid));
+    }
+  }
+  if (member.category) {
+    return [normalizeRosterCategory(member.category)];
+  }
+  return ['Core Team Member'];
+}
+
+/**
  * Centralized mapping from roster category and active state to visual badge styling.
  */
 export function getRosterBadgeConfig(category?: string, isActive = true): BadgeConfig {
-  const normCategory = (category || 'Current Core Lead').trim();
+  const normCategory = normalizeRosterCategory(category);
 
   // If explicitly inactive and a student/chapter lead, visually reflect alumni/former status
   if (!isActive && normCategory !== 'Faculty Advisor' && normCategory !== 'Honorary Member') {
-    if (normCategory === 'Alumni Mentor' || normCategory === 'Alumni') {
+    if (normCategory === 'Alumni Mentor') {
       return {
         badgeClass: 'badge badge-slate',
-        label: normCategory,
+        label: 'Alumni Mentor',
         roleColor: '#9CA3AF',
         bg: 'bg-neutral-800',
         text: 'text-neutral-400',
@@ -48,35 +97,35 @@ export function getRosterBadgeConfig(category?: string, isActive = true): BadgeC
   }
 
   switch (normCategory) {
-    case 'Faculty Advisor':
+    case 'Student Developer Champion':
       return {
-        badgeClass: 'badge badge-neutral',
-        label: 'Faculty Advisor',
-        roleColor: '#C084FC',
-        bg: 'bg-purple-950/60',
-        text: 'text-purple-300',
-        border: 'border-purple-800/60',
+        badgeClass: 'badge badge-cyan',
+        label: 'Student Developer Champion',
+        roleColor: '#38BDF8',
+        bg: 'bg-sky-950/60',
+        text: 'text-sky-400',
+        border: 'border-sky-800/60',
         customStyle: {
-          background: 'rgba(168, 85, 247, 0.12)',
-          color: '#C084FC',
-          border: '1px solid rgba(168, 85, 247, 0.28)'
+          background: 'rgba(56, 189, 248, 0.12)',
+          color: '#38BDF8',
+          border: '1px solid rgba(56, 189, 248, 0.28)'
         }
       };
 
-    case 'Current Core Lead':
+    case 'Core Team Member':
       return {
         badgeClass: 'badge badge-orange',
-        label: 'Current Core Lead',
+        label: 'Core Team Member',
         roleColor: '#FA4616',
         bg: 'bg-orange-950/60',
         text: 'text-orange-400',
         border: 'border-orange-800/60'
       };
 
-    case 'Technical Lead':
+    case 'Trainer / Technical Lead':
       return {
         badgeClass: 'badge badge-green',
-        label: 'Technical Lead',
+        label: 'Trainer / Technical Lead',
         roleColor: '#34D399',
         bg: 'bg-emerald-950/60',
         text: 'text-emerald-400',
@@ -98,11 +147,25 @@ export function getRosterBadgeConfig(category?: string, isActive = true): BadgeC
         }
       };
 
+    case 'Faculty Advisor':
+      return {
+        badgeClass: 'badge badge-neutral',
+        label: 'Faculty Advisor',
+        roleColor: '#C084FC',
+        bg: 'bg-purple-950/60',
+        text: 'text-purple-300',
+        border: 'border-purple-800/60',
+        customStyle: {
+          background: 'rgba(168, 85, 247, 0.12)',
+          color: '#C084FC',
+          border: '1px solid rgba(168, 85, 247, 0.28)'
+        }
+      };
+
     case 'Alumni Mentor':
-    case 'Alumni':
       return {
         badgeClass: 'badge badge-slate',
-        label: normCategory === 'Alumni' ? 'Alumni' : 'Alumni Mentor',
+        label: 'Alumni Mentor',
         roleColor: '#9CA3AF',
         bg: 'bg-neutral-800',
         text: 'text-neutral-400',
@@ -124,16 +187,6 @@ export function getRosterBadgeConfig(category?: string, isActive = true): BadgeC
         }
       };
 
-    case 'Community Lead':
-      return {
-        badgeClass: 'badge badge-orange',
-        label: 'Community Lead',
-        roleColor: '#FA4616',
-        bg: 'bg-orange-950/60',
-        text: 'text-orange-400',
-        border: 'border-orange-800/60'
-      };
-
     default:
       return {
         badgeClass: 'badge badge-neutral',
@@ -153,7 +206,8 @@ export function isMemberActive(member: Partial<LeadershipMember>): boolean {
   if (member.isActive !== undefined) {
     return Boolean(member.isActive);
   }
-  if (member.category === 'Alumni' || member.category === 'Alumni Mentor') {
+  const categories = getMemberCategories(member);
+  if (categories.length === 1 && categories[0] === 'Alumni Mentor') {
     return false;
   }
   if (member.academicYear?.includes('Present')) {

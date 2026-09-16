@@ -277,12 +277,15 @@ export interface TimelineMilestone {
 }
 
 export type RosterCategory =
-  | 'Faculty Advisor'
-  | 'Current Core Lead'
-  | 'Technical Lead'
+  | 'Student Developer Champion'
+  | 'Core Team Member'
+  | 'Trainer / Technical Lead'
   | 'Domain Lead'
+  | 'Faculty Advisor'
   | 'Alumni Mentor'
   | 'Honorary Member'
+  | 'Current Core Lead'
+  | 'Technical Lead'
   | 'Community Lead'
   | 'Alumni';
 
@@ -291,6 +294,7 @@ export interface LeadershipMember {
   name: string;
   roleTitle: string;
   category: RosterCategory;
+  rosterCategories?: RosterCategory[];
   academicYear: string; // e.g. "2024 - Present" or "2022-2026"
   avatarUrl: string;
   startYear?: string | number;

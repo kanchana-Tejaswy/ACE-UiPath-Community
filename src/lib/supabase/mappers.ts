@@ -252,11 +252,16 @@ export function mapLeadershipRowToEntity(row: DatabaseLeadershipRow): Leadership
   const derivedEnd = parts[1] || undefined;
   const isAlumniCategory = row.category === 'Alumni' || row.category === 'Alumni Mentor';
 
+  const categories = Array.isArray(row.roster_categories) && row.roster_categories.length > 0
+    ? (row.roster_categories as any[])
+    : [row.category || 'Core Team Member'];
+
   return {
     id: row.id,
     name: row.name,
     roleTitle: row.role_title,
-    category: row.category as any,
+    category: (categories[0] || row.category || 'Core Team Member') as any,
+    rosterCategories: categories as any,
     academicYear: row.academic_year,
     avatarUrl: row.avatar_url,
     startYear: row.start_year || derivedStart,
@@ -278,11 +283,16 @@ export function mapLeadershipEntityToRow(lead: LeadershipMember): DatabaseLeader
     ? `${lead.startYear} - ${lead.isActive !== false ? 'Present' : (lead.endYear || 'Past')}`
     : (lead.academicYear || '2024 - Present');
 
+  const categories = Array.isArray(lead.rosterCategories) && lead.rosterCategories.length > 0
+    ? lead.rosterCategories
+    : [lead.category || 'Core Team Member'];
+
   return {
     id: lead.id,
     name: lead.name,
     role_title: lead.roleTitle,
-    category: lead.category,
+    category: String(categories[0] || lead.category || 'Core Team Member'),
+    roster_categories: categories.map(String),
     academic_year: computedTenure,
     avatar_url: lead.avatarUrl,
     start_year: lead.startYear !== undefined ? String(lead.startYear) : undefined,

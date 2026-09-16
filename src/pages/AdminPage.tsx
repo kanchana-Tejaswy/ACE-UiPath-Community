@@ -58,6 +58,7 @@ import {
 import { 
   ROSTER_CATEGORIES, 
   getRosterBadgeConfig, 
+  getMemberCategories,
   getMemberTenure, 
   getMemberInitials, 
   isMemberActive 
@@ -470,19 +471,12 @@ export const AdminPage: React.FC<Props> = ({
       const parsedEnd = member.endYear ?? (member.academicYear && !member.academicYear.toLowerCase().includes('present') ? parseInt(member.academicYear.split('-')[1]) || undefined : undefined);
       const activeState = member.isActive ?? (!isAlum && (member.academicYear ? member.academicYear.toLowerCase().includes('present') : true));
       
-      // Normalize legacy categories if needed
-      let cat: RosterCategory = 'Current Core Lead';
-      if (ROSTER_CATEGORIES.includes(member.category as RosterCategory)) {
-        cat = member.category as RosterCategory;
-      } else if ((member.category as string) === 'Alumni') {
-        cat = 'Alumni Mentor';
-      } else if ((member.category as string) === 'Community Lead') {
-        cat = 'Domain Lead';
-      }
+      const roles = getMemberCategories(member);
 
       setEditingMember({
         ...member,
-        category: cat,
+        category: roles[0] || 'Core Team Member',
+        rosterCategories: roles,
         startYear: parsedStart,
         endYear: parsedEnd,
         isActive: activeState,
@@ -497,7 +491,8 @@ export const AdminPage: React.FC<Props> = ({
         id: `ldr_${Date.now()}`,
         name: '',
         roleTitle: '',
-        category: 'Current Core Lead',
+        category: 'Core Team Member',
+        rosterCategories: ['Core Team Member'],
         department: '',
         startYear: currentYear,
         endYear: undefined,
@@ -561,6 +556,12 @@ export const AdminPage: React.FC<Props> = ({
       return;
     }
 
+    const roles = getMemberCategories(editingMember);
+    if (!roles || roles.length === 0) {
+      showToast('Please select at least one roster role / designation.');
+      return;
+    }
+
     if (editingMember.bio && editingMember.bio.length > 250) {
       showToast('Bio cannot exceed 250 characters.');
       return;
@@ -576,7 +577,8 @@ export const AdminPage: React.FC<Props> = ({
       ...editingMember,
       name: editingMember.name.trim(),
       roleTitle: editingMember.roleTitle.trim(),
-      category: editingMember.category,
+      category: roles[0],
+      rosterCategories: roles,
       department: editingMember.department?.trim() || undefined,
       startYear: start,
       endYear: isActive ? undefined : (editingMember.endYear || start),
@@ -1808,11 +1810,20 @@ export const AdminPage: React.FC<Props> = ({
                           )}
                         </div>
                         <div>
-                          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.4rem', marginBottom: '0.25rem' }}>
                             <strong style={{ fontSize: '1.05rem', color: 'var(--text-primary)' }}>{mem.name}</strong>
-                            <span className={`text-[11px] px-2.5 py-0.5 rounded-full font-medium border ${badge.bg} ${badge.text} ${badge.border}`}>
-                              {mem.category}
-                            </span>
+                            {getMemberCategories(mem).map((cat) => {
+                              const badge = getRosterBadgeConfig(cat, active);
+                              return (
+                                <span
+                                  key={cat}
+                                  className={`text-[11px] px-2.5 py-0.5 rounded-full font-medium border ${badge.bg} ${badge.text} ${badge.border}`}
+                                  style={badge.customStyle}
+                                >
+                                  {badge.label}
+                                </span>
+                              );
+                            })}
                             {active ? (
                               <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-emerald-950/70 text-emerald-400 border border-emerald-800/60">
                                 Active Lead
@@ -2691,36 +2702,67 @@ export const AdminPage: React.FC<Props> = ({
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">
-                    Department / Batch / Roll No.
-                  </label>
-                  <input
-                    type="text"
-                    value={editingMember.department || ''}
-                    onChange={(e) => setEditingMember({ ...editingMember, department: e.target.value })}
-                    placeholder="e.g. CSE - 2024 Batch"
-                    className="w-full bg-neutral-900 border border-neutral-850 rounded-xl px-3.5 py-2.5 text-sm text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all"
-                  />
-                </div>
+              <div className="mb-4">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">
+                  Department / Batch / Roll No.
+                </label>
+                <input
+                  type="text"
+                  value={editingMember.department || ''}
+                  onChange={(e) => setEditingMember({ ...editingMember, department: e.target.value })}
+                  placeholder="e.g. CSE - 2024 Batch"
+                  className="w-full bg-neutral-900 border border-neutral-850 rounded-xl px-3.5 py-2.5 text-sm text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all"
+                />
+              </div>
 
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">
-                    Roster Category <span className="text-[#FA4616]">*</span>
+              {/* Roster Roles / Designations Multi-Select Pills */}
+              <div className="mb-4">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400">
+                    Roster Roles / Designations <span className="text-[#FA4616]">*</span>
                   </label>
-                  <select
-                    value={editingMember.category}
-                    onChange={(e) => setEditingMember({ ...editingMember, category: e.target.value as RosterCategory })}
-                    className="w-full bg-neutral-900 border border-neutral-850 rounded-xl px-3.5 py-2.5 text-sm text-neutral-100 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all cursor-pointer"
-                  >
-                    {ROSTER_CATEGORIES.map((cat) => (
-                      <option key={cat} value={cat} className="bg-neutral-900 text-neutral-100">
-                        {cat}
-                      </option>
-                    ))}
-                  </select>
+                  <span className="text-xs text-neutral-500 font-mono">
+                    {getMemberCategories(editingMember).length} selected
+                  </span>
                 </div>
+                <div className="flex flex-wrap gap-2 p-3 bg-neutral-900/60 border border-neutral-850 rounded-xl">
+                  {ROSTER_CATEGORIES.map((role) => {
+                    const currentSelected = getMemberCategories(editingMember);
+                    const isSelected = currentSelected.includes(role);
+                    return (
+                      <button
+                        key={role}
+                        type="button"
+                        onClick={() => {
+                          let updated: RosterCategory[];
+                          if (isSelected) {
+                            updated = currentSelected.filter((c) => c !== role);
+                          } else {
+                            updated = [...currentSelected, role];
+                          }
+                          setEditingMember({
+                            ...editingMember,
+                            category: updated[0] || role,
+                            rosterCategories: updated
+                          });
+                        }}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer border ${
+                          isSelected
+                            ? 'bg-orange-950/40 border-orange-500 text-orange-400 shadow-sm shadow-orange-500/10 font-semibold'
+                            : 'bg-neutral-900 border-neutral-800 text-neutral-400 hover:text-neutral-200 hover:border-neutral-700 hover:bg-neutral-850'
+                        }`}
+                      >
+                        <span className={`w-3.5 h-3.5 rounded flex items-center justify-center text-[10px] ${isSelected ? 'bg-orange-500 text-black font-bold' : 'border border-neutral-700 text-transparent'}`}>
+                          ✓
+                        </span>
+                        <span>{role}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                {getMemberCategories(editingMember).length === 0 && (
+                  <p className="text-xs text-red-400 mt-1.5">At least one roster role / designation is required.</p>
+                )}
               </div>
 
               {/* Section 3: Tenure Controls & Status Switch */}
