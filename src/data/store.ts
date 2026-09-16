@@ -810,6 +810,10 @@ export function useCommunityStore() {
   };
 
   const saveLeadership = (member: LeadershipMember) => {
+    if (!currentUser || !hasPermission(currentUser.role, 'Admin')) {
+      alert('Access Restricted: Administrator role required to manage team leadership.');
+      return;
+    }
     const all = localDatabase.getLeadership();
     const idx = all.findIndex((m) => m.id === member.id);
     let updated: LeadershipMember[];
@@ -835,6 +839,10 @@ export function useCommunityStore() {
   };
 
   const deleteLeadership = (id: string) => {
+    if (!currentUser || !hasPermission(currentUser.role, 'Admin')) {
+      alert('Access Restricted: Administrator role required to manage team leadership.');
+      return;
+    }
     const all = localDatabase.getLeadership();
     const target = all.find((m) => m.id === id);
     const updated = all.filter((m) => m.id !== id);

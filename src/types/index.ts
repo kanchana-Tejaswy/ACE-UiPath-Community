@@ -276,15 +276,30 @@ export interface TimelineMilestone {
   order: number;
 }
 
+export type RosterCategory =
+  | 'Faculty Advisor'
+  | 'Current Core Lead'
+  | 'Technical Lead'
+  | 'Domain Lead'
+  | 'Alumni Mentor'
+  | 'Honorary Member'
+  | 'Community Lead'
+  | 'Alumni';
+
 export interface LeadershipMember {
   id: string;
   name: string;
   roleTitle: string;
-  category: 'Faculty Advisor' | 'Current Core Lead' | 'Technical Lead' | 'Community Lead' | 'Alumni';
-  academicYear: string; // e.g. "2025-2026", "2024-2025"
+  category: RosterCategory;
+  academicYear: string; // e.g. "2024 - Present" or "2022-2026"
   avatarUrl: string;
+  startYear?: string | number;
+  endYear?: string | number;
+  isActive?: boolean;
+  department?: string; // Department / Batch / Roll No. (e.g. "CSE - 2024 Batch")
   linkedinUrl?: string;
   githubUrl?: string;
+  uipathProfileUrl?: string;
   bio: string;
   contributions: string[];
   orderIndex: number;

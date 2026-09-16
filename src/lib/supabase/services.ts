@@ -373,7 +373,24 @@ export async function saveLeadershipToSupabase(member: LeadershipMember): Promis
   if (!isSupabaseConfigured()) return false;
   try {
     const row = mapLeadershipEntityToRow(member);
-    const { error } = await supabase.from('leadership').upsert(row);
+    let { error } = await supabase.from('leadership').upsert(row);
+    if (error && error.message && error.message.includes('column')) {
+      const baseRow = {
+        id: row.id,
+        name: row.name,
+        role_title: row.role_title,
+        category: row.category,
+        academic_year: row.academic_year,
+        avatar_url: row.avatar_url,
+        linkedin_url: row.linkedin_url,
+        github_url: row.github_url,
+        bio: row.bio,
+        contributions: row.contributions,
+        order_index: row.order_index
+      };
+      const retry = await supabase.from('leadership').upsert(baseRow);
+      error = retry.error;
+    }
     if (error) {
       console.warn('Supabase leadership save warning:', error);
       return false;
@@ -715,6 +732,59 @@ export async function uploadArticleCoverImage(file: File): Promise<{ url: string
   }
 
   // Local/Offline development mode fallback: Object URL
+  const localUrl = URL.createObjectURL(file);
+  return { url: localUrl };
+}
+
+/**
+ * Upload team member avatar image to Supabase Storage ('blog-media' bucket)
+ * Returns public URL, falling back to local Object URL for offline/preview.
+ */
+export async function uploadMemberAvatarImage(file: File): Promise<{ url: string | null; error?: string }> {
+  const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml'];
+  if (!validTypes.includes(file.type)) {
+    return { url: null, error: 'Unsupported file format. Please upload a PNG, JPEG, WEBP, or SVG image.' };
+  }
+
+  // 10 MB limit
+  if (file.size > 10 * 1024 * 1024) {
+    return { url: null, error: 'File size exceeds 10MB limit. Please upload a smaller image.' };
+  }
+
+  if (isSupabaseConfigured()) {
+    try {
+      const sanitizedName = file.name.toLowerCase().replace(/[^a-z0-9.]/g, '-');
+      const filePath = `avatars/${Date.now()}-${sanitizedName}`;
+
+      let uploadRes = await supabase.storage.from('blog-media').upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: true
+      });
+
+      let bucketUsed = 'blog-media';
+      if (uploadRes.error) {
+        uploadRes = await supabase.storage.from('activities-media').upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
+        bucketUsed = 'activities-media';
+      }
+
+      if (uploadRes.error) {
+        console.warn('Supabase avatar upload warning, falling back to local preview:', uploadRes.error);
+        const localUrl = URL.createObjectURL(file);
+        return { url: localUrl };
+      }
+
+      const { data: publicData } = supabase.storage.from(bucketUsed).getPublicUrl(filePath);
+      return { url: publicData.publicUrl };
+    } catch (err: any) {
+      console.warn('Avatar upload failed, falling back to local preview:', err);
+      const localUrl = URL.createObjectURL(file);
+      return { url: localUrl };
+    }
+  }
+
   const localUrl = URL.createObjectURL(file);
   return { url: localUrl };
 }

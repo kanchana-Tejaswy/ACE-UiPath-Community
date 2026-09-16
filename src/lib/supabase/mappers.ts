@@ -247,6 +247,11 @@ export function mapChallengeEntityToRow(chal: Challenge): DatabaseChallengeRow {
 
 // Leadership
 export function mapLeadershipRowToEntity(row: DatabaseLeadershipRow): LeadershipMember {
+  const parts = row.academic_year?.includes('-') ? row.academic_year.split('-').map((s) => s.trim()) : [];
+  const derivedStart = parts[0] || undefined;
+  const derivedEnd = parts[1] || undefined;
+  const isAlumniCategory = row.category === 'Alumni' || row.category === 'Alumni Mentor';
+
   return {
     id: row.id,
     name: row.name,
@@ -254,8 +259,13 @@ export function mapLeadershipRowToEntity(row: DatabaseLeadershipRow): Leadership
     category: row.category as any,
     academicYear: row.academic_year,
     avatarUrl: row.avatar_url,
+    startYear: row.start_year || derivedStart,
+    endYear: row.end_year || (derivedEnd === 'Present' ? undefined : derivedEnd),
+    isActive: row.is_active !== undefined ? row.is_active : !isAlumniCategory,
+    department: row.department,
     linkedinUrl: row.linkedin_url,
     githubUrl: row.github_url,
+    uipathProfileUrl: row.uipath_profile_url,
     bio: row.bio,
     contributions: row.contributions || [],
     orderIndex: row.order_index
@@ -263,17 +273,27 @@ export function mapLeadershipRowToEntity(row: DatabaseLeadershipRow): Leadership
 }
 
 export function mapLeadershipEntityToRow(lead: LeadershipMember): DatabaseLeadershipRow {
+  // Format standardized tenure string for academic_year
+  const computedTenure = lead.startYear
+    ? `${lead.startYear} - ${lead.isActive !== false ? 'Present' : (lead.endYear || 'Past')}`
+    : (lead.academicYear || '2024 - Present');
+
   return {
     id: lead.id,
     name: lead.name,
     role_title: lead.roleTitle,
     category: lead.category,
-    academic_year: lead.academicYear,
+    academic_year: computedTenure,
     avatar_url: lead.avatarUrl,
+    start_year: lead.startYear !== undefined ? String(lead.startYear) : undefined,
+    end_year: lead.endYear !== undefined ? String(lead.endYear) : undefined,
+    is_active: lead.isActive !== false,
+    department: lead.department,
     linkedin_url: lead.linkedinUrl,
     github_url: lead.githubUrl,
+    uipath_profile_url: lead.uipathProfileUrl,
     bio: lead.bio,
-    contributions: lead.contributions,
+    contributions: lead.contributions || [],
     order_index: lead.orderIndex
   };
 }

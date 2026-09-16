@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   Settings, 
   Layers, 
@@ -26,7 +26,12 @@ import {
   EyeOff,
   Star,
   ExternalLink,
-  Newspaper
+  Newspaper,
+  Upload,
+  Linkedin,
+  Github,
+  Globe,
+  Loader2
 } from 'lucide-react';
 
 import { 
@@ -46,8 +51,18 @@ import {
   Announcement,
   TimelineMilestone,
   LeadershipMember,
+  RosterCategory,
   Article
 } from '../types';
+
+import { 
+  ROSTER_CATEGORIES, 
+  getRosterBadgeConfig, 
+  getMemberTenure, 
+  getMemberInitials, 
+  isMemberActive 
+} from '../utils/rosterBadges';
+import { uploadMemberAvatarImage } from '../lib/supabase/services';
 
 import { UserManagementSection } from '../components/UserManagementSection';
 import { AdminAnalyticsSection } from '../components/AdminAnalyticsSection';
@@ -444,33 +459,140 @@ export const AdminPage: React.FC<Props> = ({
   // 7. TEAM / LEADERSHIP STATE & MODAL
   const [editingMember, setEditingMember] = useState<LeadershipMember | null>(null);
   const [isMemberModalOpen, setIsMemberModalOpen] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
+  const avatarFileInputRef = useRef<HTMLInputElement>(null);
 
   const handleOpenMemberModal = (member?: LeadershipMember) => {
     if (member) {
-      setEditingMember(member);
+      const isAlum = member.category === 'Alumni Mentor' || (member.category as string) === 'Alumni';
+      const parsedStart = member.startYear ?? (member.academicYear ? parseInt(member.academicYear.split('-')[0]) || new Date().getFullYear() : new Date().getFullYear());
+      const parsedEnd = member.endYear ?? (member.academicYear && !member.academicYear.toLowerCase().includes('present') ? parseInt(member.academicYear.split('-')[1]) || undefined : undefined);
+      const activeState = member.isActive ?? (!isAlum && (member.academicYear ? member.academicYear.toLowerCase().includes('present') : true));
+      
+      // Normalize legacy categories if needed
+      let cat: RosterCategory = 'Current Core Lead';
+      if (ROSTER_CATEGORIES.includes(member.category as RosterCategory)) {
+        cat = member.category as RosterCategory;
+      } else if ((member.category as string) === 'Alumni') {
+        cat = 'Alumni Mentor';
+      } else if ((member.category as string) === 'Community Lead') {
+        cat = 'Domain Lead';
+      }
+
+      setEditingMember({
+        ...member,
+        category: cat,
+        startYear: parsedStart,
+        endYear: parsedEnd,
+        isActive: activeState,
+        department: member.department || '',
+        uipathProfileUrl: member.uipathProfileUrl || '',
+        bio: member.bio || '',
+        avatarUrl: member.avatarUrl || ''
+      });
     } else {
+      const currentYear = new Date().getFullYear();
       setEditingMember({
         id: `ldr_${Date.now()}`,
         name: '',
         roleTitle: '',
         category: 'Current Core Lead',
-        academicYear: '2025-2026',
-        avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+        department: '',
+        startYear: currentYear,
+        endYear: undefined,
+        isActive: true,
+        academicYear: `${currentYear} - Present`,
+        avatarUrl: '',
+        linkedinUrl: '',
+        githubUrl: '',
+        uipathProfileUrl: '',
         bio: '',
         contributions: [],
         orderIndex: leadership.length + 1
       });
     }
+    setAvatarError(null);
     setIsMemberModalOpen(true);
+  };
+
+  const handleAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      setAvatarError('Image size exceeds 5MB limit.');
+      return;
+    }
+
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml'];
+    if (!validTypes.includes(file.type)) {
+      setAvatarError('Only JPG, PNG, WebP, GIF, or SVG images are supported.');
+      return;
+    }
+
+    setAvatarUploading(true);
+    setAvatarError(null);
+    try {
+      const res = await uploadMemberAvatarImage(file);
+      if (res.error) {
+        setAvatarError(res.error);
+        return;
+      }
+      if (res.url && editingMember) {
+        setEditingMember({ ...editingMember, avatarUrl: res.url });
+      }
+      showToast('Profile photo uploaded.');
+    } catch (err: any) {
+      console.error('Avatar upload failed:', err);
+      setAvatarError(err?.message || 'Failed to upload photo to storage.');
+    } finally {
+      setAvatarUploading(false);
+      if (avatarFileInputRef.current) {
+        avatarFileInputRef.current.value = '';
+      }
+    }
   };
 
   const handleSaveMemberSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingMember || !editingMember.name || !editingMember.roleTitle) return;
+    if (!editingMember || !editingMember.name.trim() || !editingMember.roleTitle.trim()) {
+      showToast('Please enter member name and role title.');
+      return;
+    }
+
+    if (editingMember.bio && editingMember.bio.length > 250) {
+      showToast('Bio cannot exceed 250 characters.');
+      return;
+    }
+
+    const start = editingMember.startYear || new Date().getFullYear();
+    const isActive = editingMember.isActive ?? true;
+    const computedAcademicYear = isActive
+      ? `${start} - Present`
+      : `${start} - ${editingMember.endYear || start}`;
+
+    const memberToSave: LeadershipMember = {
+      ...editingMember,
+      name: editingMember.name.trim(),
+      roleTitle: editingMember.roleTitle.trim(),
+      category: editingMember.category,
+      department: editingMember.department?.trim() || undefined,
+      startYear: start,
+      endYear: isActive ? undefined : (editingMember.endYear || start),
+      isActive,
+      academicYear: computedAcademicYear,
+      avatarUrl: editingMember.avatarUrl?.trim() || '',
+      bio: editingMember.bio?.trim() || '',
+      linkedinUrl: editingMember.linkedinUrl?.trim() || undefined,
+      githubUrl: editingMember.githubUrl?.trim() || undefined,
+      uipathProfileUrl: editingMember.uipathProfileUrl?.trim() || undefined
+    };
+
     if (onSaveLeadership) {
-      onSaveLeadership(editingMember);
+      onSaveLeadership(memberToSave);
       setIsMemberModalOpen(false);
-      showToast(`Team member "${editingMember.name}" saved.`);
+      showToast(`Team member "${memberToSave.name}" saved.`);
     }
   };
 
@@ -1640,62 +1762,142 @@ export const AdminPage: React.FC<Props> = ({
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                {leadership.map((mem) => (
-                  <div
-                    key={mem.id}
-                    style={{
-                      background: 'var(--bg-primary)',
-                      border: '1px solid var(--border-subtle)',
-                      borderRadius: 'var(--radius-md)',
-                      padding: '1.25rem',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center'
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                      {mem.avatarUrl && (
-                        <img
-                          src={mem.avatarUrl}
-                          alt={mem.name}
-                          style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover' }}
-                        />
-                      )}
-                      <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <strong style={{ fontSize: '1.05rem', color: 'var(--text-primary)' }}>{mem.name}</strong>
-                          <span className="badge badge-orange">{mem.category}</span>
+                {leadership.map((mem) => {
+                  const badge = getRosterBadgeConfig(mem.category);
+                  const active = isMemberActive(mem);
+                  const tenure = getMemberTenure(mem);
+                  return (
+                    <div
+                      key={mem.id}
+                      style={{
+                        background: 'var(--bg-primary)',
+                        border: '1px solid var(--border-subtle)',
+                        borderRadius: 'var(--radius-md)',
+                        padding: '1.25rem',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '1rem'
+                      }}
+                      className="sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <div style={{
+                          width: '52px',
+                          height: '52px',
+                          borderRadius: '50%',
+                          border: '2px solid rgba(250, 70, 22, 0.35)',
+                          overflow: 'hidden',
+                          backgroundColor: '#262626',
+                          flexShrink: 0,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#E5E5E5',
+                          fontWeight: 700,
+                          fontSize: '1.1rem'
+                        }}>
+                          {mem.avatarUrl ? (
+                            <img
+                              src={mem.avatarUrl}
+                              alt={mem.name}
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                              onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
+                            />
+                          ) : (
+                            <span>{getMemberInitials(mem.name)}</span>
+                          )}
                         </div>
-                        <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                          {mem.roleTitle} • Year: {mem.academicYear}
+                        <div>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                            <strong style={{ fontSize: '1.05rem', color: 'var(--text-primary)' }}>{mem.name}</strong>
+                            <span className={`text-[11px] px-2.5 py-0.5 rounded-full font-medium border ${badge.bg} ${badge.text} ${badge.border}`}>
+                              {mem.category}
+                            </span>
+                            {active ? (
+                              <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-emerald-950/70 text-emerald-400 border border-emerald-800/60">
+                                Active Lead
+                              </span>
+                            ) : (
+                              <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-neutral-800 text-neutral-400 border border-neutral-700">
+                                Alumni / Former
+                              </span>
+                            )}
+                          </div>
+                          <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem' }}>
+                            <span style={{ color: '#FA4616', fontWeight: 600 }}>{mem.roleTitle}</span>
+                            {mem.department && (
+                              <>
+                                <span>•</span>
+                                <span>{mem.department}</span>
+                              </>
+                            )}
+                            <span>•</span>
+                            <span style={{ fontFamily: 'monospace' }}>{tenure}</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                      <button
-                        onClick={() => handleOpenMemberModal(mem)}
-                        className="btn btn-secondary btn-sm"
-                      >
-                        <Edit3 size={14} /> Edit
-                      </button>
-                      {onDeleteLeadership && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', alignSelf: 'flex-end' }}>
+                        {mem.linkedinUrl && (
+                          <a
+                            href={mem.linkedinUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="btn btn-secondary btn-sm"
+                            style={{ padding: '0.4rem 0.6rem' }}
+                            title="LinkedIn Profile"
+                          >
+                            <Linkedin size={13} style={{ color: '#0A66C2' }} />
+                          </a>
+                        )}
+                        {mem.githubUrl && (
+                          <a
+                            href={mem.githubUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="btn btn-secondary btn-sm"
+                            style={{ padding: '0.4rem 0.6rem' }}
+                            title="GitHub Profile"
+                          >
+                            <Github size={13} />
+                          </a>
+                        )}
+                        {mem.uipathProfileUrl && (
+                          <a
+                            href={mem.uipathProfileUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="btn btn-secondary btn-sm"
+                            style={{ padding: '0.4rem 0.6rem' }}
+                            title="UiPath Profile"
+                          >
+                            <Globe size={13} style={{ color: '#FA4616' }} />
+                          </a>
+                        )}
                         <button
-                          onClick={() => {
-                            if (confirm(`Remove "${mem.name}" from team?`)) {
-                              onDeleteLeadership(mem.id);
-                              showToast('Member removed.');
-                            }
-                          }}
+                          onClick={() => handleOpenMemberModal(mem)}
                           className="btn btn-secondary btn-sm"
-                          style={{ color: '#EF4444' }}
                         >
-                          <Trash2 size={14} />
+                          <Edit3 size={14} /> Edit
                         </button>
-                      )}
+                        {onDeleteLeadership && (
+                          <button
+                            onClick={() => {
+                              if (confirm(`Remove "${mem.name}" from team?`)) {
+                                onDeleteLeadership(mem.id);
+                                showToast('Member removed.');
+                              }
+                            }}
+                            className="btn btn-secondary btn-sm"
+                            style={{ color: '#EF4444' }}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -2346,64 +2548,343 @@ export const AdminPage: React.FC<Props> = ({
         </div>
       )}
 
-      {/* MODAL: EDIT TEAM MEMBER */}
+      {/* MODAL: EDIT/CREATE TEAM MEMBER */}
       {isMemberModalOpen && editingMember && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 110, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-          <div style={{ width: '100%', maxWidth: '480px', background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 'var(--radius-md)', padding: '2rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-              <h3 style={{ fontSize: '1.2rem', color: '#FFF' }}>Team Member</h3>
-              <button onClick={() => setIsMemberModalOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={18} /></button>
-            </div>
-            <form onSubmit={handleSaveMemberSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>NAME *</label>
-                <input
-                  type="text"
-                  required
-                  value={editingMember.name}
-                  onChange={(e) => setEditingMember({ ...editingMember, name: e.target.value })}
-                  style={{ width: '100%', padding: '0.65rem', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', color: '#FFF', marginTop: '0.25rem' }}
-                />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+          <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-[#121214] border border-neutral-800 rounded-2xl shadow-2xl p-6 md:p-8 text-neutral-100">
+            {/* Close Button (✕) */}
+            <button
+              type="button"
+              onClick={() => setIsMemberModalOpen(false)}
+              className="absolute top-5 right-5 text-neutral-400 hover:text-white text-lg p-1 rounded-lg hover:bg-neutral-800 transition-colors"
+              aria-label="Close dialog"
+            >
+              ✕
+            </button>
+
+            {/* Modal Header */}
+            <div className="mb-6 pr-8">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="w-2 h-2 rounded-full bg-[#FA4616]"></span>
+                <h3 className="text-xl font-bold text-white tracking-tight">
+                  {editingMember.name ? `Edit Member: ${editingMember.name}` : 'Add Leadership Member'}
+                </h3>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+              <p className="text-xs text-neutral-400">
+                Configure member profile, tenure, department, leadership role, and social presence.
+              </p>
+            </div>
+
+            <form onSubmit={handleSaveMemberSubmit}>
+              {/* Section 1: Avatar & Profile Photo */}
+              <div className="p-4 rounded-xl bg-neutral-900/60 border border-neutral-850 mb-5">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">
+                  Avatar & Profile Photo
+                </label>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mt-2">
+                  {/* Circular Preview Image */}
+                  <div className="w-16 h-16 rounded-full object-cover border border-neutral-700 bg-neutral-800 flex-shrink-0 flex items-center justify-center text-neutral-300 font-bold text-lg overflow-hidden">
+                    {editingMember.avatarUrl ? (
+                      <img
+                        src={editingMember.avatarUrl}
+                        alt={editingMember.name || 'Avatar Preview'}
+                        className="w-full h-full object-cover rounded-full"
+                        onError={(e) => {
+                          (e.target as HTMLElement).style.display = 'none';
+                        }}
+                      />
+                    ) : (
+                      <span>{getMemberInitials(editingMember.name)}</span>
+                    )}
+                  </div>
+
+                  {/* Image URL input & Action buttons */}
+                  <div className="flex-1 w-full space-y-2.5">
+                    <input
+                      type="url"
+                      value={editingMember.avatarUrl || ''}
+                      onChange={(e) => setEditingMember({ ...editingMember, avatarUrl: e.target.value })}
+                      placeholder="Paste image URL (https://...)"
+                      className="w-full bg-neutral-900 border border-neutral-850 rounded-xl px-3.5 py-2.5 text-sm text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all"
+                    />
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      <input
+                        ref={avatarFileInputRef}
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml"
+                        className="hidden"
+                        onChange={handleAvatarFileChange}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => avatarFileInputRef.current?.click()}
+                        className="text-xs px-3 py-1.5 bg-neutral-850 hover:bg-neutral-800 border border-neutral-700 rounded-lg text-neutral-300 transition-colors cursor-pointer"
+                      >
+                        Choose File
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => avatarFileInputRef.current?.click()}
+                        disabled={avatarUploading}
+                        className="text-xs px-3 py-1.5 bg-neutral-850 hover:bg-neutral-800 border border-neutral-700 rounded-lg text-neutral-300 transition-colors cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                      >
+                        {avatarUploading ? (
+                          <>
+                            <Loader2 size={13} className="animate-spin text-orange-500" />
+                            <span>Uploading...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Upload size={13} className="text-orange-500" />
+                            <span>Upload</span>
+                          </>
+                        )}
+                      </button>
+
+                      {editingMember.avatarUrl && (
+                        <button
+                          type="button"
+                          onClick={() => setEditingMember({ ...editingMember, avatarUrl: '' })}
+                          className="text-xs px-3 py-1.5 bg-neutral-850 hover:bg-neutral-800 border border-neutral-700 rounded-lg text-neutral-300 hover:text-red-300 transition-colors cursor-pointer"
+                        >
+                          Remove
+                        </button>
+                      )}
+                    </div>
+
+                    {avatarError && (
+                      <p className="text-xs text-red-400">{avatarError}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 2: Name, Role & Department */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 my-4">
                 <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>ROLE TITLE</label>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">
+                    Full Name <span className="text-[#FA4616]">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editingMember.name}
+                    onChange={(e) => setEditingMember({ ...editingMember, name: e.target.value })}
+                    placeholder="e.g. Aditi Sharma"
+                    className="w-full bg-neutral-900 border border-neutral-850 rounded-xl px-3.5 py-2.5 text-sm text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">
+                    Role Title <span className="text-[#FA4616]">*</span>
+                  </label>
                   <input
                     type="text"
                     required
                     value={editingMember.roleTitle}
                     onChange={(e) => setEditingMember({ ...editingMember, roleTitle: e.target.value })}
-                    placeholder="Student Lead, Advisor..."
-                    style={{ width: '100%', padding: '0.65rem', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', color: '#FFF', marginTop: '0.25rem' }}
+                    placeholder="e.g. Chapter President, Technical Lead"
+                    className="w-full bg-neutral-900 border border-neutral-850 rounded-xl px-3.5 py-2.5 text-sm text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all"
                   />
                 </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>CATEGORY</label>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">
+                    Department / Batch / Roll No.
+                  </label>
+                  <input
+                    type="text"
+                    value={editingMember.department || ''}
+                    onChange={(e) => setEditingMember({ ...editingMember, department: e.target.value })}
+                    placeholder="e.g. CSE - 2024 Batch"
+                    className="w-full bg-neutral-900 border border-neutral-850 rounded-xl px-3.5 py-2.5 text-sm text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">
+                    Roster Category <span className="text-[#FA4616]">*</span>
+                  </label>
                   <select
                     value={editingMember.category}
-                    onChange={(e) => setEditingMember({ ...editingMember, category: e.target.value as any })}
-                    style={{ width: '100%', padding: '0.65rem', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', color: '#FFF', marginTop: '0.25rem' }}
+                    onChange={(e) => setEditingMember({ ...editingMember, category: e.target.value as RosterCategory })}
+                    className="w-full bg-neutral-900 border border-neutral-850 rounded-xl px-3.5 py-2.5 text-sm text-neutral-100 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all cursor-pointer"
                   >
-                    <option value="Current Core Lead">Current Core Lead</option>
-                    <option value="Faculty Advisor">Faculty Advisor</option>
-                    <option value="Technical Lead">Technical Lead</option>
-                    <option value="Community Lead">Community Lead</option>
-                    <option value="Alumni">Alumni</option>
+                    {ROSTER_CATEGORIES.map((cat) => (
+                      <option key={cat} value={cat} className="bg-neutral-900 text-neutral-100">
+                        {cat}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
-              <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>SHORT BIO</label>
+
+              {/* Section 3: Tenure Controls & Status Switch */}
+              <div className="p-4 rounded-xl bg-neutral-900/60 border border-neutral-850 space-y-3 mb-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-sm font-medium text-neutral-200">Currently Serving / Active Lead</span>
+                    <p className="text-xs text-neutral-400 mt-0.5">Toggle off for alumni, former leads, or completed tenures</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={editingMember.isActive ?? true}
+                      onChange={(e) => {
+                        const active = e.target.checked;
+                        setEditingMember({
+                          ...editingMember,
+                          isActive: active,
+                          endYear: active ? undefined : (editingMember.endYear || new Date().getFullYear())
+                        });
+                      }}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-neutral-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                  </label>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 border-t border-neutral-850">
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">
+                      Start Year
+                    </label>
+                    <input
+                      type="number"
+                      min="2015"
+                      max="2035"
+                      value={editingMember.startYear || new Date().getFullYear()}
+                      onChange={(e) => setEditingMember({ ...editingMember, startYear: parseInt(e.target.value) || new Date().getFullYear() })}
+                      className="w-full bg-neutral-900 border border-neutral-850 rounded-xl px-3.5 py-2.5 text-sm text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">
+                      End Year {editingMember.isActive ? '(Active)' : ''}
+                    </label>
+                    <input
+                      type="number"
+                      min="2015"
+                      max="2035"
+                      disabled={editingMember.isActive ?? true}
+                      value={editingMember.isActive ? '' : (editingMember.endYear || new Date().getFullYear())}
+                      onChange={(e) => setEditingMember({ ...editingMember, endYear: parseInt(e.target.value) || undefined })}
+                      placeholder={editingMember.isActive ? 'Present' : 'e.g. 2024'}
+                      className="w-full bg-neutral-900 border border-neutral-850 rounded-xl px-3.5 py-2.5 text-sm text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-1">
+                  <span className="text-xs text-neutral-400 font-medium">Tenure Preview:</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-mono bg-neutral-850 border border-neutral-800 px-2.5 py-1 rounded-md text-orange-400">
+                      {editingMember.startYear || new Date().getFullYear()} - {(editingMember.isActive ?? true) ? 'Present' : (editingMember.endYear || new Date().getFullYear())}
+                    </span>
+                    {(editingMember.isActive ?? true) ? (
+                      <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-950/70 text-emerald-400 border border-emerald-800/60">
+                        Active Lead
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-neutral-800 text-neutral-400 border border-neutral-700">
+                        Alumni / Former
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 4: Social Profiles */}
+              <div className="space-y-3 mb-4">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">
+                  Social & Professional Profiles
+                </label>
+
+                <div className="relative flex items-center">
+                  <div className="absolute left-3.5 pointer-events-none text-neutral-400 flex items-center">
+                    <Linkedin size={16} className="text-[#0A66C2]" />
+                  </div>
+                  <input
+                    type="url"
+                    value={editingMember.linkedinUrl || ''}
+                    onChange={(e) => setEditingMember({ ...editingMember, linkedinUrl: e.target.value })}
+                    placeholder="https://linkedin.com/in/username"
+                    className="w-full bg-neutral-900 border border-neutral-850 rounded-xl pl-10 pr-3.5 py-2.5 text-sm text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all"
+                  />
+                </div>
+
+                <div className="relative flex items-center">
+                  <div className="absolute left-3.5 pointer-events-none text-neutral-400 flex items-center">
+                    <Github size={16} className="text-neutral-300" />
+                  </div>
+                  <input
+                    type="url"
+                    value={editingMember.githubUrl || ''}
+                    onChange={(e) => setEditingMember({ ...editingMember, githubUrl: e.target.value })}
+                    placeholder="https://github.com/username"
+                    className="w-full bg-neutral-900 border border-neutral-850 rounded-xl pl-10 pr-3.5 py-2.5 text-sm text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all"
+                  />
+                </div>
+
+                <div className="relative flex items-center">
+                  <div className="absolute left-3.5 pointer-events-none text-neutral-400 flex items-center">
+                    <Globe size={16} className="text-[#FA4616]" />
+                  </div>
+                  <input
+                    type="url"
+                    value={editingMember.uipathProfileUrl || ''}
+                    onChange={(e) => setEditingMember({ ...editingMember, uipathProfileUrl: e.target.value })}
+                    placeholder="https://forum.uipath.com/u/username (UiPath Forum Profile)"
+                    className="w-full bg-neutral-900 border border-neutral-850 rounded-xl pl-10 pr-3.5 py-2.5 text-sm text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all"
+                  />
+                </div>
+              </div>
+
+              {/* Section 5: Short Bio */}
+              <div className="mb-2">
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400">
+                    Short Bio
+                  </label>
+                  <span className={`text-xs font-mono ${((editingMember.bio || '').length > 250) ? 'text-red-400 font-bold' : 'text-neutral-500'}`}>
+                    {(editingMember.bio || '').length}/250
+                  </span>
+                </div>
                 <textarea
-                  rows={2}
-                  value={editingMember.bio}
-                  onChange={(e) => setEditingMember({ ...editingMember, bio: e.target.value })}
-                  style={{ width: '100%', padding: '0.65rem', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', color: '#FFF', marginTop: '0.25rem' }}
+                  rows={3}
+                  maxLength={250}
+                  value={editingMember.bio || ''}
+                  onChange={(e) => {
+                    if (e.target.value.length <= 250) {
+                      setEditingMember({ ...editingMember, bio: e.target.value });
+                    }
+                  }}
+                  placeholder="Brief summary of contributions, interests, and community role (max 250 characters)..."
+                  className="w-full bg-neutral-900 border border-neutral-850 rounded-xl px-3.5 py-2.5 text-sm text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all resize-none"
                 />
               </div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem' }}>
-                <button type="button" onClick={() => setIsMemberModalOpen(false)} className="btn btn-secondary btn-sm">Cancel</button>
-                <button type="submit" className="btn btn-primary btn-sm">Save Member</button>
+
+              {/* Sticky Action Footer */}
+              <div className="pt-5 mt-6 border-t border-neutral-850 flex items-center justify-end gap-3 sticky bottom-0 bg-[#121214] pb-1 z-10">
+                <button
+                  type="button"
+                  onClick={() => setIsMemberModalOpen(false)}
+                  className="px-4 py-2 text-sm text-neutral-300 hover:text-white hover:bg-neutral-800 rounded-xl transition-all cursor-pointer border border-transparent"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 text-sm font-semibold bg-[#FA4616] hover:bg-[#ff5722] text-white rounded-xl shadow-lg shadow-orange-500/20 transition-all cursor-pointer flex items-center gap-2"
+                >
+                  <Save size={16} />
+                  <span>Save Member</span>
+                </button>
               </div>
             </form>
           </div>

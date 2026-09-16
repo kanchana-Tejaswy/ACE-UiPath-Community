@@ -4,6 +4,7 @@ import {
   Award, 
   Linkedin, 
   Github, 
+  Globe,
   BookOpen, 
   CheckCircle2, 
   ExternalLink,
@@ -12,6 +13,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { LeadershipMember, SiteSettings } from '../types';
+import { getRosterBadgeConfig, getMemberTenure, getMemberInitials, isMemberActive } from '../utils/rosterBadges';
 
 interface Props {
   leadership: LeadershipMember[];
@@ -116,84 +118,138 @@ export const AboutPage: React.FC<Props> = ({ leadership, settings, onNavigate })
         </div>
 
         <div className="grid-responsive-2">
-          {sortedLeadership.map((member) => (
-            <div
-              key={member.id}
-              className="glass-card"
-              style={{
-                padding: '2rem',
-                display: 'flex',
-                gap: '1.5rem',
-                alignItems: 'flex-start'
-              }}
-            >
-              <img
-                src={member.avatarUrl}
-                alt={member.name}
+          {sortedLeadership.map((member) => {
+            const badge = getRosterBadgeConfig(member.category);
+            const active = isMemberActive(member);
+            const tenure = getMemberTenure(member);
+
+            return (
+              <div
+                key={member.id}
+                className="glass-card"
                 style={{
+                  padding: '2rem',
+                  display: 'flex',
+                  gap: '1.5rem',
+                  alignItems: 'flex-start'
+                }}
+              >
+                <div style={{
                   width: '72px',
                   height: '72px',
                   borderRadius: '16px',
-                  objectFit: 'cover',
-                  border: '1px solid var(--border-subtle)',
-                  flexShrink: 0
-                }}
-              />
-
-              <div style={{ flex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-                  <h3 style={{ fontSize: '1.2rem', color: 'var(--text-primary)' }}>{member.name}</h3>
-                  <span className="badge badge-slate" style={{ fontSize: '0.65rem' }}>
-                    {member.academicYear}
-                  </span>
+                  border: '2px solid rgba(250, 70, 22, 0.35)',
+                  overflow: 'hidden',
+                  backgroundColor: '#262626',
+                  flexShrink: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#E5E5E5',
+                  fontWeight: 700,
+                  fontSize: '1.25rem'
+                }}>
+                  {member.avatarUrl ? (
+                    <img
+                      src={member.avatarUrl}
+                      alt={member.name}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
+                    />
+                  ) : (
+                    <span>{getMemberInitials(member.name)}</span>
+                  )}
                 </div>
 
-                <div style={{ fontSize: '0.85rem', color: 'var(--uipath-orange)', fontWeight: 600, marginBottom: '0.5rem' }}>
-                  {member.roleTitle}
-                </div>
-
-                <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '1rem' }}>
-                  {member.bio}
-                </p>
-
-                {/* Key Contributions */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', marginBottom: '1rem' }}>
-                  {member.contributions.map((c, cIdx) => (
-                    <div key={cIdx} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.775rem', color: 'var(--text-muted)' }}>
-                      <CheckCircle2 size={13} style={{ color: '#10B981' }} />
-                      <span>{c}</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.35rem' }}>
+                    <h3 style={{ fontSize: '1.2rem', color: 'var(--text-primary)', fontWeight: 700 }}>{member.name}</h3>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium border ${badge.bg} ${badge.text} ${badge.border}`}>
+                        {member.category}
+                      </span>
+                      {active ? (
+                        <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-emerald-950/80 text-emerald-400 border border-emerald-800/60">
+                          Active
+                        </span>
+                      ) : (
+                        <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-neutral-800 text-neutral-400 border border-neutral-700">
+                          Alumni
+                        </span>
+                      )}
                     </div>
-                  ))}
-                </div>
+                  </div>
 
-                {/* Social Links */}
-                <div style={{ display: 'flex', gap: '0.6rem' }}>
-                  {member.linkedinUrl && (
-                    <a
-                      href={member.linkedinUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="btn btn-secondary btn-sm"
-                      style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem' }}
-                    >
-                      <Linkedin size={13} /> LinkedIn
-                    </a>
+                  <div style={{ fontSize: '0.85rem', color: 'var(--uipath-orange)', fontWeight: 600, marginBottom: '0.5rem', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.4rem' }}>
+                    <span>{member.roleTitle}</span>
+                    {member.department && (
+                      <>
+                        <span style={{ color: 'var(--text-muted)' }}>•</span>
+                        <span style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>{member.department}</span>
+                      </>
+                    )}
+                    <span style={{ color: 'var(--text-muted)' }}>•</span>
+                    <span style={{ color: 'var(--text-muted)', fontFamily: 'monospace', fontWeight: 500 }}>{tenure}</span>
+                  </div>
+
+                  {member.bio && (
+                    <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '1rem' }}>
+                      {member.bio}
+                    </p>
                   )}
-                  {member.githubUrl && (
-                    <a
-                      href={member.githubUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="btn btn-secondary btn-sm"
-                      style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem' }}
-                    >
-                      <Github size={13} /> GitHub
-                    </a>
+
+                  {/* Key Contributions */}
+                  {member.contributions && member.contributions.length > 0 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', marginBottom: '1rem' }}>
+                      {member.contributions.map((c, cIdx) => (
+                        <div key={cIdx} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.775rem', color: 'var(--text-muted)' }}>
+                          <CheckCircle2 size={13} style={{ color: '#10B981' }} />
+                          <span>{c}</span>
+                        </div>
+                      ))}
+                    </div>
                   )}
+
+                  {/* Social Links */}
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.6rem' }}>
+                    {member.linkedinUrl && (
+                      <a
+                        href={member.linkedinUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="btn btn-secondary btn-sm"
+                        style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem' }}
+                      >
+                        <Linkedin size={13} style={{ color: '#0A66C2' }} /> LinkedIn
+                      </a>
+                    )}
+                    {member.githubUrl && (
+                      <a
+                        href={member.githubUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="btn btn-secondary btn-sm"
+                        style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem' }}
+                      >
+                        <Github size={13} /> GitHub
+                      </a>
+                    )}
+                    {member.uipathProfileUrl && (
+                      <a
+                        href={member.uipathProfileUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="btn btn-secondary btn-sm"
+                        style={{ padding: '0.35rem 0.65rem', fontSize: '0.75rem' }}
+                      >
+                        <Globe size={13} style={{ color: '#FA4616' }} /> UiPath Forum
+                      </a>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>

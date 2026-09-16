@@ -117,8 +117,13 @@ export interface DatabaseLeadershipRow {
   category: string;
   academic_year: string;
   avatar_url: string;
+  start_year?: string;
+  end_year?: string;
+  is_active?: boolean;
+  department?: string;
   linkedin_url?: string;
   github_url?: string;
+  uipath_profile_url?: string;
   bio: string;
   contributions?: string[];
   order_index: number;
