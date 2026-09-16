@@ -90,8 +90,8 @@ interface Props {
   onDeleteChallenge?: (id: string) => void;
   onSaveResource: (res: CommunityResource) => void;
   onDeleteResource: (id: string) => void;
-  onSaveLeadership?: (member: LeadershipMember) => void;
-  onDeleteLeadership?: (id: string) => void;
+  onSaveLeadership?: (member: LeadershipMember) => Promise<{ success: boolean; error?: string }> | Promise<boolean> | void;
+  onDeleteLeadership?: (id: string) => Promise<{ success: boolean; error?: string }> | Promise<boolean> | void;
   onSaveLearningPath?: (path: LearningPath) => void;
   onDeleteLearningPath?: (id: string) => void;
   onSaveStatistic?: (stat: CommunityStatistic) => void;
@@ -460,6 +460,7 @@ export const AdminPage: React.FC<Props> = ({
   // 7. TEAM / LEADERSHIP STATE & MODAL
   const [editingMember, setEditingMember] = useState<LeadershipMember | null>(null);
   const [isMemberModalOpen, setIsMemberModalOpen] = useState(false);
+  const [isSavingMember, setIsSavingMember] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [avatarError, setAvatarError] = useState<string | null>(null);
   const avatarFileInputRef = useRef<HTMLInputElement>(null);
@@ -549,7 +550,7 @@ export const AdminPage: React.FC<Props> = ({
     }
   };
 
-  const handleSaveMemberSubmit = (e: React.FormEvent) => {
+  const handleSaveMemberSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingMember || !editingMember.name.trim() || !editingMember.roleTitle.trim()) {
       showToast('Please enter member name and role title.');
@@ -592,9 +593,20 @@ export const AdminPage: React.FC<Props> = ({
     };
 
     if (onSaveLeadership) {
-      onSaveLeadership(memberToSave);
-      setIsMemberModalOpen(false);
-      showToast(`Team member "${memberToSave.name}" saved.`);
+      setIsSavingMember(true);
+      try {
+        const res = await onSaveLeadership(memberToSave);
+        if (res && typeof res === 'object' && 'success' in res && !res.success) {
+          showToast(res.error || 'Failed to save team member to Supabase.');
+          return;
+        }
+        setIsMemberModalOpen(false);
+        showToast(`Team member "${memberToSave.name}" saved.`);
+      } catch (err: any) {
+        showToast(err?.message || 'Error occurred while saving team member.');
+      } finally {
+        setIsSavingMember(false);
+      }
     }
   };
 
@@ -1893,9 +1905,13 @@ export const AdminPage: React.FC<Props> = ({
                         </button>
                         {onDeleteLeadership && (
                           <button
-                            onClick={() => {
+                            onClick={async () => {
                               if (confirm(`Remove "${mem.name}" from team?`)) {
-                                onDeleteLeadership(mem.id);
+                                const res = await onDeleteLeadership(mem.id);
+                                if (res && typeof res === 'object' && 'success' in res && !res.success) {
+                                  showToast(res.error || 'Failed to remove team member.');
+                                  return;
+                                }
                                 showToast('Member removed.');
                               }
                             }}
@@ -2922,10 +2938,11 @@ export const AdminPage: React.FC<Props> = ({
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 text-sm font-semibold bg-[#FA4616] hover:bg-[#ff5722] text-white rounded-xl shadow-lg shadow-orange-500/20 transition-all cursor-pointer flex items-center gap-2"
+                  disabled={isSavingMember || avatarUploading}
+                  className="px-5 py-2 text-sm font-semibold bg-[#FA4616] hover:bg-[#ff5722] text-white rounded-xl shadow-lg shadow-orange-500/20 transition-all cursor-pointer flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Save size={16} />
-                  <span>Save Member</span>
+                  <span>{isSavingMember ? 'Saving...' : 'Save Member'}</span>
                 </button>
               </div>
             </form>

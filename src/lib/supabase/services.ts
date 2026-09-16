@@ -369,8 +369,8 @@ export async function fetchLeadershipFromSupabase(): Promise<LeadershipMember[] 
   }
 }
 
-export async function saveLeadershipToSupabase(member: LeadershipMember): Promise<boolean> {
-  if (!isSupabaseConfigured()) return false;
+export async function saveLeadershipToSupabase(member: LeadershipMember): Promise<{ success: boolean; error?: string }> {
+  if (!isSupabaseConfigured()) return { success: true };
   try {
     const row = mapLeadershipEntityToRow(member);
     let { error } = await supabase.from('leadership').upsert(row);
@@ -392,24 +392,28 @@ export async function saveLeadershipToSupabase(member: LeadershipMember): Promis
       error = retry.error;
     }
     if (error) {
-      console.warn('Supabase leadership save warning:', error);
-      return false;
+      console.error('Supabase leadership save failed:', error);
+      return { success: false, error: error.message || 'Database rejected the leadership update.' };
     }
-    return true;
-  } catch (err) {
+    return { success: true };
+  } catch (err: any) {
     console.error('Failed to save leadership to Supabase:', err);
-    return false;
+    return { success: false, error: err?.message || 'Network error occurred while saving leadership.' };
   }
 }
 
-export async function deleteLeadershipFromSupabase(id: string): Promise<boolean> {
-  if (!isSupabaseConfigured()) return false;
+export async function deleteLeadershipFromSupabase(id: string): Promise<{ success: boolean; error?: string }> {
+  if (!isSupabaseConfigured()) return { success: true };
   try {
     const { error } = await supabase.from('leadership').delete().eq('id', id);
-    return !error;
-  } catch (err) {
+    if (error) {
+      console.error('Supabase leadership delete failed:', error);
+      return { success: false, error: error.message || 'Database rejected the leadership deletion.' };
+    }
+    return { success: true };
+  } catch (err: any) {
     console.error('Failed to delete leadership from Supabase:', err);
-    return false;
+    return { success: false, error: err?.message || 'Network error occurred while deleting leadership.' };
   }
 }
 

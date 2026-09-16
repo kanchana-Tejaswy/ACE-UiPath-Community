@@ -306,25 +306,23 @@ export const supabaseAdapter: DataAdapter = {
   },
 
   saveLeadership: async (member: LeadershipMember): Promise<LeadershipMember[]> => {
-    const local = await localAdapter.saveLeadership(member);
-    if (!isSupabaseConfigured()) return local;
-    try {
-      await saveLeadershipToSupabase(member);
-    } catch (e) {
-      console.warn('Supabase leadership save fallback to local:', e);
+    if (isSupabaseConfigured()) {
+      const res = await saveLeadershipToSupabase(member);
+      if (!res.success) {
+        throw new Error(res.error || 'Failed to save team member to Supabase database.');
+      }
     }
-    return local;
+    return localAdapter.saveLeadership(member);
   },
 
   deleteLeadership: async (id: string): Promise<LeadershipMember[]> => {
-    const local = await localAdapter.deleteLeadership(id);
-    if (!isSupabaseConfigured()) return local;
-    try {
-      await deleteLeadershipFromSupabase(id);
-    } catch (e) {
-      console.warn('Supabase leadership delete fallback to local:', e);
+    if (isSupabaseConfigured()) {
+      const res = await deleteLeadershipFromSupabase(id);
+      if (!res.success) {
+        throw new Error(res.error || 'Failed to delete team member from Supabase database.');
+      }
     }
-    return local;
+    return localAdapter.deleteLeadership(id);
   },
 
   // ==================================================================

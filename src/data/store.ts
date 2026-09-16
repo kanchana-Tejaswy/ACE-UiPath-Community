@@ -809,56 +809,66 @@ export function useCommunityStore() {
     updateSettings({ timelineMilestones: updatedMilestones });
   };
 
-  const saveLeadership = (member: LeadershipMember) => {
+  const saveLeadership = async (member: LeadershipMember): Promise<{ success: boolean; error?: string }> => {
     if (!currentUser || !hasPermission(currentUser.role, 'Admin')) {
-      alert('Access Restricted: Administrator role required to manage team leadership.');
-      return;
+      const msg = 'Access Restricted: Administrator role required to manage team leadership.';
+      alert(msg);
+      return { success: false, error: msg };
     }
-    const all = localDatabase.getLeadership();
-    const idx = all.findIndex((m) => m.id === member.id);
-    let updated: LeadershipMember[];
-    if (idx >= 0) {
-      updated = [...all];
-      updated[idx] = member;
-    } else {
-      updated = [...all, member];
+    try {
+      await activeAdapter.saveLeadership(member);
+      const all = localDatabase.getLeadership();
+      const idx = all.findIndex((m) => m.id === member.id);
+      let updated: LeadershipMember[];
+      if (idx >= 0) {
+        updated = [...all];
+        updated[idx] = member;
+      } else {
+        updated = [...all, member];
+      }
+      setLeadership(updated);
+      localDatabase.saveLeadership(updated);
+      localDatabase.addAuditLog({
+        action: 'ADMIN_SAVED_LEADERSHIP',
+        entityType: 'LEADERSHIP',
+        entityId: member.id,
+        description: `Saved leadership member "${member.name}" (${member.roleTitle})`,
+        performedBy: currentUser.name
+      });
+      notifyDbChange();
+      return { success: true };
+    } catch (err: any) {
+      console.error('Save leadership failed:', err);
+      return { success: false, error: err?.message || 'Failed to save team member.' };
     }
-    setLeadership(updated);
-    localDatabase.saveLeadership(updated);
-    if (activeAdapter.isCloudConnected()) {
-      activeAdapter.saveLeadership(member).catch((e) => console.warn('Supabase saveLeadership warning:', e));
-    }
-    localDatabase.addAuditLog({
-      action: 'ADMIN_SAVED_LEADERSHIP',
-      entityType: 'LEADERSHIP',
-      entityId: member.id,
-      description: `Saved leadership member "${member.name}" (${member.roleTitle})`,
-      performedBy: currentUser.name
-    });
-    notifyDbChange();
   };
 
-  const deleteLeadership = (id: string) => {
+  const deleteLeadership = async (id: string): Promise<{ success: boolean; error?: string }> => {
     if (!currentUser || !hasPermission(currentUser.role, 'Admin')) {
-      alert('Access Restricted: Administrator role required to manage team leadership.');
-      return;
+      const msg = 'Access Restricted: Administrator role required to manage team leadership.';
+      alert(msg);
+      return { success: false, error: msg };
     }
-    const all = localDatabase.getLeadership();
-    const target = all.find((m) => m.id === id);
-    const updated = all.filter((m) => m.id !== id);
-    setLeadership(updated);
-    localDatabase.saveLeadership(updated);
-    if (activeAdapter.isCloudConnected()) {
-      activeAdapter.deleteLeadership(id).catch((e) => console.warn('Supabase deleteLeadership warning:', e));
+    try {
+      await activeAdapter.deleteLeadership(id);
+      const all = localDatabase.getLeadership();
+      const target = all.find((m) => m.id === id);
+      const updated = all.filter((m) => m.id !== id);
+      setLeadership(updated);
+      localDatabase.saveLeadership(updated);
+      localDatabase.addAuditLog({
+        action: 'ADMIN_DELETED_LEADERSHIP',
+        entityType: 'LEADERSHIP',
+        entityId: id,
+        description: `Deleted leadership member "${target?.name || id}"`,
+        performedBy: currentUser.name
+      });
+      notifyDbChange();
+      return { success: true };
+    } catch (err: any) {
+      console.error('Delete leadership failed:', err);
+      return { success: false, error: err?.message || 'Failed to delete team member.' };
     }
-    localDatabase.addAuditLog({
-      action: 'ADMIN_DELETED_LEADERSHIP',
-      entityType: 'LEADERSHIP',
-      entityId: id,
-      description: `Deleted leadership member "${target?.name || id}"`,
-      performedBy: currentUser.name
-    });
-    notifyDbChange();
   };
 
   const saveLearningPath = (path: LearningPath) => {
