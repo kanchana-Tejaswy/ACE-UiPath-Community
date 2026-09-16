@@ -999,10 +999,10 @@ export const HomePage: React.FC<Props> = ({
             <div>
               <div className="section-tag">COMMUNITY HISTORY & PURPOSE</div>
               <h2 className="section-title">
-                {settings.communityStoryHeading || 'Building an Engineering Legacy in Robotic Automation'}
+                {settings.communityStoryHeading || 'Built by Students, Powered by UiPath'}
               </h2>
               <p style={{ fontSize: '1rem', color: 'var(--text-secondary)', lineHeight: 1.7, marginBottom: '1.25rem' }}>
-                {settings.communityStoryText || 'Founded under the UiPath Academic Alliance at ACE Engineering College (Ghatkesar, Hyderabad), our community bridges the gap between academic theory and industry automation practice. Guided by dedicated faculty and student champions, we conduct weekly hands-on labs, open-source bot hackathons, and enterprise certification bootcamps.'}
+                {settings.communityStoryText || 'Founded in 2022 under the department of CSE & IT, the ACE UiPath Community started as a group of 15 students eager to automate routine campus processes. Today, it stands as one of the premier student automation hubs in the region.'}
               </p>
               <div style={{
                 padding: '1rem 1.25rem',
@@ -1013,7 +1013,7 @@ export const HomePage: React.FC<Props> = ({
                 fontSize: '0.9rem',
                 color: '#FED7AA'
               }}>
-                {settings.communityStoryHighlight || 'Over 950 students trained and 140+ functional automations built for campus and enterprise use cases.'}
+                {settings.communityStoryHighlight || 'Recognized by UiPath Academic Alliance with 450+ students trained and 38 software bots deployed across college administration.'}
               </div>
 
               <button
