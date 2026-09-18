@@ -9,6 +9,7 @@ import {
   ActivityDraft,
   Article
 } from '../../types';
+import { normalizeBannerAspectRatio } from '../../utils/bannerRatio';
 import { 
   DatabaseActivityRow, 
   DatabaseProjectRow, 
@@ -212,15 +213,26 @@ export function mapChallengeRowToEntity(row: DatabaseChallengeRow): Challenge {
     title: row.title,
     theme: row.theme,
     category: row.category as any,
-    status: row.status as any,
+    status: (row.status as any) || 'Active',
     startDate: row.start_date,
     endDate: row.end_date,
+    startTime: row.start_time,
+    endTime: row.end_time,
+    registrationDeadline: row.registration_deadline,
+    registrationDeadlineTime: row.registration_deadline_time,
+    registrationUrl: row.registration_url,
+    communityChannelUrl: row.community_channel_url,
+    bannerImage: row.banner_image_url,
+    isFeatured: Boolean(row.is_featured),
     prizePool: row.prize_pool,
     descriptionMd: row.description_md,
     rulesMd: row.rules_md,
     evaluationCriteria: row.evaluation_criteria || [],
     starterDatasetUrl: row.starter_dataset_url,
     submissionCount: row.submission_count || 0,
+    recordings: row.recordings || [],
+    useCases: row.use_cases || [],
+    referenceMaterials: row.reference_materials || [],
     winners: row.winners || []
   };
 }
@@ -235,12 +247,23 @@ export function mapChallengeEntityToRow(chal: Challenge): DatabaseChallengeRow {
     status: chal.status,
     start_date: chal.startDate,
     end_date: chal.endDate,
+    start_time: chal.startTime,
+    end_time: chal.endTime,
+    registration_deadline: chal.registrationDeadline,
+    registration_deadline_time: chal.registrationDeadlineTime,
+    registration_url: chal.registrationUrl,
+    community_channel_url: chal.communityChannelUrl,
+    banner_image_url: chal.bannerImage,
+    is_featured: chal.isFeatured,
     prize_pool: chal.prizePool,
     description_md: chal.descriptionMd,
     rules_md: chal.rulesMd,
     evaluation_criteria: chal.evaluationCriteria,
     starter_dataset_url: chal.starterDatasetUrl,
     submission_count: chal.submissionCount,
+    recordings: chal.recordings,
+    use_cases: chal.useCases,
+    reference_materials: chal.referenceMaterials,
     winners: chal.winners
   };
 }
@@ -385,6 +408,7 @@ export function mapActivityDraftEntityToRow(draft: ActivityDraft): DatabaseActiv
 
 // Articles & Technical Write-ups
 export function mapArticleRowToEntity(row: DatabaseArticleRow): Article {
+  const normalizedRatio = normalizeBannerAspectRatio(row.aspect_ratio);
   return {
     id: row.id,
     slug: row.slug,
@@ -392,6 +416,12 @@ export function mapArticleRowToEntity(row: DatabaseArticleRow): Article {
     excerpt: row.excerpt,
     content: row.content,
     coverImage: row.cover_image,
+    coverImageUrl: row.cover_image,
+    aspectRatio: normalizedRatio,
+    coverBanner: {
+      url: row.cover_image,
+      aspectRatio: normalizedRatio
+    },
     category: row.category as any,
     authorName: row.author_name,
     authorRole: row.author_role,
@@ -408,13 +438,15 @@ export function mapArticleRowToEntity(row: DatabaseArticleRow): Article {
 }
 
 export function mapArticleEntityToRow(article: Article): DatabaseArticleRow {
+  const ratio = normalizeBannerAspectRatio(article.coverBanner?.aspectRatio || article.aspectRatio);
   return {
     id: article.id,
     slug: article.slug,
     title: article.title,
     excerpt: article.excerpt,
     content: article.content,
-    cover_image: article.coverImage,
+    cover_image: article.coverBanner?.url || article.coverImageUrl || article.coverImage,
+    aspect_ratio: ratio,
     category: article.category,
     author_name: article.authorName,
     author_role: article.authorRole,

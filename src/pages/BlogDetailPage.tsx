@@ -15,6 +15,7 @@ import {
   Newspaper
 } from 'lucide-react';
 import { Article, User } from '../types';
+import { normalizeBannerAspectRatio } from '../utils/bannerRatio';
 import { TechnicalMarkdownRenderer } from '../components/TechnicalMarkdownRenderer';
 
 interface Props {
@@ -377,25 +378,53 @@ export const BlogDetailPage: React.FC<Props> = ({
       </header>
 
       {/* COVER BANNER */}
-      {(article.coverImageUrl || article.coverImage) && (
-        <div style={{ maxWidth: '860px', margin: '0 auto 2.5rem auto', padding: '0 1.5rem' }}>
-          <div
-            style={{
-              position: 'relative',
-              borderRadius: '1rem',
-              overflow: 'hidden',
-              boxShadow: '0 16px 36px rgba(0,0,0,0.5)',
-              border: '1px solid rgba(255, 255, 255, 0.08)'
-            }}
-          >
-            <img
-              src={article.coverImageUrl || article.coverImage}
-              alt={article.title}
-              style={{ width: '100%', maxHeight: '420px', objectFit: 'cover', display: 'block' }}
-            />
+      {(article.coverBanner?.url || article.coverImageUrl || article.coverImage) && (() => {
+        const effectiveRatio = normalizeBannerAspectRatio(article.coverBanner?.aspectRatio || article.aspectRatio);
+        return (
+          <div style={{ maxWidth: '860px', margin: '0 auto 2.5rem auto', padding: '0 1.5rem' }}>
+            <div
+              className={`relative overflow-hidden rounded-2xl border border-white/10 bg-[#0F1117] shadow-2xl transition-all duration-300 ${
+                effectiveRatio === 'default'
+                  ? 'aspect-[4/1] min-h-[140px]'
+                  : effectiveRatio === '21/9'
+                  ? 'aspect-[21/9]'
+                  : effectiveRatio === '16/9'
+                  ? 'aspect-video'
+                  : 'h-auto max-h-[420px]'
+              }`}
+              style={{
+                position: 'relative',
+                borderRadius: '1rem',
+                overflow: 'hidden',
+                boxShadow: '0 16px 36px rgba(0,0,0,0.5)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                background: '#0F1117',
+                ...(effectiveRatio === 'default'
+                  ? { aspectRatio: '4 / 1', minHeight: '140px', width: '100%' }
+                  : effectiveRatio === '21/9'
+                  ? { aspectRatio: '21 / 9', width: '100%' }
+                  : effectiveRatio === '16/9'
+                  ? { aspectRatio: '16 / 9', width: '100%' }
+                  : { height: 'auto', maxHeight: '420px', width: '100%' })
+              }}
+            >
+              <img
+                src={article.coverBanner?.url || article.coverImageUrl || article.coverImage}
+                alt={article.title}
+                className={effectiveRatio === 'auto' ? 'w-full h-auto max-h-[420px] object-contain' : 'w-full h-full object-cover'}
+                style={{
+                  width: '100%',
+                  height: effectiveRatio === 'auto' ? 'auto' : '100%',
+                  maxHeight: effectiveRatio === 'auto' ? '420px' : undefined,
+                  objectFit: effectiveRatio === 'auto' ? 'contain' : 'cover',
+                  display: 'block',
+                  margin: effectiveRatio === 'auto' ? '0 auto' : undefined
+                }}
+              />
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* ARTICLE MAIN CONTENT */}
       <main

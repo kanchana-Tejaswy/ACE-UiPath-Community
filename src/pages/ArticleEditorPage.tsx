@@ -27,7 +27,15 @@ import {
   CheckCircle2,
   Share2
 } from 'lucide-react';
-import { Article, ArticleCategory, ArticleStatus, User, ARTICLE_CATEGORIES } from '../types';
+import { Article, ArticleCategory, ArticleStatus, User, ARTICLE_CATEGORIES, BannerAspectRatio } from '../types';
+import { 
+  normalizeBannerAspectRatio, 
+  BANNER_ASPECT_RATIO_OPTIONS, 
+  getBannerContainerStyle, 
+  getBannerImageStyle,
+  getBannerContainerClasses,
+  getBannerImageClasses
+} from '../utils/bannerRatio';
 import { TechnicalMarkdownRenderer } from '../components/TechnicalMarkdownRenderer';
 
 interface Props {
@@ -108,6 +116,9 @@ export const ArticleEditorPage: React.FC<Props> = ({
   );
   const [authorAvatar, setAuthorAvatar] = useState(existingArticle?.authorAvatar || currentUser.avatarUrl || '');
   const [coverImageUrl, setCoverImageUrl] = useState(existingArticle?.coverImageUrl || PRESET_COVERS[0].url);
+  const [aspectRatio, setAspectRatio] = useState<BannerAspectRatio>(
+    normalizeBannerAspectRatio(existingArticle?.coverBanner?.aspectRatio || existingArticle?.aspectRatio)
+  );
   const [excerpt, setExcerpt] = useState(existingArticle?.excerpt || '');
   const [content, setContent] = useState(
     existingArticle?.content ||
@@ -134,6 +145,7 @@ export const ArticleEditorPage: React.FC<Props> = ({
       setAuthorRole(existingArticle.authorRole || (currentUser.role === 'ADMIN' ? 'Community Lead & Architect' : 'ACE Core Team Member'));
       setAuthorAvatar(existingArticle.authorAvatar || currentUser.avatarUrl || '');
       setCoverImageUrl(existingArticle.coverImageUrl || existingArticle.coverImage || PRESET_COVERS[0].url);
+      setAspectRatio(normalizeBannerAspectRatio(existingArticle.coverBanner?.aspectRatio || existingArticle.aspectRatio));
       setExcerpt(existingArticle.excerpt || '');
       setContent(existingArticle.content || DEFAULT_MARKDOWN_TEMPLATE);
       setTags(existingArticle.tags || ['UiPath', 'RPA', 'Automation']);
@@ -148,6 +160,7 @@ export const ArticleEditorPage: React.FC<Props> = ({
       setAuthorRole(currentUser.role === 'ADMIN' ? 'Community Lead & Architect' : 'ACE Core Team Member');
       setAuthorAvatar(currentUser.avatarUrl || '');
       setCoverImageUrl(PRESET_COVERS[0].url);
+      setAspectRatio('default');
       setExcerpt('');
       setContent(DEFAULT_MARKDOWN_TEMPLATE);
       setTags(['UiPath', 'RPA', 'Automation']);
@@ -311,6 +324,11 @@ export const ArticleEditorPage: React.FC<Props> = ({
       content: content.trim(),
       coverImage: coverImageUrl || PRESET_COVERS[0].url,
       coverImageUrl: coverImageUrl || PRESET_COVERS[0].url,
+      aspectRatio,
+      coverBanner: {
+        url: coverImageUrl || PRESET_COVERS[0].url,
+        aspectRatio
+      },
       category,
       tags,
       authorName: authorName.trim() || currentUser.name,
@@ -877,21 +895,122 @@ export const ArticleEditorPage: React.FC<Props> = ({
               </div>
             )}
 
-            {/* Cover Banner Preview */}
+            {/* Aspect Ratio Control */}
             <div
               style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '0.6rem',
+                padding: '0.5rem 0.75rem',
+                background: 'rgba(255, 255, 255, 0.03)',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: '0.5rem',
+                marginBottom: '0.75rem'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  Aspect Ratio:
+                </span>
+                <div style={{ display: 'inline-flex', background: 'rgba(0, 0, 0, 0.45)', borderRadius: '0.375rem', padding: '2px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                  {BANNER_ASPECT_RATIO_OPTIONS.map((opt) => {
+                    const isActive = aspectRatio === opt.id;
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => {
+                          setAspectRatio(opt.id);
+                          setIsDirty(true);
+                        }}
+                        title={opt.description}
+                        style={{
+                          padding: '0.25rem 0.65rem',
+                          borderRadius: '0.25rem',
+                          fontSize: '0.72rem',
+                          fontWeight: isActive ? 700 : 500,
+                          color: isActive ? '#FFFFFF' : 'var(--text-secondary)',
+                          background: isActive ? '#FA4616' : 'transparent',
+                          border: 'none',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.3rem',
+                          boxShadow: isActive ? '0 1px 4px rgba(250, 70, 22, 0.4)' : 'none'
+                        }}
+                      >
+                        <span>{opt.label}</span>
+                        <span style={{ opacity: isActive ? 0.9 : 0.6, fontSize: '0.65rem' }}>({opt.ratioBadge})</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {aspectRatio !== 'default' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAspectRatio('default');
+                    setIsDirty(true);
+                  }}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: '#FA4616',
+                    fontSize: '0.72rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    textDecoration: 'underline',
+                    padding: '0.2rem 0.4rem'
+                  }}
+                >
+                  Reset to Default
+                </button>
+              )}
+            </div>
+
+            {/* Cover Banner Dynamic Preview */}
+            <div
+              className={`relative overflow-hidden rounded-xl border border-white/10 bg-[#0F1117] transition-all duration-300 ${
+                aspectRatio === 'default'
+                  ? 'aspect-[4/1] min-h-[140px]'
+                  : aspectRatio === '21/9'
+                  ? 'aspect-[21/9]'
+                  : aspectRatio === '16/9'
+                  ? 'aspect-video'
+                  : 'h-auto max-h-[420px]'
+              }`}
+              style={{
                 position: 'relative',
-                height: '180px',
                 borderRadius: '0.75rem',
                 overflow: 'hidden',
                 border: '1px solid var(--border-subtle)',
-                background: '#0F1117'
+                background: '#0F1117',
+                ...(aspectRatio === 'default'
+                  ? { aspectRatio: '4 / 1', minHeight: '140px', width: '100%' }
+                  : aspectRatio === '21/9'
+                  ? { aspectRatio: '21 / 9', width: '100%' }
+                  : aspectRatio === '16/9'
+                  ? { aspectRatio: '16 / 9', width: '100%' }
+                  : { height: 'auto', maxHeight: '420px', width: '100%' })
               }}
             >
               <img
                 src={coverImageUrl}
                 alt="Article Cover"
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                className={aspectRatio === 'auto' ? 'w-full h-auto max-h-[420px] object-contain' : 'w-full h-full object-cover'}
+                style={{
+                  width: '100%',
+                  height: aspectRatio === 'auto' ? 'auto' : '100%',
+                  maxHeight: aspectRatio === 'auto' ? '420px' : undefined,
+                  objectFit: aspectRatio === 'auto' ? 'contain' : 'cover',
+                  display: 'block',
+                  margin: aspectRatio === 'auto' ? '0 auto' : undefined
+                }}
                 onError={() => setCoverImageUrl(PRESET_COVERS[0].url)}
               />
               <div
@@ -901,10 +1020,12 @@ export const ArticleEditorPage: React.FC<Props> = ({
                   background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 60%)',
                   display: 'flex',
                   alignItems: 'flex-end',
-                  padding: '1rem'
+                  justifyContent: 'space-between',
+                  padding: '0.75rem 1rem',
+                  pointerEvents: 'none'
                 }}
               >
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', gap: '0.5rem', pointerEvents: 'auto' }}>
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
@@ -940,6 +1061,9 @@ export const ArticleEditorPage: React.FC<Props> = ({
                   >
                     Reset
                   </button>
+                </div>
+                <div style={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.65)', fontWeight: 600, background: 'rgba(0,0,0,0.4)', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>
+                  Ratio: {aspectRatio}
                 </div>
               </div>
             </div>
@@ -1447,6 +1571,49 @@ export const ArticleEditorPage: React.FC<Props> = ({
                 }}
               >
                 <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+                  {coverImageUrl && (
+                    <div
+                      className={`relative overflow-hidden rounded-xl border border-white/10 bg-[#0F1117] transition-all duration-300 ${
+                        aspectRatio === 'default'
+                          ? 'aspect-[4/1] min-h-[140px]'
+                          : aspectRatio === '21/9'
+                          ? 'aspect-[21/9]'
+                          : aspectRatio === '16/9'
+                          ? 'aspect-video'
+                          : 'h-auto max-h-[420px]'
+                      }`}
+                      style={{
+                        position: 'relative',
+                        borderRadius: '0.75rem',
+                        overflow: 'hidden',
+                        border: '1px solid var(--border-subtle)',
+                        background: '#0F1117',
+                        marginBottom: '1.5rem',
+                        ...(aspectRatio === 'default'
+                          ? { aspectRatio: '4 / 1', minHeight: '140px', width: '100%' }
+                          : aspectRatio === '21/9'
+                          ? { aspectRatio: '21 / 9', width: '100%' }
+                          : aspectRatio === '16/9'
+                          ? { aspectRatio: '16 / 9', width: '100%' }
+                          : { height: 'auto', maxHeight: '420px', width: '100%' })
+                      }}
+                    >
+                      <img
+                        src={coverImageUrl}
+                        alt={title || 'Article Cover'}
+                        className={aspectRatio === 'auto' ? 'w-full h-auto max-h-[420px] object-contain' : 'w-full h-full object-cover'}
+                        style={{
+                          width: '100%',
+                          height: aspectRatio === 'auto' ? 'auto' : '100%',
+                          maxHeight: aspectRatio === 'auto' ? '420px' : undefined,
+                          objectFit: aspectRatio === 'auto' ? 'contain' : 'cover',
+                          display: 'block',
+                          margin: aspectRatio === 'auto' ? '0 auto' : undefined
+                        }}
+                      />
+                    </div>
+                  )}
+
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '1rem' }}>
                     <span className="badge badge-orange" style={{ fontSize: '0.72rem' }}>
                       {category}

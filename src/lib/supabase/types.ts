@@ -100,12 +100,23 @@ export interface DatabaseChallengeRow {
   status: string;
   start_date: string;
   end_date: string;
+  start_time?: string;
+  end_time?: string;
+  registration_deadline?: string;
+  registration_deadline_time?: string;
+  registration_url?: string;
+  community_channel_url?: string;
+  banner_image_url?: string;
+  is_featured?: boolean;
   prize_pool: string;
   description_md: string;
   rules_md: string;
   evaluation_criteria?: string[];
   starter_dataset_url?: string;
   submission_count: number;
+  recordings?: any[];
+  use_cases?: any[];
+  reference_materials?: any[];
   winners?: any[];
   created_at?: string;
 }
@@ -195,6 +206,7 @@ export interface DatabaseArticleRow {
   excerpt: string;
   content: string;
   cover_image?: string;
+  aspect_ratio?: string;
   category: string;
   author_name: string;
   author_role: string;

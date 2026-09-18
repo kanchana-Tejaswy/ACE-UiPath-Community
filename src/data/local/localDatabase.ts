@@ -12,6 +12,7 @@ import {
   ActivityDraft,
   Article
 } from '../../types';
+import { normalizeBannerAspectRatio } from '../../utils/bannerRatio';
 import {
   INITIAL_ACTIVITIES,
   INITIAL_LEARNING_PATHS,
@@ -83,7 +84,20 @@ export const localDatabase = {
   getLeadership: (): LeadershipMember[] => getItem(STORAGE_KEYS.LEADERSHIP, INITIAL_LEADERSHIP),
   saveLeadership: (data: LeadershipMember[]): void => setItem(STORAGE_KEYS.LEADERSHIP, data),
 
-  getArticles: (): Article[] => getItem(STORAGE_KEYS.ARTICLES, INITIAL_ARTICLES),
+  getArticles: (): Article[] => {
+    const raw = getItem<Article[]>(STORAGE_KEYS.ARTICLES, INITIAL_ARTICLES);
+    return (raw || []).map((art) => {
+      const ratio = normalizeBannerAspectRatio(art.coverBanner?.aspectRatio || art.aspectRatio);
+      return {
+        ...art,
+        aspectRatio: ratio,
+        coverBanner: {
+          url: art.coverBanner?.url || art.coverImageUrl || art.coverImage,
+          aspectRatio: ratio
+        }
+      };
+    });
+  },
   saveArticles: (data: Article[]): void => setItem(STORAGE_KEYS.ARTICLES, data),
 
   getSettings: (): SiteSettings => {

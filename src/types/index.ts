@@ -26,11 +26,12 @@ export type ActivityCategory =
   | 'Guest Lecture' 
   | 'Ideathon' 
   | 'Bootcamp'
-  | 'Community Meetup';
+  | 'Community Meetup'
+  | 'Masterclass';
 
 export type ActivityEventType = 'Offline' | 'Online' | 'Hybrid';
 
-export type ActivityStatus = 'Draft' | 'Upcoming' | 'Ongoing' | 'Completed' | 'Archived';
+export type ActivityStatus = 'Draft' | 'Upcoming' | 'Ongoing' | 'In Progress' | 'Completed' | 'Archived';
 
 export type DraftStatus = 'DRAFT' | 'SUBMITTED' | 'IN_REVIEW' | 'CHANGES_REQUESTED' | 'APPROVED' | 'PUBLISHED';
 
@@ -147,6 +148,10 @@ export interface Activity {
   isFeatured: boolean;
   speakers: ActivitySpeaker[];
   achievements?: ActivityAchievement[];
+  registrationUrl?: string;
+  meetingUrl?: string;
+  capacity?: string;
+  targetAudience?: string;
   createdAt?: string;
 }
 
@@ -190,21 +195,54 @@ export interface ProjectShowcase {
   summary: string;
   problemStatement: string;
   solutionDescription: string;
+  workflowArchitecture?: 'REFramework (Robotic Enterprise Framework)' | 'Linear Sequential Workflow' | 'State Machine' | 'Dispatcher / Performer Model' | 'Attended Assistant' | string;
+  automationType?: string | string[];
   uipathToolsUsed: string[];
   roiMetrics: string; // e.g. "Saves 35 manual hours / month"
   repoUrl?: string;
   packageDownloadUrl?: string;
+  liveDemoUrl?: string;
   videoDemoUrl?: string;
+  thumbnailUrl?: string;
   previewImages: string[];
   authorName: string;
   authorRollNumber?: string;
   authorBranch?: string;
   authorAvatar?: string;
   authorLinkedin?: string;
+  authorPortfolioUrl?: string;
+  contributors?: string[];
   status: 'Pending' | 'Approved' | 'Featured';
   downloadCount: number;
   upvotes: number;
   createdAt: string;
+}
+
+export interface ChallengeVideoRecording {
+  id: string;
+  title: string;
+  type: 'Kickoff Recording' | 'Bot Tutorial Walkthrough' | 'AMA / Q&A Session' | 'Closing & Demos';
+  url: string;
+  duration?: string;
+  speakerName?: string;
+}
+
+export interface ChallengeUseCaseTrack {
+  id: string;
+  title: string;
+  problemBrief: string;
+  evaluationRubric: string;
+  starterTemplateUrl?: string;
+  starterTemplateType?: 'XAML' | 'ZIP' | 'GitHub' | 'Docs';
+  difficulty?: 'Beginner' | 'Intermediate' | 'Advanced';
+}
+
+export interface ChallengeReferenceMaterial {
+  id: string;
+  title: string;
+  type: 'PDF Guide' | 'API Docs' | 'Cheat Sheet' | 'Sample Dataset (CSV/XLSX)';
+  url: string;
+  description?: string;
 }
 
 export interface Challenge {
@@ -213,9 +251,17 @@ export interface Challenge {
   title: string;
   theme: string;
   category: 'Monthly Sprint' | 'Hackathon' | 'Ideathon' | 'Bug Bash';
-  status: 'Upcoming' | 'Active' | 'Judging' | 'Completed';
+  status: 'Upcoming' | 'Active' | 'Judging' | 'Completed' | 'Draft' | 'Archived';
   startDate: string;
   endDate: string;
+  startTime?: string;
+  endTime?: string;
+  registrationDeadline?: string;
+  registrationDeadlineTime?: string;
+  registrationUrl?: string;
+  communityChannelUrl?: string;
+  bannerImage?: string;
+  isFeatured?: boolean;
   prizePool: string;
   descriptionMd: string;
   description?: string;
@@ -225,6 +271,9 @@ export interface Challenge {
   evaluationCriteria: string[];
   starterDatasetUrl?: string;
   submissionCount: number;
+  recordings?: ChallengeVideoRecording[];
+  useCases?: ChallengeUseCaseTrack[];
+  referenceMaterials?: ChallengeReferenceMaterial[];
   winners?: {
     rank: number;
     teamName: string;
@@ -372,6 +421,13 @@ export const ARTICLE_CATEGORIES: ArticleCategory[] = [
 
 export type ArticleStatus = 'DRAFT' | 'PUBLISHED' | 'SCHEDULED';
 
+export type BannerAspectRatio = 'default' | '21/9' | '16/9' | 'auto';
+
+export interface CoverBannerConfig {
+  url?: string;
+  aspectRatio: BannerAspectRatio;
+}
+
 export interface Article {
   id: string;
   slug: string;
@@ -380,6 +436,8 @@ export interface Article {
   content: string; // Markdown technical content
   coverImage?: string;
   coverImageUrl?: string;
+  coverBanner?: CoverBannerConfig;
+  aspectRatio?: BannerAspectRatio;
   category: ArticleCategory;
   authorName: string;
   authorRole: string;

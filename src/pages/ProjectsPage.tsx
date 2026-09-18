@@ -11,7 +11,12 @@ import {
   CheckCircle2, 
   Layers, 
   TrendingUp,
-  Cpu
+  Cpu,
+  Video,
+  Users,
+  Linkedin,
+  Globe,
+  Play
 } from 'lucide-react';
 import { ProjectShowcase, User } from '../types';
 
@@ -23,6 +28,20 @@ interface Props {
   onUpvoteProject: (id: string) => void;
   onNavigate?: (view: string, detailId?: string) => void;
 }
+
+const getVideoEmbedUrl = (url?: string): { type: 'youtube' | 'loom' | 'direct' | 'none'; embedUrl: string } => {
+  if (!url || !url.trim()) return { type: 'none', embedUrl: '' };
+  const trimmed = url.trim();
+  const ytMatch = trimmed.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+  if (ytMatch && ytMatch[1]) {
+    return { type: 'youtube', embedUrl: `https://www.youtube.com/embed/${ytMatch[1]}` };
+  }
+  const loomMatch = trimmed.match(/loom\.com\/(?:share|embed)\/([a-zA-Z0-9]+)/);
+  if (loomMatch && loomMatch[1]) {
+    return { type: 'loom', embedUrl: `https://www.loom.com/embed/${loomMatch[1]}` };
+  }
+  return { type: 'direct', embedUrl: trimmed };
+};
 
 export const ProjectsPage: React.FC<Props> = ({
   projects,
@@ -386,13 +405,23 @@ export const ProjectsPage: React.FC<Props> = ({
               padding: '2.5rem'
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
+            {/* Modal Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem' }}>
               <div>
-                <span className="badge badge-orange" style={{ marginBottom: '0.5rem' }}>
-                  {activeProject.uipathToolsUsed.join(' • ')}
-                </span>
-                <h2 style={{ fontSize: '1.65rem' }}>{activeProject.title}</h2>
-                <p style={{ fontSize: '0.9rem', color: 'var(--uipath-orange)' }}>{activeProject.tagline}</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
+                  {activeProject.workflowArchitecture && (
+                    <span className="badge badge-orange">
+                      <Cpu size={11} style={{ marginRight: '3px' }} /> {activeProject.workflowArchitecture}
+                    </span>
+                  )}
+                  {activeProject.status === 'Featured' && (
+                    <span className="badge badge-orange" style={{ background: 'rgba(250,70,22,0.15)', color: '#FB923C' }}>
+                      ★ Featured Showcase
+                    </span>
+                  )}
+                </div>
+                <h2 style={{ fontSize: '1.65rem', fontWeight: 800 }}>{activeProject.title}</h2>
+                <p style={{ fontSize: '0.9rem', color: 'var(--uipath-orange)', marginTop: '0.2rem' }}>{activeProject.tagline}</p>
               </div>
               <button
                 onClick={() => onNavigate ? onNavigate('projects') : setActiveProject(null)}
@@ -402,42 +431,119 @@ export const ProjectsPage: React.FC<Props> = ({
               </button>
             </div>
 
+            {/* Embedded Video Demo Player (If present) */}
+            {activeProject.videoDemoUrl && (() => {
+              const video = getVideoEmbedUrl(activeProject.videoDemoUrl);
+              return (
+                <div style={{ marginBottom: '1.75rem', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border-subtle)', background: '#000', aspectRatio: '16/9', maxHeight: '340px', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {video.type === 'youtube' || video.type === 'loom' ? (
+                    <iframe
+                      src={video.embedUrl}
+                      title="Project Demo Video"
+                      style={{ width: '100%', height: '100%', border: 0 }}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  ) : (
+                    <video
+                      src={video.embedUrl}
+                      controls
+                      style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                    />
+                  )}
+                </div>
+              );
+            })()}
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginBottom: '2rem' }}>
+              {/* Problem Statement */}
               <div>
-                <h4 style={{ fontSize: '0.95rem', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '0.4rem' }}>
-                  Problem Statement
+                <h4 style={{ fontSize: '0.85rem', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '0.4rem', letterSpacing: '0.05em' }}>
+                  Problem Statement & Friction Solved
                 </h4>
                 <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
                   {activeProject.problemStatement}
                 </p>
               </div>
 
+              {/* Solution Description & How It Works */}
               <div>
-                <h4 style={{ fontSize: '0.95rem', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '0.4rem' }}>
-                  UiPath Solution Architecture
+                <h4 style={{ fontSize: '0.85rem', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '0.4rem', letterSpacing: '0.05em' }}>
+                  Detailed Solution & Bot Workflow
                 </h4>
-                <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', lineHeight: 1.6, whiteSpace: 'pre-line' }}>
                   {activeProject.solutionDescription}
                 </p>
               </div>
 
+              {/* Automation Capabilities & Tools Used */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                <h4 style={{ fontSize: '0.85rem', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '0.05em' }}>
+                  UiPath Stack & Capabilities
+                </h4>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                  {activeProject.uipathToolsUsed.map((tool, idx) => (
+                    <span key={idx} className="badge badge-neutral">
+                      {tool}
+                    </span>
+                  ))}
+                  {Array.isArray(activeProject.automationType) ? activeProject.automationType.map((type, idx) => (
+                    <span key={`cap-${idx}`} className="badge badge-slate">
+                      {type}
+                    </span>
+                  )) : activeProject.automationType && (
+                    <span className="badge badge-slate">{activeProject.automationType}</span>
+                  )}
+                </div>
+              </div>
+
+              {/* ROI Metric Card */}
               <div style={{
-                padding: '1rem',
-                background: 'var(--bg-tertiary)',
+                padding: '1rem 1.25rem',
+                background: 'rgba(16, 185, 129, 0.08)',
+                border: '1px solid rgba(16, 185, 129, 0.25)',
                 borderRadius: 'var(--radius-md)',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.75rem'
               }}>
-                <TrendingUp size={20} style={{ color: '#10B981' }} />
+                <TrendingUp size={22} style={{ color: '#10B981' }} />
                 <div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>MEASURED BUSINESS ROI</div>
-                  <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#34D399' }}>{activeProject.roiMetrics}</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>MEASURED BUSINESS ROI & IMPACT</div>
+                  <div style={{ fontWeight: 700, fontSize: '1rem', color: '#34D399' }}>{activeProject.roiMetrics}</div>
                 </div>
               </div>
 
-              <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                Author: <strong style={{ color: '#FFF' }}>{activeProject.authorName}</strong> {activeProject.authorRollNumber && `(${activeProject.authorRollNumber})`} • {activeProject.authorBranch}
+              {/* Team Members & Contributors */}
+              <div style={{ padding: '1rem 1.25rem', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                    Lead Author: <strong style={{ color: '#FFF' }}>{activeProject.authorName}</strong> {activeProject.authorRollNumber && `(${activeProject.authorRollNumber})`} • {activeProject.authorBranch}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    {activeProject.authorLinkedin && (
+                      <a href={activeProject.authorLinkedin} target="_blank" rel="noreferrer" style={{ color: '#0A66C2' }} title="Author LinkedIn">
+                        <Linkedin size={16} />
+                      </a>
+                    )}
+                    {activeProject.authorPortfolioUrl && (
+                      <a href={activeProject.authorPortfolioUrl} target="_blank" rel="noreferrer" style={{ color: 'var(--text-muted)' }} title="Author Portfolio">
+                        <Globe size={16} />
+                      </a>
+                    )}
+                  </div>
+                </div>
+
+                {activeProject.contributors && activeProject.contributors.length > 0 && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap', paddingTop: '0.5rem', borderTop: '1px solid var(--border-subtle)' }}>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>Co-Devs:</span>
+                    {activeProject.contributors.map((contrib, cIdx) => (
+                      <span key={cIdx} className="badge badge-orange" style={{ fontSize: '0.7rem' }}>
+                        {contrib}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -450,7 +556,7 @@ export const ProjectsPage: React.FC<Props> = ({
                   rel="noreferrer"
                   className="btn btn-primary"
                 >
-                  <Download size={16} /> Download .NUPKG Package
+                  <Download size={16} /> Download .NUPKG / .XAML
                 </a>
               )}
               {activeProject.repoUrl && (
@@ -460,7 +566,17 @@ export const ProjectsPage: React.FC<Props> = ({
                   rel="noreferrer"
                   className="btn btn-secondary"
                 >
-                  <Github size={16} /> Inspect GitHub Repo
+                  <Github size={16} /> GitHub Repository
+                </a>
+              )}
+              {activeProject.liveDemoUrl && (
+                <a
+                  href={activeProject.liveDemoUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="btn btn-secondary"
+                >
+                  <ExternalLink size={16} /> Live Demo Endpoint
                 </a>
               )}
               <button

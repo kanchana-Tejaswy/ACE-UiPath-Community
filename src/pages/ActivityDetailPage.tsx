@@ -15,7 +15,8 @@ import {
   ExternalLink,
   BookOpen,
   Image as ImageIcon,
-  Check
+  Check,
+  Linkedin
 } from 'lucide-react';
 import { Activity, User } from '../types';
 
@@ -174,6 +175,20 @@ export const ActivityDetailPage: React.FC<Props> = ({
                   <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{activity.venue}</div>
                 </div>
               </div>
+
+              {(activity.capacity || activity.targetAudience) && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'var(--uipath-orange-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--uipath-orange)' }}>
+                    <Users size={18} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Capacity & Audience</div>
+                    <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>
+                      {activity.capacity || ''}{activity.capacity && activity.targetAudience ? ' • ' : ''}{activity.targetAudience || ''}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -293,9 +308,22 @@ export const ActivityDetailPage: React.FC<Props> = ({
                         alt={spk.name}
                         style={{ width: '56px', height: '56px', borderRadius: '12px', objectFit: 'cover' }}
                       />
-                      <div>
-                        <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text-primary)' }}>
-                          {spk.name}
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+                          <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text-primary)' }}>
+                            {spk.name}
+                          </div>
+                          {spk.linkedinUrl && (
+                            <a
+                              href={spk.linkedinUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              style={{ color: '#0A66C2', display: 'inline-flex', alignItems: 'center', padding: '0.2rem' }}
+                              title="LinkedIn Profile"
+                            >
+                              <Linkedin size={16} />
+                            </a>
+                          )}
                         </div>
                         <div style={{ fontSize: '0.8rem', color: 'var(--uipath-orange)', marginBottom: '0.25rem' }}>
                           {spk.roleTitle}
@@ -422,8 +450,49 @@ export const ActivityDetailPage: React.FC<Props> = ({
             </div>
           </div>
 
-          {/* Sidebar: Downloadable Artifacts Vault */}
+          {/* Sidebar: Registration & Downloadable Artifacts */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            {/* 1. Registration / Virtual Meeting Card */}
+            {(activity.registrationUrl || activity.meetingUrl || activity.status === 'Upcoming') && (
+              <div className="glass-card" style={{ padding: '1.75rem', background: 'rgba(250, 70, 22, 0.04)', borderColor: 'rgba(250, 70, 22, 0.25)' }}>
+                <h3 style={{ fontSize: '1.15rem', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#FFF' }}>
+                  <ExternalLink size={18} style={{ color: '#FA4616' }} /> Session Participation
+                </h3>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1.25rem', lineHeight: 1.5 }}>
+                  {activity.status === 'Upcoming' ? 'Register your seat or connect to the virtual stream for this session.' : 'Direct access links for this community session.'}
+                </p>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  {activity.registrationUrl && (
+                    <a
+                      href={activity.registrationUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="btn btn-primary"
+                      style={{ width: '100%', justifyContent: 'center' }}
+                    >
+                      <ExternalLink size={16} />
+                      <span>Register / RSVP for Event</span>
+                    </a>
+                  )}
+
+                  {activity.meetingUrl && (
+                    <a
+                      href={activity.meetingUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="btn btn-secondary"
+                      style={{ width: '100%', justifyContent: 'center', borderColor: 'rgba(250, 70, 22, 0.3)' }}
+                    >
+                      <Video size={16} style={{ color: '#FA4616' }} />
+                      <span>Join Virtual Meeting</span>
+                    </a>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* 2. Downloadable Artifacts Vault */}
             <div className="glass-card" style={{ padding: '1.75rem', position: 'sticky', top: '5.5rem' }}>
               <h3 style={{ fontSize: '1.15rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                 <Download size={18} style={{ color: 'var(--uipath-orange)' }} /> Download Artifacts

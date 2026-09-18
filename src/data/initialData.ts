@@ -776,6 +776,14 @@ export const INITIAL_CHALLENGES: Challenge[] = [
     status: 'Active',
     startDate: '2026-09-01',
     endDate: '2026-10-15',
+    startTime: '09:00',
+    endTime: '18:00',
+    registrationDeadline: '2026-09-25',
+    registrationDeadlineTime: '23:59',
+    registrationUrl: 'https://unstop.com/hackathons/ace-uipath-2026',
+    communityChannelUrl: 'https://discord.gg/ace-uipath-community',
+    bannerImage: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=1920&auto=format&fit=crop&q=80',
+    isFeatured: true,
     prizePool: '₹25,000 + UiPath Official Vouchers & Fast-Track Core Team Placement',
     descriptionMd: `### Challenge Objective
 Build a real-world enterprise bot solving a critical problem in Education, Healthcare, Supply Chain, or Finance using UiPath Studio, Orchestrator, and Document Understanding or AI Center.
@@ -795,7 +803,68 @@ Build a real-world enterprise bot solving a critical problem in Education, Healt
       'Code Cleanliness, Annotations & Documentation (20%)'
     ],
     starterDatasetUrl: 'https://github.com/kanchana-Tejaswy/ACE-UiPath-Community/releases/download/v1.0/Hackathon_2026_Problem_Statements.pdf',
-    submissionCount: 18
+    submissionCount: 18,
+    recordings: [
+      {
+        id: 'rec_01',
+        title: 'Hackathon Kickoff & Problem Statement Breakdown',
+        type: 'Kickoff Recording',
+        url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        duration: '45 mins',
+        speakerName: 'UiPath Community Leads'
+      },
+      {
+        id: 'rec_02',
+        title: 'Starter Bot Setup Tutorial & REFramework Scaffolding',
+        type: 'Bot Tutorial Walkthrough',
+        url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        duration: '32 mins',
+        speakerName: 'Student Technical Mentor'
+      }
+    ],
+    useCases: [
+      {
+        id: 'uc_01',
+        title: 'Invoice & PO Reconciliation with Document Understanding',
+        problemBrief: 'Automate PDF invoice extraction with UiPath Document Understanding ML models, cross-validate item line totals against SAP/Excel tables, and generate exception logs for discrepancies.',
+        evaluationRubric: 'Accuracy > 95%, Exception Handling for corrupted PDFs, Execution speed < 45s per invoice.',
+        starterTemplateUrl: 'https://github.com/kanchana-Tejaswy/ACE-UiPath-Community/releases/download/v1.0/Invoice_DU_Starter_Template.zip',
+        starterTemplateType: 'ZIP',
+        difficulty: 'Intermediate'
+      },
+      {
+        id: 'uc_02',
+        title: 'Autonomous Exam Invigilation & Hall Ticket Verification Bot',
+        problemBrief: 'Extract student roll numbers from attendance sheets, check fee clearance on campus portal via web automation, and send instant WhatsApp/Email alerts with hall ticket barcodes.',
+        evaluationRubric: 'Zero false approvals, queue management via Orchestrator, clean audit trail logging.',
+        starterTemplateUrl: 'https://github.com/kanchana-Tejaswy/ACE-UiPath-Community/releases/download/v1.0/Attendance_Bot_Scaffold.xaml',
+        starterTemplateType: 'XAML',
+        difficulty: 'Beginner'
+      }
+    ],
+    referenceMaterials: [
+      {
+        id: 'ref_01',
+        title: 'UiPath Action Center Official Integration Guide',
+        type: 'PDF Guide',
+        url: 'https://docs.uipath.com/action-center',
+        description: 'Comprehensive human-in-the-loop task validation workflow architecture.'
+      },
+      {
+        id: 'ref_02',
+        title: 'Synthetic Invoice & PO Sample Dataset (500 Records)',
+        type: 'Sample Dataset (CSV/XLSX)',
+        url: 'https://github.com/kanchana-Tejaswy/ACE-UiPath-Community/releases/download/v1.0/Sample_Invoices_Dataset.xlsx',
+        description: '500 anonymized multi-vendor invoice PDFs and companion Excel lookup tables.'
+      },
+      {
+        id: 'ref_03',
+        title: 'REFramework State Machine Quick Reference Cheat Sheet',
+        type: 'Cheat Sheet',
+        url: 'https://github.com/kanchana-Tejaswy/ACE-UiPath-Community/releases/download/v1.0/REFramework_CheatSheet_v2024.pdf',
+        description: 'Essential transitions, transaction states, and retry logic guidelines.'
+      }
+    ]
   },
   {
     id: 'chal_2025_02',
@@ -806,6 +875,9 @@ Build a real-world enterprise bot solving a critical problem in Education, Healt
     status: 'Completed',
     startDate: '2025-12-01',
     endDate: '2025-12-20',
+    startTime: '10:00',
+    endTime: '17:00',
+    bannerImage: 'https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=1920&auto=format&fit=crop&q=80',
     prizePool: 'UiPath Merch Swag + Certificate of Excellence',
     descriptionMd: 'Parse 100 student resumes in PDF/Word format and match candidate technical keywords against company job descriptions.',
     rulesMd: 'Must use UiPath Text/RegEx extraction or Document Understanding.',
@@ -940,6 +1012,12 @@ export const INITIAL_ARTICLES: Article[] = [
     isFeatured: true,
     views: 142,
     coverImage: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=1200&auto=format&fit=crop&q=80',
+    coverImageUrl: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=1200&auto=format&fit=crop&q=80',
+    aspectRatio: 'default',
+    coverBanner: {
+      url: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=1200&auto=format&fit=crop&q=80',
+      aspectRatio: 'default'
+    },
     createdAt: '2026-09-14T07:30:00.000Z',
     updatedAt: '2026-09-14T08:00:00.000Z',
     createdBy: 'Tejaswy',
@@ -1039,6 +1117,12 @@ Activities are what make UiPath intuitive yet deeply powerful. By mastering how 
     isFeatured: false,
     views: 98,
     coverImage: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1200&auto=format&fit=crop&q=80',
+    coverImageUrl: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1200&auto=format&fit=crop&q=80',
+    aspectRatio: 'default',
+    coverBanner: {
+      url: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1200&auto=format&fit=crop&q=80',
+      aspectRatio: 'default'
+    },
     createdAt: '2026-09-10T09:00:00.000Z',
     updatedAt: '2026-09-10T10:30:00.000Z',
     createdBy: 'Rohit Varma',
@@ -1116,6 +1200,12 @@ This modularity keeps your project clean, testable, and ready for code review!`
     isFeatured: false,
     views: 215,
     coverImage: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=1200&auto=format&fit=crop&q=80',
+    coverImageUrl: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=1200&auto=format&fit=crop&q=80',
+    aspectRatio: 'default',
+    coverBanner: {
+      url: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=1200&auto=format&fit=crop&q=80',
+      aspectRatio: 'default'
+    },
     createdAt: '2026-09-02T12:00:00.000Z',
     updatedAt: '2026-09-02T14:15:00.000Z',
     createdBy: 'Tejaswy',
@@ -1169,6 +1259,12 @@ Here is how the ACE UiPath Community built and deployed an unattended software b
     isFeatured: false,
     views: 76,
     coverImage: 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=1200&auto=format&fit=crop&q=80',
+    coverImageUrl: 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=1200&auto=format&fit=crop&q=80',
+    aspectRatio: 'default',
+    coverBanner: {
+      url: 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=1200&auto=format&fit=crop&q=80',
+      aspectRatio: 'default'
+    },
     createdAt: '2026-08-25T08:00:00.000Z',
     updatedAt: '2026-08-25T09:00:00.000Z',
     createdBy: 'Siddharth Rao',

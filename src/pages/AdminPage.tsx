@@ -67,6 +67,9 @@ import { uploadMemberAvatarImage } from '../lib/supabase/services';
 
 import { UserManagementSection } from '../components/UserManagementSection';
 import { AdminAnalyticsSection } from '../components/AdminAnalyticsSection';
+import { EventEditorModal } from '../components/EventEditorModal';
+import { ProjectEditorModal } from '../components/ProjectEditorModal';
+import { ChallengeEditorModal } from '../components/ChallengeEditorModal';
 
 interface Props {
   activities: Activity[];
@@ -293,22 +296,27 @@ export const AdminPage: React.FC<Props> = ({
         galleryImages: [],
         status: 'Upcoming',
         isFeatured: false,
-        speakers: [{ id: `spk_${Date.now()}`, name: '', roleTitle: '', organization: '', avatarUrl: '', bio: '' }]
+        registrationUrl: '',
+        meetingUrl: '',
+        capacity: '',
+        targetAudience: '',
+        speakers: [{ id: `spk_${Date.now()}`, name: '', roleTitle: '', organization: '', avatarUrl: '', linkedinUrl: '', bio: '' }]
       });
     }
     setIsActivityModalOpen(true);
   };
 
-  const handleSaveActivitySubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingActivity || !editingActivity.title || !editingActivity.date) return;
-    const actToSave: Activity = {
-      ...editingActivity,
-      slug: editingActivity.slug || editingActivity.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')
-    };
+  const handleSaveActivityModal = (actToSave: Activity, makeFeatured: boolean) => {
     onSaveActivity(actToSave);
+    if (makeFeatured) {
+      setFeaturedActivityId(actToSave.id);
+      onUpdateSettings({ featuredActivityId: actToSave.id });
+    } else if (featuredActivityId === actToSave.id && !makeFeatured) {
+      setFeaturedActivityId('');
+      onUpdateSettings({ featuredActivityId: '' });
+    }
     setIsActivityModalOpen(false);
-    showToast(`Event "${actToSave.title}" saved.`);
+    showToast(`Event "${actToSave.title}" saved successfully.`);
   };
 
   // 4. PROJECTS STATE & MODAL
@@ -327,11 +335,20 @@ export const AdminPage: React.FC<Props> = ({
         summary: '',
         problemStatement: '',
         solutionDescription: '',
-        uipathToolsUsed: ['UiPath Studio'],
-        roiMetrics: 'Saves 20 hours/month',
-        previewImages: [],
-        authorName: '',
-        authorBranch: 'Computer Science',
+        workflowArchitecture: 'REFramework (Robotic Enterprise Framework)',
+        automationType: ['Studio Desktop Automation'],
+        uipathToolsUsed: ['UiPath Studio', 'REFramework'],
+        roiMetrics: 'Saves 25 hours/month • 99.5% accuracy',
+        repoUrl: '',
+        packageDownloadUrl: '',
+        videoDemoUrl: '',
+        thumbnailUrl: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&auto=format&fit=crop&q=80',
+        previewImages: ['https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&auto=format&fit=crop&q=80'],
+        authorName: currentUser.name || '',
+        authorBranch: currentUser.branch || 'Computer Science & Engineering',
+        authorRollNumber: currentUser.rollNumber || '',
+        authorLinkedin: currentUser.linkedinUrl || '',
+        contributors: [],
         status: 'Approved',
         downloadCount: 0,
         upvotes: 0,
@@ -341,16 +358,10 @@ export const AdminPage: React.FC<Props> = ({
     setIsProjectModalOpen(true);
   };
 
-  const handleSaveProjectSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingProject || !editingProject.title || !editingProject.authorName) return;
-    const projToSave: ProjectShowcase = {
-      ...editingProject,
-      slug: editingProject.slug || editingProject.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')
-    };
+  const handleSaveProjectModal = (projToSave: ProjectShowcase) => {
     onSaveProject(projToSave);
     setIsProjectModalOpen(false);
-    showToast(`Project "${projToSave.title}" saved.`);
+    showToast(`Project "${projToSave.title}" saved successfully.`);
   };
 
   // 5. TIMELINE MILESTONES STATE & MODAL
@@ -655,6 +666,9 @@ export const AdminPage: React.FC<Props> = ({
     if (chal) {
       setEditingChallenge(chal);
     } else {
+      const today = new Date().toISOString().split('T')[0];
+      const nextMonth = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const deadline = new Date(Date.now() + 20 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
       setEditingChallenge({
         id: `chal_${Date.now()}`,
         slug: `hackathon-${Date.now()}`,
@@ -662,27 +676,38 @@ export const AdminPage: React.FC<Props> = ({
         theme: '',
         category: 'Hackathon',
         status: 'Active',
-        startDate: new Date().toISOString().split('T')[0],
-        endDate: new Date().toISOString().split('T')[0],
-        prizePool: '₹25,000 + Vouchers',
-        descriptionMd: '',
-        rulesMd: '',
-        evaluationCriteria: ['Innovation', 'Technical Depth', 'Presentation'],
-        submissionCount: 0
+        startDate: today,
+        endDate: nextMonth,
+        startTime: '09:00',
+        endTime: '18:00',
+        registrationDeadline: deadline,
+        registrationDeadlineTime: '23:59',
+        registrationUrl: '',
+        communityChannelUrl: '',
+        bannerImage: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=1920&auto=format&fit=crop&q=80',
+        isFeatured: false,
+        prizePool: '₹25,000 + UiPath Official Vouchers & Fast-Track Core Placement',
+        descriptionMd: '### Challenge Objective\nBuild a real-world enterprise bot solving a critical problem in Education, Healthcare, Supply Chain, or Finance using UiPath Studio, Orchestrator, and Document Understanding.',
+        rulesMd: '1. Teams can comprise 1 to 4 students.\n2. Workflows must be implemented in UiPath Studio.\n3. Exception handling is mandatory.',
+        evaluationCriteria: [
+          'Business Value & Practical ROI (30%)',
+          'UiPath Architecture & REFramework Best Practices (30%)',
+          'Robust Exception Handling & Auto-recovery (20%)',
+          'Code Cleanliness, Annotations & Documentation (20%)'
+        ],
+        submissionCount: 0,
+        recordings: [],
+        useCases: [],
+        referenceMaterials: []
       });
     }
     setIsChallengeModalOpen(true);
   };
 
-  const handleSaveChallengeSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingChallenge || !editingChallenge.title) return;
-    onSaveChallenge({
-      ...editingChallenge,
-      slug: editingChallenge.slug || editingChallenge.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')
-    });
+  const handleSaveChallengeModal = (chalToSave: Challenge) => {
+    onSaveChallenge(chalToSave);
     setIsChallengeModalOpen(false);
-    showToast(`Hackathon "${editingChallenge.title}" saved.`);
+    showToast(`Hackathon "${chalToSave.title}" saved successfully.`);
   };
 
   // BACKUP & RESTORE
@@ -1625,54 +1650,137 @@ export const AdminPage: React.FC<Props> = ({
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                {challenges.map((chal) => (
-                  <div
-                    key={chal.id}
-                    style={{
-                      background: 'var(--bg-primary)',
-                      border: '1px solid var(--border-subtle)',
-                      borderRadius: 'var(--radius-md)',
-                      padding: '1.25rem',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center'
-                    }}
-                  >
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
-                        <span className="badge badge-green">{chal.status}</span>
-                        <span className="badge badge-neutral">{chal.category}</span>
-                        <strong style={{ fontSize: '1.1rem', color: 'var(--text-primary)' }}>{chal.title}</strong>
-                      </div>
-                      <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                        Dates: {chal.startDate} to {chal.endDate} • Prize Pool: {chal.prizePool}
-                      </div>
-                    </div>
+                {challenges.map((chal) => {
+                  const isActive = chal.status === 'Active';
+                  const isUpcoming = chal.status === 'Upcoming';
+                  const isCompleted = chal.status === 'Completed';
 
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                      <button
-                        onClick={() => handleOpenChallengeModal(chal)}
-                        className="btn btn-secondary btn-sm"
-                      >
-                        <Edit3 size={14} /> Edit
-                      </button>
-                      {onDeleteChallenge && (
-                        <button
-                          onClick={() => {
-                            if (confirm(`Delete hackathon "${chal.title}"?`)) {
-                              onDeleteChallenge(chal.id);
-                              showToast('Hackathon removed.');
-                            }
-                          }}
-                          className="btn btn-secondary btn-sm"
-                          style={{ color: '#EF4444' }}
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      )}
+                  return (
+                    <div
+                      key={chal.id}
+                      style={{
+                        background: 'rgba(23, 23, 23, 0.6)',
+                        border: '1px solid #262626',
+                        borderRadius: '1rem',
+                        padding: '1.25rem',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '1rem',
+                        transition: 'border-color 0.2s ease'
+                      }}
+                    >
+                      {/* Top Header with Badges */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                          <span className={`badge ${
+                            isActive ? 'badge-green' : isUpcoming ? 'badge-blue' : 'badge-slate'
+                          }`}>
+                            {chal.status}
+                          </span>
+                          <span className="badge badge-orange">{chal.category}</span>
+                          {chal.isFeatured && (
+                            <span
+                              style={{
+                                fontSize: '0.7rem',
+                                fontWeight: 700,
+                                color: '#FA4616',
+                                background: 'rgba(250, 70, 22, 0.15)',
+                                border: '1px solid rgba(250, 70, 22, 0.35)',
+                                padding: '0.15rem 0.6rem',
+                                borderRadius: '999px',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.25rem'
+                              }}
+                            >
+                              <Star size={11} style={{ fill: '#FA4616' }} /> HOMEPAGE FEATURED
+                            </span>
+                          )}
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <button
+                            onClick={() => handleOpenChallengeModal(chal)}
+                            className="btn btn-secondary btn-sm"
+                            style={{ fontSize: '0.75rem' }}
+                          >
+                            <Edit3 size={13} /> Edit Details
+                          </button>
+                          {onDeleteChallenge && (
+                            <button
+                              onClick={() => {
+                                if (confirm(`Delete hackathon "${chal.title}"?`)) {
+                                  onDeleteChallenge(chal.id);
+                                  showToast('Hackathon removed.');
+                                }
+                              }}
+                              className="btn btn-secondary btn-sm"
+                              style={{ color: '#EF4444', fontSize: '0.75rem' }}
+                              title="Delete Hackathon"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Content Row with Thumbnail */}
+                      <div style={{ display: 'grid', gridTemplateColumns: chal.bannerImage ? '140px 1fr' : '1fr', gap: '1.25rem', alignItems: 'center' }}>
+                        {chal.bannerImage && (
+                          <div style={{
+                            width: '100%',
+                            height: '84px',
+                            borderRadius: '0.75rem',
+                            overflow: 'hidden',
+                            border: '1px solid #262626',
+                            background: '#000'
+                          }}>
+                            <img
+                              src={chal.bannerImage}
+                              alt={chal.title}
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            />
+                          </div>
+                        )}
+
+                        <div>
+                          <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#FFF', margin: '0 0 0.35rem 0' }}>
+                            {chal.title}
+                          </h3>
+                          <p style={{ fontSize: '0.85rem', color: '#FED7AA', margin: '0 0 0.5rem 0' }}>
+                            Theme: {chal.theme}
+                          </p>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                            <span><strong>Prize:</strong> {chal.prizePool}</span>
+                            <span><strong>Dates:</strong> {chal.startDate} to {chal.endDate}</span>
+                            {chal.useCases && chal.useCases.length > 0 && (
+                              <span><strong>Tracks:</strong> {chal.useCases.length} use cases</span>
+                            )}
+                            {chal.recordings && chal.recordings.length > 0 && (
+                              <span><strong>Recordings:</strong> {chal.recordings.length} videos</span>
+                            )}
+                            <span><strong>Submissions:</strong> {chal.submissionCount} teams</span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
+                  );
+                })}
+
+                {challenges.length === 0 && (
+                  <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.02)', borderRadius: '1rem', border: '1px dashed var(--border-subtle)' }}>
+                    <Trophy size={36} style={{ color: 'var(--text-muted)', margin: '0 auto 0.75rem', opacity: 0.5 }} />
+                    <p style={{ fontSize: '0.95rem', fontWeight: 600, color: '#FFF', margin: '0 0 0.25rem' }}>No hackathons configured</p>
+                    <p style={{ fontSize: '0.82rem', margin: '0 0 1rem' }}>Create campus hackathons and sprint challenges with starter bots & scoring rubrics.</p>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenChallengeModal()}
+                      className="btn btn-primary btn-sm"
+                    >
+                      <Plus size={14} /> Add Hackathon
+                    </button>
                   </div>
-                ))}
+                )}
               </div>
             </div>
           )}
@@ -2217,232 +2325,22 @@ export const AdminPage: React.FC<Props> = ({
         </div>
       )}
 
-      {/* MODAL: EDIT EVENT */}
-      {isActivityModalOpen && editingActivity && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 110, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', overflowY: 'auto' }}>
-          <div style={{ width: '100%', maxWidth: '640px', background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 'var(--radius-md)', padding: '2rem', maxHeight: '90vh', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-              <h3 style={{ fontSize: '1.2rem', color: '#FFF' }}>Event / Workshop Details</h3>
-              <button onClick={() => setIsActivityModalOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={18} /></button>
-            </div>
-            <form onSubmit={handleSaveActivitySubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>EVENT TITLE *</label>
-                <input
-                  type="text"
-                  required
-                  value={editingActivity.title}
-                  onChange={(e) => setEditingActivity({ ...editingActivity, title: e.target.value })}
-                  style={{ width: '100%', padding: '0.65rem', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', color: '#FFF', marginTop: '0.25rem' }}
-                />
-              </div>
+      {/* MODAL: EDIT / CREATE EVENT (Upgraded CMS Modal) */}
+      <EventEditorModal
+        isOpen={isActivityModalOpen}
+        activity={editingActivity}
+        isFeaturedOnHome={editingActivity ? editingActivity.id === featuredActivityId : false}
+        onClose={() => setIsActivityModalOpen(false)}
+        onSave={handleSaveActivityModal}
+      />
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem' }}>
-                <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>CATEGORY</label>
-                  <select
-                    value={editingActivity.category}
-                    onChange={(e) => setEditingActivity({ ...editingActivity, category: e.target.value as any })}
-                    style={{ width: '100%', padding: '0.65rem', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', color: '#FFF', marginTop: '0.25rem' }}
-                  >
-                    <option value="Workshop">Workshop</option>
-                    <option value="Community Meetup">Community Meetup</option>
-                    <option value="Hackathon">Hackathon</option>
-                    <option value="Bootcamp">Bootcamp</option>
-                    <option value="Certification">Certification</option>
-                  </select>
-                </div>
-                <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>MODE</label>
-                  <select
-                    value={editingActivity.eventType}
-                    onChange={(e) => setEditingActivity({ ...editingActivity, eventType: e.target.value as any })}
-                    style={{ width: '100%', padding: '0.65rem', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', color: '#FFF', marginTop: '0.25rem' }}
-                  >
-                    <option value="Offline">Offline</option>
-                    <option value="Hybrid">Hybrid</option>
-                    <option value="Online">Online</option>
-                  </select>
-                </div>
-                <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>STATUS</label>
-                  <select
-                    value={editingActivity.status}
-                    onChange={(e) => setEditingActivity({ ...editingActivity, status: e.target.value as any })}
-                    style={{ width: '100%', padding: '0.65rem', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', color: '#FFF', marginTop: '0.25rem' }}
-                  >
-                    <option value="Upcoming">Upcoming</option>
-                    <option value="Ongoing">Ongoing</option>
-                    <option value="Completed">Completed</option>
-                    <option value="Archived">Archived</option>
-                  </select>
-                </div>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem' }}>
-                <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>DATE (YYYY-MM-DD) *</label>
-                  <input
-                    type="date"
-                    required
-                    value={editingActivity.date}
-                    onChange={(e) => setEditingActivity({ ...editingActivity, date: e.target.value })}
-                    style={{ width: '100%', padding: '0.65rem', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', color: '#FFF', marginTop: '0.25rem' }}
-                  />
-                </div>
-                <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>START TIME</label>
-                  <input
-                    type="text"
-                    value={editingActivity.timeStart}
-                    onChange={(e) => setEditingActivity({ ...editingActivity, timeStart: e.target.value })}
-                    style={{ width: '100%', padding: '0.65rem', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', color: '#FFF', marginTop: '0.25rem' }}
-                  />
-                </div>
-                <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>END TIME</label>
-                  <input
-                    type="text"
-                    value={editingActivity.timeEnd}
-                    onChange={(e) => setEditingActivity({ ...editingActivity, timeEnd: e.target.value })}
-                    style={{ width: '100%', padding: '0.65rem', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', color: '#FFF', marginTop: '0.25rem' }}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>VENUE / LOCATION</label>
-                <input
-                  type="text"
-                  value={editingActivity.venue}
-                  onChange={(e) => setEditingActivity({ ...editingActivity, venue: e.target.value })}
-                  style={{ width: '100%', padding: '0.65rem', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', color: '#FFF', marginTop: '0.25rem' }}
-                />
-              </div>
-
-              <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>EXECUTIVE SUMMARY *</label>
-                <textarea
-                  rows={2}
-                  required
-                  value={editingActivity.summary}
-                  onChange={(e) => setEditingActivity({ ...editingActivity, summary: e.target.value })}
-                  style={{ width: '100%', padding: '0.65rem', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', color: '#FFF', marginTop: '0.25rem' }}
-                />
-              </div>
-
-              <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>BANNER IMAGE / POSTER URL</label>
-                <input
-                  type="text"
-                  value={editingActivity.bannerImage || ''}
-                  onChange={(e) => setEditingActivity({ ...editingActivity, bannerImage: e.target.value })}
-                  placeholder="/uipath-session-1.png or image URL"
-                  style={{ width: '100%', padding: '0.65rem', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', color: '#FFF', marginTop: '0.25rem' }}
-                />
-                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Tip: You can use `/uipath-session-1.png` or `/uipath-session-2.png` for real session posters!</span>
-              </div>
-
-              <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>SPEAKER NAME</label>
-                <input
-                  type="text"
-                  value={editingActivity.speakers?.[0]?.name || ''}
-                  onChange={(e) => {
-                    const spk = editingActivity.speakers?.[0] || { id: 'spk_1', name: '', roleTitle: '', organization: '', avatarUrl: '', bio: '' };
-                    setEditingActivity({
-                      ...editingActivity,
-                      speakers: [{ ...spk, name: e.target.value }]
-                    });
-                  }}
-                  style={{ width: '100%', padding: '0.65rem', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', color: '#FFF', marginTop: '0.25rem' }}
-                />
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem' }}>
-                <button type="button" onClick={() => setIsActivityModalOpen(false)} className="btn btn-secondary btn-sm">Cancel</button>
-                <button type="submit" className="btn btn-primary btn-sm">Save Event</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL: EDIT PROJECT */}
-      {isProjectModalOpen && editingProject && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 110, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-          <div style={{ width: '100%', maxWidth: '540px', background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 'var(--radius-md)', padding: '2rem', maxHeight: '90vh', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-              <h3 style={{ fontSize: '1.2rem', color: '#FFF' }}>Student Project Details</h3>
-              <button onClick={() => setIsProjectModalOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={18} /></button>
-            </div>
-            <form onSubmit={handleSaveProjectSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>PROJECT NAME *</label>
-                <input
-                  type="text"
-                  required
-                  value={editingProject.title}
-                  onChange={(e) => setEditingProject({ ...editingProject, title: e.target.value })}
-                  style={{ width: '100%', padding: '0.65rem', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', color: '#FFF', marginTop: '0.25rem' }}
-                />
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>STUDENT / TEAM NAME *</label>
-                  <input
-                    type="text"
-                    required
-                    value={editingProject.authorName}
-                    onChange={(e) => setEditingProject({ ...editingProject, authorName: e.target.value })}
-                    style={{ width: '100%', padding: '0.65rem', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', color: '#FFF', marginTop: '0.25rem' }}
-                  />
-                </div>
-                <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>DEPARTMENT / BRANCH</label>
-                  <input
-                    type="text"
-                    value={editingProject.authorBranch || ''}
-                    onChange={(e) => setEditingProject({ ...editingProject, authorBranch: e.target.value })}
-                    style={{ width: '100%', padding: '0.65rem', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', color: '#FFF', marginTop: '0.25rem' }}
-                  />
-                </div>
-              </div>
-              <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>TOOLS USED (comma-separated)</label>
-                <input
-                  type="text"
-                  value={editingProject.uipathToolsUsed.join(', ')}
-                  onChange={(e) => setEditingProject({ ...editingProject, uipathToolsUsed: e.target.value.split(',').map((s) => s.trim()).filter(Boolean) })}
-                  style={{ width: '100%', padding: '0.65rem', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', color: '#FFF', marginTop: '0.25rem' }}
-                />
-              </div>
-              <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>WHAT IT SOLVES / PROBLEM STATEMENT</label>
-                <textarea
-                  rows={2}
-                  value={editingProject.problemStatement}
-                  onChange={(e) => setEditingProject({ ...editingProject, problemStatement: e.target.value })}
-                  style={{ width: '100%', padding: '0.65rem', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', color: '#FFF', marginTop: '0.25rem' }}
-                />
-              </div>
-              <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>IMPACT / ROI METRIC (e.g. Saves 30 hours/month)</label>
-                <input
-                  type="text"
-                  value={editingProject.roiMetrics}
-                  onChange={(e) => setEditingProject({ ...editingProject, roiMetrics: e.target.value })}
-                  style={{ width: '100%', padding: '0.65rem', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', color: '#FFF', marginTop: '0.25rem' }}
-                />
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem' }}>
-                <button type="button" onClick={() => setIsProjectModalOpen(false)} className="btn btn-secondary btn-sm">Cancel</button>
-                <button type="submit" className="btn btn-primary btn-sm">Save Project</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* MODAL: EDIT / CREATE PROJECT (Upgraded CMS Modal) */}
+      <ProjectEditorModal
+        isOpen={isProjectModalOpen}
+        project={editingProject}
+        onClose={() => setIsProjectModalOpen(false)}
+        onSave={handleSaveProjectModal}
+      />
 
       {/* MODAL: EDIT TIMELINE MILESTONE */}
       {isMilestoneModalOpen && editingMilestone && (
@@ -2551,66 +2449,13 @@ export const AdminPage: React.FC<Props> = ({
         </div>
       )}
 
-      {/* MODAL: EDIT HACKATHON */}
-      {isChallengeModalOpen && editingChallenge && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 110, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-          <div style={{ width: '100%', maxWidth: '520px', background: 'var(--bg-secondary)', border: '1px solid var(--border-medium)', borderRadius: 'var(--radius-md)', padding: '2rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-              <h3 style={{ fontSize: '1.2rem', color: '#FFF' }}>Hackathon / Challenge</h3>
-              <button onClick={() => setIsChallengeModalOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={18} /></button>
-            </div>
-            <form onSubmit={handleSaveChallengeSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>HACKATHON TITLE *</label>
-                <input
-                  type="text"
-                  required
-                  value={editingChallenge.title}
-                  onChange={(e) => setEditingChallenge({ ...editingChallenge, title: e.target.value })}
-                  style={{ width: '100%', padding: '0.65rem', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', color: '#FFF', marginTop: '0.25rem' }}
-                />
-              </div>
-              <div>
-                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>THEME</label>
-                <input
-                  type="text"
-                  value={editingChallenge.theme}
-                  onChange={(e) => setEditingChallenge({ ...editingChallenge, theme: e.target.value })}
-                  style={{ width: '100%', padding: '0.65rem', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', color: '#FFF', marginTop: '0.25rem' }}
-                />
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>PRIZE POOL</label>
-                  <input
-                    type="text"
-                    value={editingChallenge.prizePool}
-                    onChange={(e) => setEditingChallenge({ ...editingChallenge, prizePool: e.target.value })}
-                    style={{ width: '100%', padding: '0.65rem', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', color: '#FFF', marginTop: '0.25rem' }}
-                  />
-                </div>
-                <div>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>STATUS</label>
-                  <select
-                    value={editingChallenge.status}
-                    onChange={(e) => setEditingChallenge({ ...editingChallenge, status: e.target.value as any })}
-                    style={{ width: '100%', padding: '0.65rem', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', color: '#FFF', marginTop: '0.25rem' }}
-                  >
-                    <option value="Upcoming">Upcoming</option>
-                    <option value="Active">Active</option>
-                    <option value="Judging">Judging</option>
-                    <option value="Completed">Completed</option>
-                  </select>
-                </div>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem' }}>
-                <button type="button" onClick={() => setIsChallengeModalOpen(false)} className="btn btn-secondary btn-sm">Cancel</button>
-                <button type="submit" className="btn btn-primary btn-sm">Save Hackathon</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* MODAL: EDIT HACKATHON / COMPETITION COMMAND CENTER */}
+      <ChallengeEditorModal
+        isOpen={isChallengeModalOpen}
+        challenge={editingChallenge}
+        onClose={() => setIsChallengeModalOpen(false)}
+        onSave={handleSaveChallengeModal}
+      />
 
       {/* MODAL: EDIT/CREATE TEAM MEMBER */}
       {isMemberModalOpen && editingMember && (

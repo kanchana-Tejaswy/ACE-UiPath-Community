@@ -621,6 +621,40 @@ export const HomePage: React.FC<Props> = ({
                       View Session Details <ArrowRight size={16} />
                     </button>
 
+                    {featuredActivity.registrationUrl && (
+                      <a
+                        href={featuredActivity.registrationUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          background: 'rgba(250, 70, 22, 0.15)',
+                          color: '#FB923C',
+                          border: '1px solid rgba(250, 70, 22, 0.4)',
+                          borderRadius: '8px',
+                          padding: '0.65rem 1.15rem',
+                          fontSize: '0.875rem',
+                          fontWeight: 600,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.45rem',
+                          cursor: 'pointer',
+                          textDecoration: 'none',
+                          transition: 'all 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = '#FA4616';
+                          e.currentTarget.style.color = '#FFFFFF';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = 'rgba(250, 70, 22, 0.15)';
+                          e.currentTarget.style.color = '#FB923C';
+                        }}
+                      >
+                        <ExternalLink size={15} />
+                        <span>Register Now</span>
+                      </a>
+                    )}
+
                     <button
                       onClick={() => {
                         const title = encodeURIComponent(featuredActivity.title);
