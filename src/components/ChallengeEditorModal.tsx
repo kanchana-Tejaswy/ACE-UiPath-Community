@@ -269,14 +269,14 @@ export const ChallengeEditorModal: React.FC<Props> = ({
   if (!isOpen || !formData) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-3 sm:p-4 md:p-6 overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-3 sm:p-4 md:p-6 overflow-hidden">
       <div 
-        className="relative w-full max-w-4xl max-h-[92vh] flex flex-col bg-[#121214] border border-neutral-800 rounded-2xl shadow-2xl text-neutral-100 animate-in fade-in zoom-in-95 duration-200"
+        className="relative w-full max-w-4xl max-h-[90vh] flex flex-col bg-[#121214] border border-neutral-800 rounded-2xl shadow-2xl text-neutral-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200"
         role="dialog"
         aria-modal="true"
       >
-        {/* MODAL HEADER */}
-        <div className="flex items-center justify-between border-b border-neutral-800/80 px-6 py-4 bg-neutral-900/50 backdrop-blur-sm rounded-t-2xl">
+        {/* LAYER 1: FIXED MODAL HEADER */}
+        <div className="flex-shrink-0 z-20 flex items-center justify-between border-b border-neutral-800/80 px-6 py-4 bg-[#121214] rounded-t-2xl">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-orange-500/10 border border-orange-500/30 flex items-center justify-center text-[#FA4616]">
               <Trophy size={20} />
@@ -304,8 +304,8 @@ export const ChallengeEditorModal: React.FC<Props> = ({
           </button>
         </div>
 
-        {/* NAVIGATION TABS */}
-        <div className="flex border-b border-neutral-800 bg-[#151518] px-6 gap-2 overflow-x-auto select-none">
+        {/* LAYER 2: FIXED TAB NAVIGATION BAR */}
+        <div className="flex-shrink-0 z-10 flex border-b border-neutral-800 bg-[#151518] px-6 gap-2 overflow-x-auto select-none">
           {[
             { id: 'overview', label: 'Overview & Dates', icon: Calendar, count: null },
             { id: 'useCases', label: 'Bot Use Cases & Tracks', icon: Code2, count: formData.useCases?.length || 0 },
@@ -339,13 +339,15 @@ export const ChallengeEditorModal: React.FC<Props> = ({
           })}
         </div>
 
-        {/* MODAL BODY (SCROLLABLE) */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6">
-          {/* TAB 1: OVERVIEW & DATES */}
-          {activeTab === 'overview' && (
-            <div className="space-y-6 animate-in fade-in duration-150">
-              {/* 1. HACKATHON MEDIA & VISUAL IDENTITY (POSTER/BANNER ASSET MANAGER) */}
-              <div className="bg-neutral-900/60 border border-neutral-800 rounded-xl p-5 space-y-4">
+        {/* FORM CONTAINER (FULL HEIGHT WITH SCROLLABLE BODY & PINNED FOOTER) */}
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+          {/* LAYER 3: SCROLLABLE CONTENT BODY (ONLY THIS CONTAINER SCROLLS) */}
+          <div className="flex-1 min-h-0 overflow-y-auto p-6 md:p-8 space-y-6">
+            {/* TAB 1: OVERVIEW & DATES */}
+            {activeTab === 'overview' && (
+              <div className="space-y-6 animate-in fade-in duration-150">
+                {/* 1. HACKATHON MEDIA & VISUAL IDENTITY (POSTER/BANNER ASSET MANAGER) */}
+                <div className="bg-neutral-900/60 border border-neutral-800 rounded-xl p-5 space-y-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <ImageIcon size={18} className="text-[#FA4616]" />
@@ -1347,68 +1349,69 @@ export const ChallengeEditorModal: React.FC<Props> = ({
               )}
             </div>
           )}
+        </div>
 
-          {/* STICKY FOOTER */}
-          <div className="sticky -bottom-6 md:-bottom-8 -mx-6 md:-mx-8 p-4 md:px-8 bg-[#121214]/95 border-t border-neutral-800 backdrop-blur-md flex flex-wrap items-center justify-between gap-4 z-20">
-            {/* Left Controls: Featured Switch + Status Badge */}
-            <div className="flex items-center gap-4 flex-wrap">
-              <label className="flex items-center gap-2 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={isFeatured}
-                  onChange={(e) => {
-                    setIsFeatured(e.target.checked);
-                    setIsDirty(true);
-                  }}
-                  className="w-4 h-4 rounded text-[#FA4616] focus:ring-orange-500 focus:ring-offset-neutral-900 bg-neutral-900 border-neutral-700"
-                />
-                <span className="text-xs font-semibold text-neutral-300 flex items-center gap-1.5">
-                  <Star size={13} className={isFeatured ? 'text-[#FA4616] fill-[#FA4616]' : 'text-neutral-400'} />
-                  Featured on Homepage
-                </span>
-              </label>
+        {/* LAYER 4: FIXED BOTTOM FOOTER (PERMANENTLY PINNED AT BOTTOM) */}
+        <div className="flex-shrink-0 z-20 p-4 md:px-8 bg-[#121214] border-t border-neutral-800 flex flex-wrap items-center justify-between gap-4 rounded-b-2xl">
+          {/* Left Controls: Featured Switch + Status Badge */}
+          <div className="flex items-center gap-4 flex-wrap">
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={isFeatured}
+                onChange={(e) => {
+                  setIsFeatured(e.target.checked);
+                  setIsDirty(true);
+                }}
+                className="w-4 h-4 rounded text-[#FA4616] focus:ring-orange-500 focus:ring-offset-neutral-900 bg-neutral-900 border-neutral-700"
+              />
+              <span className="text-xs font-semibold text-neutral-300 flex items-center gap-1.5">
+                <Star size={13} className={isFeatured ? 'text-[#FA4616] fill-[#FA4616]' : 'text-neutral-400'} />
+                Featured on Homepage
+              </span>
+            </label>
 
-              {/* Status pill preview */}
-              <div className="flex items-center gap-1.5 text-xs text-neutral-400 border-l border-neutral-800 pl-4">
-                <span>Status:</span>
-                <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
-                  formData.status === 'Active'
-                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                    : formData.status === 'Upcoming'
-                    ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
-                    : formData.status === 'Judging'
-                    ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
-                    : formData.status === 'Draft'
-                    ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                    : formData.status === 'Archived'
-                    ? 'bg-neutral-800 text-neutral-400 border border-neutral-700'
-                    : 'bg-neutral-800 text-neutral-300 border border-neutral-700'
-                }`}>
-                  {formData.status}
-                </span>
-              </div>
-            </div>
-
-            {/* Right Buttons: Cancel + Primary Save */}
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={handleCloseModal}
-                className="px-4 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-xs font-semibold transition-colors cursor-pointer"
-              >
-                Cancel
-              </button>
-
-              <button
-                type="submit"
-                className="bg-[#FA4616] hover:bg-[#ff5722] text-white font-semibold text-xs px-6 py-2.5 rounded-xl shadow-lg shadow-orange-500/20 transition-all flex items-center gap-2 cursor-pointer active:scale-95"
-              >
-                <Save size={15} /> Save Hackathon Details
-              </button>
+            {/* Status pill preview */}
+            <div className="flex items-center gap-1.5 text-xs text-neutral-400 border-l border-neutral-800 pl-4">
+              <span>Status:</span>
+              <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                formData.status === 'Active'
+                  ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                  : formData.status === 'Upcoming'
+                  ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                  : formData.status === 'Judging'
+                  ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
+                  : formData.status === 'Draft'
+                  ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                  : formData.status === 'Archived'
+                  ? 'bg-neutral-800 text-neutral-400 border border-neutral-700'
+                  : 'bg-neutral-800 text-neutral-300 border border-neutral-700'
+              }`}>
+                {formData.status}
+              </span>
             </div>
           </div>
-        </form>
-      </div>
+
+          {/* Right Buttons: Cancel + Primary Save */}
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleCloseModal}
+              className="px-4 py-2 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-xs font-semibold transition-colors cursor-pointer"
+            >
+              Cancel
+            </button>
+
+            <button
+              type="submit"
+              className="bg-[#FA4616] hover:bg-[#ff5722] text-white font-semibold text-xs px-6 py-2.5 rounded-xl shadow-lg shadow-orange-500/20 transition-all flex items-center gap-2 cursor-pointer active:scale-95"
+            >
+              <Save size={15} /> Save Hackathon Details
+            </button>
+          </div>
+        </div>
+      </form>
     </div>
-  );
+  </div>
+);
 };
