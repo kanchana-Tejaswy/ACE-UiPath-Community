@@ -189,6 +189,10 @@ export function mapLearningPathRowToEntity(row: DatabaseLearningPathRow): Learni
 }
 
 export function mapLearningPathEntityToRow(path: LearningPath): DatabaseLearningPathRow {
+  const numericHours = typeof path.estimatedHours === 'number'
+    ? path.estimatedHours
+    : parseInt(String(path.estimatedHours || '32').replace(/\D/g, ''), 10) || 32;
+
   return {
     id: path.id,
     slug: path.slug,
@@ -196,12 +200,12 @@ export function mapLearningPathEntityToRow(path: LearningPath): DatabaseLearning
     tagline: path.tagline,
     level: path.level,
     target_audience: path.targetAudience,
-    estimated_hours: path.estimatedHours,
+    estimated_hours: numericHours,
     icon_name: path.iconName,
     description: path.description,
-    order_index: path.orderIndex,
-    is_published: path.isPublished,
-    modules: path.modules
+    order_index: path.orderIndex || 1,
+    is_published: path.isPublished !== false,
+    modules: path.modules || []
   };
 }
 
