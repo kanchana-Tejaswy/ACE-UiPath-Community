@@ -155,33 +155,57 @@ export interface Activity {
   createdAt?: string;
 }
 
+export interface ModuleResource {
+  id: string;
+  title: string;
+  type: 'xaml' | 'zip' | 'pdf' | 'link' | 'code' | 'other' | string;
+  url: string;
+  description?: string;
+}
+
 export interface LearningModule {
   id: string;
-  slug: string;
+  courseId?: string;
+  name?: string;
   title: string;
-  summary: string;
-  durationMinutes: number;
-  level: 'Beginner' | 'Intermediate' | 'Advanced' | 'Architect' | 'Specialist';
-  uipathTool: 'StudioX' | 'Studio' | 'Orchestrator' | 'AI Center' | 'Document Understanding' | 'Test Suite' | 'C# / Python Extensions';
-  contentMd: string;
+  slug: string;
+  description?: string;
+  summary?: string;
+  contentMd?: string;
+  officialAcademyUrl?: string;
+  officialResourceUrl?: string;
+  youtubeUrl?: string;
   videoUrl?: string;
+  videoDuration?: string;
+  blogUrl?: string;
+  blogTitle?: string;
+  blogArticleId?: string;
+  resources?: ModuleResource[];
+  starterCodeUrl?: string;
+  solutionCodeUrl?: string;
   practiceExerciseMd?: string;
-  starterCodeUrl?: string; // .xaml link
-  solutionCodeUrl?: string; // .xaml link
+  durationMinutes: number;
+  level: 'Beginner' | 'Intermediate' | 'Advanced' | 'Architect' | 'Specialist' | string;
+  uipathTool: string;
   orderIndex: number;
   topicsCovered?: string[];
+  isPublished: boolean;
 }
 
 export interface LearningPath {
   id: string;
   slug: string;
+  name?: string;
   title: string;
   tagline: string;
-  level: 'Beginner' | 'Intermediate' | 'Advanced' | 'Specialist';
+  description: string;
+  overviewMd?: string;
+  officialAcademyUrl?: string;
+  badgeText?: string;
+  level: 'Beginner' | 'Intermediate' | 'Advanced' | 'Specialist' | string;
   targetAudience: string;
   estimatedHours: number;
   iconName: string;
-  description: string;
   orderIndex: number;
   isPublished: boolean;
   modules: LearningModule[];

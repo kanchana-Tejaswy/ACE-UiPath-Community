@@ -12,7 +12,7 @@ import { SiteSettings } from '../types';
 
 interface Props {
   settings: SiteSettings;
-  onNavigate: (view: string) => void;
+  onNavigate: (view: string, detailId?: string) => void;
 }
 
 export const Footer: React.FC<Props> = ({ settings, onNavigate }) => {
@@ -145,18 +145,23 @@ export const Footer: React.FC<Props> = ({ settings, onNavigate }) => {
             </h4>
             <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
               <li>
-                <button onClick={() => onNavigate('learn')} className="footer-nav-link">
+                <button onClick={() => onNavigate('learn', 'uipath-associate-developer')} className="footer-nav-link">
+                  UiPath Associate Developer
+                </button>
+              </li>
+              <li>
+                <button onClick={() => onNavigate('learn', 'uipath-professional-developer')} className="footer-nav-link">
+                  UiPath Professional Developer
+                </button>
+              </li>
+              <li>
+                <button onClick={() => onNavigate('learn', 'agentic-associate')} className="footer-nav-link">
+                  Agentic Automation Associate
+                </button>
+              </li>
+              <li>
+                <button onClick={() => onNavigate('learn', 'citizen-developer-studiox')} className="footer-nav-link">
                   Citizen Developer (StudioX)
-                </button>
-              </li>
-              <li>
-                <button onClick={() => onNavigate('learn')} className="footer-nav-link">
-                  Associate RPA Developer (Studio)
-                </button>
-              </li>
-              <li>
-                <button onClick={() => onNavigate('learn')} className="footer-nav-link">
-                  Enterprise Architect (REFramework)
                 </button>
               </li>
               <li>

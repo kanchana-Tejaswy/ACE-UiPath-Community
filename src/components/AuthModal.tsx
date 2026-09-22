@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ShieldCheck, Mail, Lock, LogIn, X, AlertCircle, CheckCircle2, KeyRound, ArrowLeft } from 'lucide-react';
+import { ShieldCheck, Mail, Lock, LogIn, X, AlertCircle, CheckCircle2, KeyRound, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../lib/auth/AuthContext';
 import { UserRole } from '../types';
 
@@ -26,6 +26,10 @@ export const AuthModal: React.FC<Props> = ({
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   
+  const [showPassword, setShowPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -35,6 +39,9 @@ export const AuthModal: React.FC<Props> = ({
 
   useEffect(() => {
     setViewMode(initialView);
+    setShowPassword(false);
+    setShowNewPassword(false);
+    setShowConfirmPassword(false);
     if (isOpen) {
       if (isDevEnvironment) {
         if (targetRole === 'CORE_TEAM') {
@@ -292,14 +299,14 @@ export const AuthModal: React.FC<Props> = ({
               <div style={{ position: 'relative', marginTop: '0.35rem' }}>
                 <Lock size={16} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   required
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   style={{
                     width: '100%',
-                    padding: '0.65rem 0.85rem 0.65rem 2.4rem',
+                    padding: '0.65rem 2.5rem 0.65rem 2.4rem',
                     background: 'var(--bg-tertiary)',
                     border: '1px solid var(--border-subtle)',
                     borderRadius: 'var(--radius-md)',
@@ -308,6 +315,30 @@ export const AuthModal: React.FC<Props> = ({
                     outline: 'none'
                   }}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  title={showPassword ? 'Hide password' : 'Show password'}
+                  style={{
+                    position: 'absolute',
+                    right: '0.75rem',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    color: showPassword ? 'var(--uipath-orange)' : 'var(--text-muted)',
+                    cursor: 'pointer',
+                    padding: '0.25rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'color 0.15s ease',
+                    outline: 'none'
+                  }}
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
               </div>
             </div>
 
@@ -386,14 +417,14 @@ export const AuthModal: React.FC<Props> = ({
               <div style={{ position: 'relative', marginTop: '0.35rem' }}>
                 <Lock size={16} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
                 <input
-                  type="password"
+                  type={showNewPassword ? 'text' : 'password'}
                   required
                   placeholder="At least 6 characters"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   style={{
                     width: '100%',
-                    padding: '0.65rem 0.85rem 0.65rem 2.4rem',
+                    padding: '0.65rem 2.5rem 0.65rem 2.4rem',
                     background: 'var(--bg-tertiary)',
                     border: '1px solid var(--border-subtle)',
                     borderRadius: 'var(--radius-md)',
@@ -402,6 +433,30 @@ export const AuthModal: React.FC<Props> = ({
                     outline: 'none'
                   }}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                  aria-label={showNewPassword ? 'Hide password' : 'Show password'}
+                  title={showNewPassword ? 'Hide password' : 'Show password'}
+                  style={{
+                    position: 'absolute',
+                    right: '0.75rem',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    color: showNewPassword ? 'var(--uipath-orange)' : 'var(--text-muted)',
+                    cursor: 'pointer',
+                    padding: '0.25rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'color 0.15s ease',
+                    outline: 'none'
+                  }}
+                >
+                  {showNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
               </div>
             </div>
 
@@ -412,14 +467,14 @@ export const AuthModal: React.FC<Props> = ({
               <div style={{ position: 'relative', marginTop: '0.35rem' }}>
                 <Lock size={16} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
                 <input
-                  type="password"
+                  type={showConfirmPassword ? 'text' : 'password'}
                   required
                   placeholder="Repeat new password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   style={{
                     width: '100%',
-                    padding: '0.65rem 0.85rem 0.65rem 2.4rem',
+                    padding: '0.65rem 2.5rem 0.65rem 2.4rem',
                     background: 'var(--bg-tertiary)',
                     border: '1px solid var(--border-subtle)',
                     borderRadius: 'var(--radius-md)',
@@ -428,6 +483,30 @@ export const AuthModal: React.FC<Props> = ({
                     outline: 'none'
                   }}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                  title={showConfirmPassword ? 'Hide password' : 'Show password'}
+                  style={{
+                    position: 'absolute',
+                    right: '0.75rem',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    color: showConfirmPassword ? 'var(--uipath-orange)' : 'var(--text-muted)',
+                    cursor: 'pointer',
+                    padding: '0.25rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'color 0.15s ease',
+                    outline: 'none'
+                  }}
+                >
+                  {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
               </div>
             </div>
 

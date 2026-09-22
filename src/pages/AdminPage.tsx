@@ -31,12 +31,18 @@ import {
   Linkedin,
   Github,
   Globe,
-  Loader2
+  Loader2,
+  Video,
+  PlayCircle,
+  GraduationCap,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 
 import { 
   Activity, 
-  LearningPath, 
+  LearningPath,
+  LearningModule,
   ProjectShowcase, 
   Challenge, 
   CommunityResource, 
@@ -70,6 +76,7 @@ import { AdminAnalyticsSection } from '../components/AdminAnalyticsSection';
 import { EventEditorModal } from '../components/EventEditorModal';
 import { ProjectEditorModal } from '../components/ProjectEditorModal';
 import { ChallengeEditorModal } from '../components/ChallengeEditorModal';
+import { LearningAcademyCMS } from '../components/academy/LearningAcademyCMS';
 
 interface Props {
   activities: Activity[];
@@ -1262,45 +1269,15 @@ export const AdminPage: React.FC<Props> = ({
             </div>
           )}
 
-          {/* TAB 5: LEARNING TRACKS CMS */}
+          {/* TAB 5: LEARNING ACADEMY HIERARCHICAL CMS */}
           {activeTab === 'learning' && (
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '1rem' }}>
-                <div>
-                  <h2 style={{ fontSize: '1.4rem', fontWeight: 700 }}>Learning Tracks & Modules</h2>
-                  <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                    Manage educational curricula and practical student starter templates.
-                  </p>
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                {learningPaths.map((path) => (
-                  <div key={path.id} style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', padding: '1.5rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <span className="badge badge-orange">{path.level}</span>
-                        <h3 style={{ fontSize: '1.2rem', color: 'var(--text-primary)' }}>{path.title}</h3>
-                      </div>
-                      <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{path.modules.length} Modules</span>
-                    </div>
-                    <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>{path.description}</p>
-                    
-                    <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '0.75rem' }}>
-                      <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.5rem' }}>INCLUDED MODULES</div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-                        {path.modules.map((m) => (
-                          <div key={m.id} style={{ fontSize: '0.85rem', color: 'var(--text-primary)', display: 'flex', justifyContent: 'space-between' }}>
-                            <span>• {m.title} ({m.durationMinutes} mins)</span>
-                            <span style={{ color: 'var(--text-muted)' }}>{m.uipathTool}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <LearningAcademyCMS
+              learningPaths={learningPaths}
+              onSaveLearningPath={onSaveLearningPath}
+              onDeleteLearningPath={onDeleteLearningPath}
+              onNavigate={onNavigate}
+              showToast={showToast}
+            />
           )}
 
           {/* TAB 5B: BLOGS & ARTICLES CMS */}
@@ -2828,3 +2805,7 @@ export const AdminPage: React.FC<Props> = ({
     </div>
   );
 };
+
+
+
+

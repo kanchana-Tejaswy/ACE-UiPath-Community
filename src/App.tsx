@@ -45,6 +45,9 @@ export function App() {
         if (pathname.startsWith('activities/')) {
           return { view: 'activity_detail', detailId: pathname.replace('activities/', '') };
         }
+        if (pathname.startsWith('learning-academy/')) {
+          return { view: 'learn', detailId: pathname.replace('learning-academy/', '') };
+        }
         if (pathname.startsWith('learn/')) {
           return { view: 'learn', detailId: pathname.replace('learn/', '') };
         }
@@ -66,6 +69,9 @@ export function App() {
         if (pathname.startsWith('core/draft/')) {
           return { view: 'core', detailId: pathname.replace('core/draft/', '') };
         }
+        if (pathname === 'learning-academy') {
+          return { view: 'learn', detailId: undefined };
+        }
         if (['home', 'activities', 'learn', 'projects', 'challenges', 'resources', 'about', 'join', 'admin', 'core', 'blogs', 'article_editor'].includes(pathname)) {
           return { view: pathname, detailId: undefined };
         }
@@ -82,6 +88,10 @@ export function App() {
     if (path.startsWith('activities/')) {
       const slug = path.replace('activities/', '');
       return { view: 'activity_detail', detailId: slug };
+    }
+    if (path.startsWith('learning-academy/')) {
+      const slug = path.replace('learning-academy/', '');
+      return { view: 'learn', detailId: slug };
     }
     if (path.startsWith('learn/')) {
       const slug = path.replace('learn/', '');
@@ -110,6 +120,9 @@ export function App() {
     if (path.startsWith('core/draft/')) {
       const draftId = path.replace('core/draft/', '');
       return { view: 'core', detailId: draftId };
+    }
+    if (path === 'learning-academy') {
+      return { view: 'learn', detailId: undefined };
     }
     if (['activities', 'learn', 'projects', 'challenges', 'resources', 'about', 'join', 'admin', 'core', 'blogs', 'article_editor'].includes(path)) {
       return { view: path, detailId: undefined };
@@ -277,25 +290,11 @@ export function App() {
         )}
 
         {currentView === 'learn' && (
-          <div className="container" style={{ paddingTop: '2rem' }}>
-            <RecommendedNextStep
-              recommendation={generateRecommendations(store.completedModuleIds, store.analyticsEvents, {
-                activities: store.activities,
-                learningPaths: store.learningPaths,
-                projects: store.projects,
-                challenges: store.challenges,
-                resources: store.resources
-              }).continueLearning}
-              onNavigate={navigateTo}
-            />
-            <LearnPage
-              learningPaths={store.learningPaths}
-              selectedModuleSlug={selectedDetailId}
-              completedModuleIds={store.completedModuleIds}
-              onToggleModuleCompletion={store.toggleModuleCompletion}
-              onNavigate={navigateTo}
-            />
-          </div>
+          <LearnPage
+            learningPaths={store.learningPaths}
+            selectedModuleSlug={selectedDetailId}
+            onNavigate={navigateTo}
+          />
         )}
 
         {currentView === 'projects' && (

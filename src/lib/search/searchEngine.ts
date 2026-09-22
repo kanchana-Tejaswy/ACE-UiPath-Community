@@ -186,13 +186,13 @@ export function searchContent(
       scoreItem(
         mod.id,
         'module',
-        mod.title,
-        mod.summary,
+        mod.title || mod.name || '',
+        mod.description || mod.summary || '',
         mod.topicsCovered || [],
-        [mod.uipathTool],
-        path.title,
-        mod.level,
-        '#learn',
+        [mod.uipathTool || 'Studio'],
+        path.title || path.name || '',
+        mod.level || 'Beginner',
+        `#learn/${path.slug || path.id}/${mod.slug || mod.id}`,
         mod.id,
         { durationMinutes: mod.durationMinutes, level: mod.level, pathTitle: path.title }
       );

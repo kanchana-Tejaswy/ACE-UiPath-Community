@@ -485,7 +485,7 @@ In partnership with the **UiPath Academic Alliance**, ACE UiPath Community condu
         title: 'UiPath Certified Associate',
         recipientName: '42 ACE Engineering Students',
         badgeType: 'UiPath Certified',
-        description: 'Successfully cleared the industry-recognized UiPath Associate Developer examination.'
+        description: 'Successfully cleared the industry-recognized UiPath Certified Associate Developer examination.'
       }
     ],
     createdAt: '2024-09-01'
@@ -494,26 +494,590 @@ In partnership with the **UiPath Academic Alliance**, ACE UiPath Community condu
 
 export const INITIAL_LEARNING_PATHS: LearningPath[] = [
   {
+    id: 'path_associate_dev',
+    slug: 'uipath-associate-developer',
+    title: 'UiPath Associate Developer',
+    tagline: 'Foundation to certification: master essential RPA workflows, UI automation, and Orchestrator integration.',
+    level: 'Beginner',
+    targetAudience: '1st, 2nd & 3rd year engineering students aiming for UiPath Certified Associate certification',
+    estimatedHours: 16,
+    iconName: 'GraduationCap',
+    badgeText: 'Official Certification Track',
+    officialAcademyUrl: 'https://academy.uipath.com/learning-plans/uipath-certified-professional-associate-track',
+    description: 'The standard zero-to-hero curriculum designed to prepare students for the official UiPath Certified Professional Associate Developer (UiRPA) examination with hands-on workflows and community mentorship.',
+    overviewMd: `### Course Curriculum Overview
+The **UiPath Associate Developer** track covers the core foundational building blocks of enterprise robotic process automation (RPA).
+
+Students learn how to design linear and modular workflows in UiPath Studio, utilize modern selectors with computer vision anchors, manipulate complex data types, and interact with UiPath Orchestrator cloud assets.
+
+#### What You Will Learn
+* **Core Fundamentals**: Understanding software robots, attended vs unattended automation, and Studio architecture.
+* **Workflow Modeling**: Creating Sequences, Flowcharts, and Control Flow branching with If/Switch statements.
+* **Targeting & Selectors**: Modern Design Experience with fuzzy selectors, strict selectors, and visual anchors.
+* **Data Handling**: Manipulating Variables, Arguments, Strings, Collections, and Microsoft Excel DataTables.
+* **Certification Ready**: Complete preparation aligned directly with the official UiPath Associate certification exam blueprint.`,
+    orderIndex: 1,
+    isPublished: true,
+    modules: [
+      {
+        id: 'mod_assoc_01',
+        slug: 'introduction-to-rpa',
+        title: 'Introduction to RPA & UiPath Ecosystem',
+        summary: 'Understand the robotic process automation paradigm, discover how software bots execute business tasks, and navigate the complete UiPath automation cloud ecosystem.',
+        durationMinutes: 45,
+        level: 'Beginner',
+        uipathTool: 'Studio',
+        videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        videoDuration: '14 mins',
+        blogUrl: '#blogs/what-are-activities-in-uipath',
+        blogArticleId: 'art_1',
+        blogTitle: 'What Are Activities in UiPath? The Foundation of Workflow Automation',
+        officialResourceUrl: 'https://academy.uipath.com/courses/introduction-to-rpa-and-automation',
+        topicsCovered: ['RPA Fundamentals', 'UiPath Studio', 'Attended vs Unattended', 'Community Cloud Setup'],
+        orderIndex: 1,
+        isPublished: true,
+        contentMd: `# Introduction to RPA & The UiPath Ecosystem
+
+Robotic Process Automation (RPA) is a software technology that enables anyone to configure computer software, or a **"robot"**, to emulate and integrate the actions of a human interacting within digital systems to execute a business process.
+
+### What Makes UiPath the Global RPA Leader?
+The UiPath platform consists of three core layers:
+1. **Build (Studio Family)**: StudioX for no-code, Studio for low-code RPA developers, and Studio Web for browser-first automation.
+2. **Manage (Orchestrator)**: Cloud-native control center to provision, schedule, monitor, and scale robot fleets.
+3. **Run (Robots & Assistants)**: Attended robots that assist humans on their desktops, and unattended robots running in background server environments.
+
+### Core Automation Concepts
+* **Attended Automation**: Bots triggered by a human user to complete sub-tasks during daily work.
+* **Unattended Automation**: Autonomous bots operating 24/7 on remote VMs or containers based on queue triggers and scheduled cron intervals.
+* **Deterministic Execution**: Robots execute rules-based instructions with 100% precision and compliance.
+
+### Community Quick Start
+Students can download **UiPath Studio Community Edition** for free from [cloud.uipath.com](https://cloud.uipath.com). Pair it with our community exercises to start building your first project today!`,
+        practiceExerciseMd: 'Create a simple sequence in Studio that opens your favorite browser, navigates to the ACE College portal, and writes the current page title to the Output panel using Log Message.'
+      },
+      {
+        id: 'mod_assoc_02',
+        slug: 'uipath-platform-overview',
+        title: 'UiPath Platform Overview & Studio Setup',
+        summary: 'Tour the UiPath Studio interface, understand project dependencies (.json / NuGet packages), configure your cloud workspace, and build your first hello-world bot.',
+        durationMinutes: 60,
+        level: 'Beginner',
+        uipathTool: 'Studio',
+        videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        videoDuration: '18 mins',
+        officialResourceUrl: 'https://academy.uipath.com/courses/build-your-first-automation-with-studio',
+        topicsCovered: ['Studio Interface', 'Project.json', 'Package Manager', 'Output & Watch Panels'],
+        orderIndex: 2,
+        isPublished: true,
+        contentMd: `# UiPath Studio Interface & Project Anatomy
+
+UiPath Studio is an integrated development environment (IDE) built specifically for process design, workflow testing, and enterprise orchestration.
+
+### Anatomy of a UiPath Studio Project
+When you create a project in Studio, the following critical files are generated:
+* \`project.json\`: Contains project metadata, target framework (.NET), and NuGet dependencies (e.g., \`UiPath.UIAutomation.Activities\`, \`UiPath.System.Activities\`).
+* \`Main.xaml\`: The entry point workflow serialized as standard Extensible Application Markup Language (XAML).
+* \`.entities/\` & \`.local/\`: Cached configurations and local project schema.
+
+### Core Panels in Studio
+* **Designer Panel**: The visual canvas where activities are composed into Sequences or Flowcharts.
+* **Activities Panel (Ctrl+Shift+T)**: Search and drag activities into your canvas.
+* **Properties Panel**: Configure input arguments, timeout thresholds, error handlers, and output variables.
+* **Output & Immediate Panels**: View execution logs, breakpoint inspections, and live variable evaluations during debugging.`,
+        practiceExerciseMd: 'Open Package Manager in Studio, install the "UiPath.Excel.Activities" package, and verify that Excel activities appear in your Activities panel.'
+      },
+      {
+        id: 'mod_assoc_03',
+        slug: 'variables-and-control-flow',
+        title: 'Variables, Data Types & Control Flow',
+        summary: 'Master declaring variables, scoping rules, converting between .NET types, and building robust decision trees with Sequences, Flowcharts, and Switch blocks.',
+        durationMinutes: 75,
+        level: 'Beginner',
+        uipathTool: 'Studio',
+        starterCodeUrl: 'https://github.com/kanchana-Tejaswy/ACE-UiPath-Community/releases/download/v1.0/Variables_ControlFlow_Starter.xaml',
+        officialResourceUrl: 'https://academy.uipath.com/courses/variables-arguments-and-control-flow-in-studio',
+        topicsCovered: ['Variables & Scopes', 'Data Types (.NET)', 'If / Else & Switch', 'Loops & For Each'],
+        orderIndex: 3,
+        isPublished: true,
+        contentMd: `# Variables, Data Types & Control Flow
+
+Variables store dynamic data during workflow execution. In UiPath Studio, variables are strongly typed using the .NET type system.
+
+### Common Data Types
+* \`String\`: Text values (\`"ACE UiPath Community"\`).
+* \`Int32\`: Integer numerical values (\`42\`).
+* \`Double\`: Floating point decimal numbers (\`98.6\`).
+* \`Boolean\`: Truth values (\`True\` or \`False\`).
+* \`DateTime\`: Date and timestamps (\`DateTime.Now\`).
+* \`DataTable\`: In-memory 2D tabular dataset with columns and rows.
+* \`GenericValue\`: Auto-coercing variable type (recommended to avoid in enterprise code).
+
+### Variable Scoping Rules
+Variables have a defined **Scope** corresponding to the container activity (e.g., specific Sequence vs entire workflow). Always scope variables as tightly as possible to prevent unintended side effects and memory retention.
+
+### Control Flow Structures
+1. **Sequence**: Linear step-by-step execution from top to bottom.
+2. **Flowchart**: Branching and decision points with diamond decision nodes.
+3. **If & Else If**: Binary or conditional branching.
+4. **Switch**: Multi-branch condition based on an exact evaluation key.
+5. **For Each & While**: Iterating collections, arrays, and lists.`,
+        practiceExerciseMd: 'Build a workflow that takes a student score variable (0-100) and uses a Switch activity to output the grade (A, B, C, or D) with formatted message.'
+      },
+      {
+        id: 'mod_assoc_04',
+        slug: 'arguments-and-modularization',
+        title: 'Arguments & Workflow Modularization',
+        summary: 'Deconstruct monolithic workflows into clean, reusable child XAML components using In, Out, and In/Out direction arguments.',
+        durationMinutes: 75,
+        level: 'Intermediate',
+        uipathTool: 'Studio',
+        starterCodeUrl: 'https://github.com/kanchana-Tejaswy/ACE-UiPath-Community/releases/download/v1.0/Arguments_Invocation_Starter.xaml',
+        officialResourceUrl: 'https://academy.uipath.com/courses/arguments-and-invoking-workflows-in-studio',
+        topicsCovered: ['Arguments (In/Out)', 'Invoke Workflow File', 'Naming Conventions', 'Passing By Reference'],
+        orderIndex: 4,
+        isPublished: true,
+        contentMd: `# Arguments & Workflow Modularization
+
+Never write 500 lines of logic in a single \`Main.xaml\`. Enterprise RPA requires **modularization**—breaking a large business process into small, testable, and reusable workflow files.
+
+### Difference Between Variables and Arguments
+* **Variables**: Pass data *internally* between activities inside the **same** workflow file.
+* **Arguments**: Pass data *externally* between **different** \`.xaml\` workflow files.
+
+### Argument Directions & Naming Conventions
+Always prefix your arguments to indicate direction clearly:
+* \`in_VariableName\`: Input parameter passed from caller to child workflow.
+* \`out_VariableName\`: Output parameter returned from child back to caller.
+* \`io_VariableName\`: In/Out bidirectional parameter modified by child.
+
+\`\`\`csharp
+// Example: Invoking a workflow with bound arguments
+// Input Argument: in_StudentRollNo = "21ACE05A01"
+// Output Argument: out_AttendancePercentage -> varStudentAttendance
+\`\`\`
+
+### The "Invoke Workflow File" Activity
+Use **Invoke Workflow File** to call your sub-components. Ensure **Isolated** mode is checked if you need the child workflow to run in a separate Windows process for crash resilience.`,
+        practiceExerciseMd: 'Create a reusable child workflow named "CalculateTax.xaml" that accepts in_GrossSalary and out_NetTax, then invoke it from Main.xaml.'
+      },
+      {
+        id: 'mod_assoc_05',
+        slug: 'ui-automation-and-modern-selectors',
+        title: 'UI Automation & Modern Selectors',
+        summary: 'Master UI targeting with the Modern Design Experience, fuzzy selectors, strict XML paths, wildcards, and Computer Vision anchors.',
+        durationMinutes: 90,
+        level: 'Intermediate',
+        uipathTool: 'Studio',
+        videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        videoDuration: '22 mins',
+        blogUrl: '#blogs/what-are-activities-in-uipath',
+        blogTitle: 'Modern Selectors vs Classic Selectors Guide',
+        starterCodeUrl: 'https://github.com/kanchana-Tejaswy/ACE-UiPath-Community/releases/download/v1.0/Modern_Selectors_Starter.xaml',
+        officialResourceUrl: 'https://academy.uipath.com/courses/ui-automation-with-studio-modern-design-experience',
+        topicsCovered: ['Modern Experience', 'Fuzzy & Strict Selectors', 'Anchors & Computer Vision', 'Dynamic Wildcards'],
+        orderIndex: 5,
+        isPublished: true,
+        contentMd: `# UI Automation & Modern Selectors
+
+A selector is an XML fragment that uniquely identifies a graphical user interface (GUI) element on the screen (such as a textbox, submit button, or dropdown).
+
+### Modern Design Experience Targeting
+UiPath Modern UI Automation combines multiple targeting technologies into a unified fallback chain:
+1. **Strict Selector**: Exact XML tree hierarchy and attributes (\`id\`, \`name\`, \`tag\`).
+2. **Fuzzy Selector**: Levenshtein distance matching for slight text/CSS variations.
+3. **Image / Anchor Matching**: Visual anchor positioning relative to static labels.
+4. **Computer Vision (AI)**: Neural-network analysis of pixels when UI descriptors fail.
+
+### Anatomy of an Enterprise Selector
+\`\`\`xml
+<html app='chrome.exe' title='ACE Student Portal - Dashboard' />
+<webctrl id='txt_rollNumber' tag='INPUT' type='text' />
+<nav up='1' />
+<webctrl tag='BUTTON' aaname='Search Records' />
+\`\`\`
+
+### Dynamic Wildcards
+* \`*\`: Matches zero or more characters (e.g., \`title='Invoice #* - ERP Portal'\`).
+* \`?\`: Matches exactly one character.
+* \`{{variableName}}\`: Dynamically passes variable values into selectors at runtime.`,
+        practiceExerciseMd: 'Automate filling the UiPath RPA Challenge input fields (rpachallenge.com) where inputs change locations dynamically on each submit.'
+      },
+      {
+        id: 'mod_assoc_06',
+        slug: 'excel-and-datatables-automation',
+        title: 'Excel & DataTables Automation',
+        summary: 'Filter, sort, aggregate, and transform large datasets using Excel Workbook activities, in-memory DataTables, and LINQ queries.',
+        durationMinutes: 75,
+        level: 'Intermediate',
+        uipathTool: 'Studio',
+        starterCodeUrl: 'https://github.com/kanchana-Tejaswy/ACE-UiPath-Community/releases/download/v1.0/DataTable_Automation_Starter.xaml',
+        officialResourceUrl: 'https://academy.uipath.com/courses/data-manipulation-in-studio',
+        topicsCovered: ['Excel Activities', 'Read/Write Range', 'Filter DataTable', 'LINQ Expressions'],
+        orderIndex: 6,
+        isPublished: true,
+        contentMd: `# Excel & DataTables Automation
+
+Tabular data is the lifeblood of enterprise business operations. UiPath offers two ways to interact with Excel:
+1. **Workbook Activities**: Headless, fast, does not require Microsoft Excel installed on the machine.
+2. **Excel Application Scope / Modern Excel**: Interacts with Excel COM object directly, supporting macros, pivot tables, and chart formatting.
+
+### Core DataTable Activities
+* **Read Range**: Loads Excel or CSV data into a \`System.Data.DataTable\` variable.
+* **Write Range / Append Range**: Writes in-memory tables back to disk.
+* **Filter DataTable**: Keeps or removes rows matching specific conditions.
+* **For Each Row in Data Table**: Iterates row-by-row with \`row("ColumnName").ToString\`.
+
+### Power User: LINQ in UiPath
+Instead of slow nested loops, use C# / VB.NET LINQ queries for high-speed in-memory filtering:
+\`\`\`csharp
+// Filter students with attendance > 75%
+dtEligible = dtStudents.AsEnumerable()
+    .Where(r => Convert.ToDouble(r["Attendance"]) >= 75.0)
+    .CopyToDataTable();
+\`\`\``,
+        practiceExerciseMd: 'Write a workflow that reads an Excel sheet of 50 student marks, computes their average grade, and writes back "Passed" or "Failed" status in column D.'
+      }
+    ]
+  },
+  {
+    id: 'path_professional_dev',
+    slug: 'uipath-professional-developer',
+    title: 'UiPath Professional Developer',
+    tagline: 'Enterprise architecture: State Machines, REFramework, Orchestrator Queues, and resilient exception handling.',
+    level: 'Advanced',
+    targetAudience: '3rd & 4th year engineering students preparing for Senior RPA Developer & Solution Architect roles',
+    estimatedHours: 24,
+    iconName: 'Cpu',
+    badgeText: 'Advanced Enterprise Track',
+    officialAcademyUrl: 'https://academy.uipath.com/learning-plans/uipath-certified-professional-automation-developer-professional-track',
+    description: 'Master the industry-standard Robotic Enterprise Framework (REFramework), transaction processing queues, Orchestrator APIs, and enterprise error-recovery patterns.',
+    overviewMd: `### Advanced Architecture Curriculum
+The **UiPath Professional Developer** track is aimed at senior engineering students who want to build production-grade, enterprise-scale bots.
+
+You will master the State Machine paradigm, decouple workflows using the Dispatcher-Performer pattern with Orchestrator Queues, and implement automated crash recovery.
+
+#### Key Focus Areas
+* **Robotic Enterprise Framework (REFramework)**: Deep state machine lifecycle analysis.
+* **Orchestrator Queues & Transactions**: Deadlock prevention, auto-retries, SLA prioritization.
+* **Global Exception Handlers**: Auto-healing screenshot logging and fault management.
+* **Config.xlsx Management**: Decoupling environment settings from workflow binaries.`,
+    orderIndex: 2,
+    isPublished: true,
+    modules: [
+      {
+        id: 'mod_prof_01',
+        slug: 'state-machine-architecture',
+        title: 'Advanced State Machine Architecture',
+        summary: 'Understand state machines, state transitions, entry/exit actions, and how to model complex non-linear business flows in Studio.',
+        durationMinutes: 90,
+        level: 'Advanced',
+        uipathTool: 'Studio',
+        officialResourceUrl: 'https://academy.uipath.com/courses/state-machines-in-studio',
+        topicsCovered: ['State Machines', 'Transitions & Triggers', 'Entry/Exit Actions', 'Final State'],
+        orderIndex: 1,
+        isPublished: true,
+        contentMd: `# Advanced State Machine Architecture
+
+A **State Machine** is a behavioral model consisting of a finite number of states, transitions between those states, and actions. Unlike linear Sequences or Flowcharts, State Machines are ideal for long-running, event-driven transactional processes.
+
+### Elements of a State Machine
+* **State**: A condition during execution where the robot performs specific Entry actions and waits for transitions.
+* **Transition**: A directed link that connects one state to another when a Trigger condition evaluates to true.
+* **Final State**: A terminal state that represents process completion with no outgoing transitions.`,
+        practiceExerciseMd: 'Build a 3-state state machine modeling an ATM cash withdrawal workflow (Card Inserted -> PIN Validated -> Dispense / Reject).'
+      },
+      {
+        id: 'mod_prof_02',
+        slug: 'reframework-deep-dive',
+        title: 'Robotic Enterprise Framework (REFramework) Deep Dive',
+        summary: 'Deconstruct the 4 core states of REFramework: Init, Get Transaction Data, Process Transaction, and End Process.',
+        durationMinutes: 150,
+        level: 'Advanced',
+        uipathTool: 'Studio',
+        videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        videoDuration: '35 mins',
+        blogUrl: '#blogs/mastering-reframework-guide',
+        blogArticleId: 'art_2',
+        blogTitle: "Mastering Robotic Enterprise Framework (REFramework): A Student's Guide",
+        starterCodeUrl: 'https://github.com/kanchana-Tejaswy/ACE-UiPath-Community/releases/download/v1.0/REFramework_Enterprise_Template.zip',
+        officialResourceUrl: 'https://academy.uipath.com/courses/robotic-enterprise-framework-deep-dive',
+        topicsCovered: ['REFramework Lifecycle', 'Config.xlsx', 'BusinessRuleException', 'System Exception Retries'],
+        orderIndex: 2,
+        isPublished: true,
+        contentMd: `# Robotic Enterprise Framework (REFramework) Deep Dive
+
+REFramework is the gold standard for enterprise UiPath bot authoring. It comes pre-built with retry logic, exception handling, configuration management, and queue integration.
+
+### The 4 States of REFramework
+1. **Init State**: Reads \`Config.xlsx\`, kills legacy background processes, initializes applications.
+2. **Get Transaction Data**: Fetches the next queue item from Orchestrator or local collection.
+3. **Process Transaction**: Executes business logic inside a strict Try-Catch boundary.
+4. **End Process**: Gracefully closes open applications and logs total transaction telemetry.
+
+### Handling Exceptions in REFramework
+* **BusinessRuleException (BRE)**: Data-level issue (e.g., negative salary). The transaction is marked **Failed (Business)** and the robot immediately advances to the next item with no retry.
+* **System.Exception (SE)**: Infrastructure crash (e.g., website down). The robot closes applications, re-initializes, and retries the item up to \`MaxRetryNumber\`.`,
+        practiceExerciseMd: 'Open the REFramework template, add a custom asset in Config.xlsx, and wire Process.xaml to process an invoice number.'
+      },
+      {
+        id: 'mod_prof_03',
+        slug: 'orchestrator-queues-and-slas',
+        title: 'Orchestrator Queues, Transactions & SLAs',
+        summary: 'Decouple automations using the Dispatcher-Performer pattern with Orchestrator cloud queues, encrypted credentials, and transaction SLAs.',
+        durationMinutes: 120,
+        level: 'Advanced',
+        uipathTool: 'Orchestrator',
+        starterCodeUrl: 'https://github.com/kanchana-Tejaswy/ACE-UiPath-Community/releases/download/v1.0/Dispatcher_Performer_Starter.xaml',
+        officialResourceUrl: 'https://academy.uipath.com/courses/working-with-orchestrator-queues-in-studio',
+        topicsCovered: ['Orchestrator Queues', 'Dispatcher-Performer', 'SpecificContent Dictionary', 'Queue SLA Alerts'],
+        orderIndex: 3,
+        isPublished: true,
+        contentMd: `# Orchestrator Queues & Asset Architecture
+
+Orchestrator Queues provide FIFO/Priority-based storage for transaction data items.
+
+### The Dispatcher-Performer Pattern
+* **Dispatcher Bot**: Ingests raw batch data from spreadsheets or databases, creates queue items in Orchestrator with metadata.
+* **Performer Bot**: Fetches items one-by-one, executes business logic, and records final status (Successful / Failed).
+
+\`\`\`csharp
+// Accessing Queue Item SpecificContent in Studio
+string customerId = in_TransactionItem.SpecificContent["CustomerID"].ToString();
+double invoiceAmount = Convert.ToDouble(in_TransactionItem.SpecificContent["TotalAmount"]);
+\`\`\``,
+        practiceExerciseMd: 'Create a Dispatcher workflow that pushes 10 records to an Orchestrator queue with High/Normal priority.'
+      },
+      {
+        id: 'mod_prof_04',
+        slug: 'enterprise-error-handling',
+        title: 'Enterprise Error Handling, Logging & Global Handlers',
+        summary: 'Implement robust Try-Catch-Finally trees, automatic failure screenshots, and Global Exception Handlers for uninterrupted enterprise runs.',
+        durationMinutes: 90,
+        level: 'Advanced',
+        uipathTool: 'Studio',
+        officialResourceUrl: 'https://academy.uipath.com/courses/error-handling-in-studio',
+        topicsCovered: ['Try-Catch-Finally', 'Global Exception Handler', 'Take Screenshot Activity', 'Custom Exception Types'],
+        orderIndex: 4,
+        isPublished: true,
+        contentMd: `# Enterprise Error Handling & Logging
+
+A production bot must never crash silently. It must capture diagnostics, take a screenshot of the display, log telemetry to Orchestrator, and exit or recover safely.
+
+### The Global Exception Handler
+Studio provides a specialized workflow named \`GlobalHandler.xaml\` that intercepts unhandled exceptions globally and decides whether to **Retry**, **Ignore**, **Abort**, or **Step Over** the failed activity.`,
+        practiceExerciseMd: 'Add a Global Exception Handler to a workflow that saves a timestamped screenshot to a "Logs/Screenshots" folder upon any UI failure.'
+      }
+    ]
+  },
+  {
+    id: 'path_agentic_assoc',
+    slug: 'agentic-associate',
+    title: 'UiPath Agentic Automation Associate',
+    tagline: 'Next-gen automation: autonomous AI agents, UiPath Autopilot, GenAI activities, and semantic grounding.',
+    level: 'Intermediate',
+    targetAudience: 'Students interested in Generative AI, Large Language Models (LLMs) & Intelligent Agents',
+    estimatedHours: 12,
+    iconName: 'Sparkles',
+    badgeText: 'Agentic AI Track',
+    officialAcademyUrl: 'https://academy.uipath.com/courses/introduction-to-agentic-automation-and-uipath-autopilot',
+    description: 'Learn how modern AI agents think, reason, and act across enterprise software using UiPath Autopilot and generative AI activities.',
+    overviewMd: `### Agentic Automation Curriculum
+Agentic automation moves beyond deterministic RPA scripts into autonomous reasoning systems where AI agents plan workflows dynamically.
+
+#### What You Will Learn
+* **Agentic Paradigms**: Differences between deterministic RPA scripts vs reasoning AI agents.
+* **UiPath Autopilot**: Natural language code generation, test case synthesis, and intelligent assistants.
+* **GenAI Activities**: Grounding prompts with company context, semantic search, and RAG architectures.`,
+    orderIndex: 3,
+    isPublished: true,
+    modules: [
+      {
+        id: 'mod_agnt_01',
+        slug: 'introduction-to-agentic-ai',
+        title: 'Introduction to AI Agents & Agentic Automation',
+        summary: 'Explore the shift from deterministic rule-based bots to reasoning AI agents with autonomous planning, tool calling, and human validation.',
+        durationMinutes: 60,
+        level: 'Intermediate',
+        uipathTool: 'Autopilot & GenAI',
+        videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+        videoDuration: '20 mins',
+        officialResourceUrl: 'https://academy.uipath.com/courses/introduction-to-agentic-automation-and-uipath-autopilot',
+        topicsCovered: ['Agentic Automation', 'ReAct Loops', 'LLM Tool Calling', 'Deterministic vs Autonomous'],
+        orderIndex: 1,
+        isPublished: true,
+        contentMd: `# Introduction to AI Agents & Agentic Automation
+
+Traditional RPA executes rigid, deterministic paths. **Agentic Automation** empowers software agents with Large Language Models (LLMs) to reason about unstructured inputs, decompose goals into sub-tasks, and invoke activities dynamically.
+
+### The 4 Pillars of an AI Agent
+1. **Perception**: Ingesting unstructured text, documents, emails, and UI DOM states.
+2. **Reasoning & Planning**: Formulating a multi-step execution plan using LLMs.
+3. **Action (Tool Use)**: Triggering UiPath activities and API connectors to change external systems.
+4. **Reflection**: Evaluating whether execution achieved the intended outcome before proceeding.`,
+        practiceExerciseMd: 'Design a high-level flowchart describing how an AI agent processes an ambiguous customer support email and routes it to billing or tech support.'
+      },
+      {
+        id: 'mod_agnt_02',
+        slug: 'uipath-autopilot-studio',
+        title: 'UiPath Autopilot for Studio & Test Suite',
+        summary: 'Leverage UiPath Autopilot to generate complex workflows from natural language prompts, auto-heal broken selectors, and generate synthetic test datasets.',
+        durationMinutes: 75,
+        level: 'Intermediate',
+        uipathTool: 'Autopilot & GenAI',
+        officialResourceUrl: 'https://academy.uipath.com/courses/uipath-autopilot-for-developers',
+        topicsCovered: ['UiPath Autopilot', 'Natural Language to XAML', 'Auto-healing Selectors', 'Synthetic Test Generation'],
+        orderIndex: 2,
+        isPublished: true,
+        contentMd: `# UiPath Autopilot for Developers
+
+UiPath Autopilot brings Generative AI directly into Studio and Test Suite to accelerate developer velocity.
+
+### Key Autopilot Capabilities
+* **Prompt to Workflow**: Describe what you want in plain English; Autopilot generates the complete sequence with configured activities.
+* **Auto-Generating Expressions**: Autopilot writes VB.NET / C# regular expressions and LINQ queries from example strings.
+* **Intelligent Documentation**: Auto-generates summary docstrings and activity annotation notes.`,
+        practiceExerciseMd: 'Use Autopilot in Studio to prompt: "Extract invoice date and total amount from this text and convert to EUR".'
+      },
+      {
+        id: 'mod_agnt_03',
+        slug: 'genai-activities-and-llm-connectors',
+        title: 'GenAI Activities & Semantic RAG Workflows',
+        summary: 'Integrate OpenAI, Azure OpenAI, and Google Gemini connectors into UiPath Studio workflows to summarize documents and perform semantic entity extraction.',
+        durationMinutes: 90,
+        level: 'Intermediate',
+        uipathTool: 'Autopilot & GenAI',
+        starterCodeUrl: 'https://github.com/kanchana-Tejaswy/ACE-UiPath-Community/releases/download/v1.0/GenAI_Connector_Starter.xaml',
+        officialResourceUrl: 'https://academy.uipath.com/courses/generative-ai-activities-in-studio',
+        topicsCovered: ['GenAI Connector', 'Prompt Engineering', 'JSON Schema Output', 'Grounding Data'],
+        orderIndex: 3,
+        isPublished: true,
+        contentMd: `# GenAI Studio Activities & Connectors
+
+UiPath provides first-class activities under \`UiPath.GenerativeAI.Activities\` to embed foundational LLMs directly into transactional workflows.
+
+### Structured Output Extraction
+Prompting an LLM to return valid JSON with strict schema validation ensures downstream RPA activities can parse the response reliably without regex parsing errors.`,
+        practiceExerciseMd: 'Build a workflow that takes a raw customer complaint paragraph and outputs a JSON object with Sentiment, Category, and Urgency fields.'
+      }
+    ]
+  },
+  {
+    id: 'path_agentic_prof',
+    slug: 'agentic-professional',
+    title: 'UiPath Agentic Automation Professional',
+    tagline: 'Enterprise autonomous agents: multi-agent orchestration, custom AI Center models, and trust guardrails.',
+    level: 'Specialist',
+    targetAudience: 'Advanced students aiming to deploy autonomous AI systems with human-in-the-loop validation',
+    estimatedHours: 20,
+    iconName: 'Zap',
+    badgeText: 'Autonomous Orchestration',
+    officialAcademyUrl: 'https://academy.uipath.com/learning-plans/agentic-automation-specialist',
+    description: 'Deploy multi-agent workflows with UiPath Action Center human governance, AI Center ML model fine-tuning, and enterprise security guardrails.',
+    overviewMd: `### Specialist Curriculum
+The **UiPath Agentic Professional** track focuses on enterprise governance, multi-agent systems, and production observability for autonomous AI systems.
+
+#### Key Focus Areas
+* **Multi-Agent Orchestration**: Coordinating specialized worker agents with human oversight.
+* **AI Center Integration**: Training, deploying, and monitoring custom machine learning extractors.
+* **Trust & Safety Guardrails**: Hallucination detection, PII redacting, and compliance audits.`,
+    orderIndex: 4,
+    isPublished: true,
+    modules: [
+      {
+        id: 'mod_agntp_01',
+        slug: 'multi-agent-orchestration',
+        title: 'Multi-Agent Orchestration & Action Center Governance',
+        summary: 'Coordinate multi-agent swarms with UiPath Action Center to keep human decision makers in the loop for high-risk autonomous choices.',
+        durationMinutes: 120,
+        level: 'Specialist',
+        uipathTool: 'AI Center',
+        officialResourceUrl: 'https://academy.uipath.com/courses/orchestrating-ai-agents-with-action-center',
+        topicsCovered: ['Multi-Agent Swarms', 'Action Center Integration', 'Confidence Scoring', 'Human-in-the-Loop'],
+        orderIndex: 1,
+        isPublished: true,
+        contentMd: `# Multi-Agent Orchestration & Governance
+
+In complex enterprises, a single AI agent is insufficient. Systems employ specialized agent swarms:
+1. **Classifier Agent**: Routes incoming tickets.
+2. **Extraction Agent**: Parses structured data fields.
+3. **Verification Agent**: Validates records against enterprise databases.
+4. **Action Center Gate**: Prompts human operator if confidence falls below threshold.`,
+        practiceExerciseMd: 'Design a workflow where an AI agent classifies an expense report and routes items over $1,000 to UiPath Action Center for manager signoff.'
+      },
+      {
+        id: 'mod_agntp_02',
+        slug: 'ai-center-custom-models',
+        title: 'Custom AI Center ML Models & LLM Connectors',
+        summary: 'Train and deploy custom Machine Learning models in UiPath AI Center and integrate them seamlessly into Studio pipelines.',
+        durationMinutes: 120,
+        level: 'Specialist',
+        uipathTool: 'AI Center',
+        officialResourceUrl: 'https://academy.uipath.com/courses/ai-center-for-developers',
+        topicsCovered: ['AI Center Deployment', 'ML Skills', 'Continuous Learning Pipelines', 'Dataset Labeling'],
+        orderIndex: 2,
+        isPublished: true,
+        contentMd: `# UiPath AI Center & Machine Learning Pipelines
+
+UiPath AI Center bridges the gap between Data Science and RPA. It allows teams to host, manage, and retrain machine learning models that robots can invoke via **ML Skill** activities.`,
+        practiceExerciseMd: 'Package a dataset of sample receipts, upload to AI Center, and deploy a Document Understanding ML Skill.'
+      },
+      {
+        id: 'mod_agntp_03',
+        slug: 'agentic-guardrails-and-observability',
+        title: 'Autonomous Agent Guardrails & Observability',
+        summary: 'Implement security guardrails, PII redaction, token budgets, and full audit telemetry for enterprise autonomous agents.',
+        durationMinutes: 90,
+        level: 'Specialist',
+        uipathTool: 'AI Center',
+        officialResourceUrl: 'https://academy.uipath.com/courses/ai-trust-and-governance',
+        topicsCovered: ['Agent Guardrails', 'PII Redaction', 'Token Budgeting', 'Audit Telemetry'],
+        orderIndex: 3,
+        isPublished: true,
+        contentMd: `# Agentic Guardrails, Safety & Observability
+
+Deploying autonomous agents in production requires strict controls:
+* **Hallucination Mitigation**: Grounding prompts strictly in retrieved context.
+* **PII Redaction**: Stripping sensitive personal information before sending to external APIs.
+* **Audit Trails**: Logging every LLM prompt, response, and tool invocation to immutable logs.`,
+        practiceExerciseMd: 'Configure a pre-processing filter activity that masks credit card numbers and email addresses before invoking an LLM.'
+      }
+    ]
+  },
+  {
     id: 'path_citizen_dev',
     slug: 'citizen-developer-studiox',
-    title: 'Track 1: Citizen Developer & Quick Automation',
-    tagline: 'Start automating your daily workflow without writing complex code.',
+    title: 'UiPath Citizen Developer (StudioX)',
+    tagline: 'Zero-code personal productivity: automate Excel, Gmail, desktop apps, and web scraping with visual cards.',
     level: 'Beginner',
-    targetAudience: 'Any student (1st/2nd year, all engineering branches)',
+    targetAudience: 'Any student (1st & 2nd year across all engineering branches: CSE, IT, ECE, EEE, Mech, Civil)',
     estimatedHours: 8,
     iconName: 'Zap',
+    badgeText: 'No-Code Foundation',
+    officialAcademyUrl: 'https://academy.uipath.com/learning-plans/citizen-developer-foundation',
     description: 'Master UiPath StudioX. Automate Microsoft Excel data cleaning, bulk PDF file renaming, web scraping, and automated email reporting using no-code visual workflow cards.',
-    orderIndex: 1,
+    overviewMd: `### Citizen Developer Curriculum
+UiPath StudioX allows engineering students from all branches to automate repetitive manual computer tasks without writing complex software code.
+
+#### Key Skills Acquired
+* **Excel Card Automation**: Filtering tables, auto-formatting, formula injection.
+* **Gmail / Outlook Automation**: Sending personalized bulk emails with dynamic templates.
+* **Web Scraping**: Extracting data tables from websites with zero programming.`,
+    orderIndex: 5,
     isPublished: true,
     modules: [
       {
         id: 'mod_cx_01',
         slug: 'studiox-introduction-setup',
-        title: 'Module 1: Installing UiPath StudioX & First Automation',
+        title: 'Installing UiPath StudioX & First Automation',
         summary: 'Download UiPath Community Edition, configure StudioX mode, and build a simple clipboard-to-Notepad bot.',
         durationMinutes: 45,
         level: 'Beginner',
         uipathTool: 'StudioX',
+        officialResourceUrl: 'https://academy.uipath.com/courses/build-your-first-automation-with-studiox',
+        starterCodeUrl: 'https://github.com/kanchana-Tejaswy/ACE-UiPath-Community/releases/download/v1.0/StudioX_Mod1_Starter.xaml',
+        topicsCovered: ['StudioX Profile', 'Card Activities', 'Clipboard Automation', 'Project Run'],
+        orderIndex: 1,
+        isPublished: true,
         contentMd: `# Welcome to UiPath StudioX
 
 UiPath StudioX is designed for business users and citizen developers who want to eliminate tedious manual computer tasks.
@@ -526,167 +1090,32 @@ You will create an automated workflow that:
 4. Saves confirmation data back to the sheet
 
 ### Prerequisites
-- Install **UiPath Studio Community Edition** from [cloud.uipath.com](https://cloud.uipath.com)
-- Switch profile to **StudioX** from *Home > Settings > License and Profile > Change Profile*.`,
-        practiceExerciseMd: 'Create a bot that reads a list of 5 student names and generates a custom text message file for each.',
-        starterCodeUrl: 'https://github.com/kanchana-Tejaswy/ACE-UiPath-Community/releases/download/v1.0/StudioX_Mod1_Starter.xaml',
-        orderIndex: 1
+* Install **UiPath Studio Community Edition** from [cloud.uipath.com](https://cloud.uipath.com)
+* Switch profile to **StudioX** from *Home > Settings > License and Profile > Change Profile*.`,
+        practiceExerciseMd: 'Create a bot that reads a list of 5 student names and generates a custom text message file for each.'
       },
       {
         id: 'mod_cx_02',
         slug: 'excel-and-email-automation',
-        title: 'Module 2: Advanced Excel Tables & Gmail Integration',
+        title: 'Advanced Excel Tables & Gmail Integration',
         summary: 'Filter data tables, compute grades/scores, and send personalized email attachments with dynamic templates.',
         durationMinutes: 60,
         level: 'Beginner',
         uipathTool: 'StudioX',
+        starterCodeUrl: 'https://github.com/kanchana-Tejaswy/ACE-UiPath-Community/releases/download/v1.0/StudioX_Mod2_Excel_Email.xaml',
+        officialResourceUrl: 'https://academy.uipath.com/courses/excel-and-mail-automation-with-studiox',
+        topicsCovered: ['Excel Cards', 'For Each Row', 'Send Email Card', 'Dynamic Templates'],
+        orderIndex: 2,
+        isPublished: true,
         contentMd: `# Automated Excel & Email Workflows
 
 Spreadsheets and emails consume 60% of office productivity. With StudioX, you can connect Excel Cards with Gmail/Outlook cards seamlessly.
 
 ### Core Activities Used
-- **Use Excel File**: Designates the working workbook.
-- **For Each Row**: Iterates over data rows with header recognition.
-- **Send Email**: Dispatches formatted HTML messages with attachments.`,
-        starterCodeUrl: 'https://github.com/kanchana-Tejaswy/ACE-UiPath-Community/releases/download/v1.0/StudioX_Mod2_Excel_Email.xaml',
-        orderIndex: 2
-      }
-    ]
-  },
-  {
-    id: 'path_associate_dev',
-    slug: 'uipath-associate-developer-studio',
-    title: 'Track 2: UiPath Associate Developer (Studio & Modern Design)',
-    tagline: 'Become an industry-ready RPA developer using UiPath Studio.',
-    level: 'Intermediate',
-    targetAudience: 'CSE / IT / ECE students with basic programming foundation',
-    estimatedHours: 20,
-    iconName: 'Code',
-    description: 'Comprehensive curriculum covering Variables, Arguments, Flowcharts, Sequences, Modern Experience Selectors, Computer Vision, Data Manipulation with LINQ, and Orchestrator Asset configuration.',
-    orderIndex: 2,
-    isPublished: true,
-    modules: [
-      {
-        id: 'mod_as_01',
-        slug: 'modern-selectors-and-computer-vision',
-        title: 'Module 1: Modern Experience Selectors & UI Descriptors',
-        summary: 'Master fuzzy selectors, strict selectors, computer vision anchors, and resilient UI automation against web updates.',
-        durationMinutes: 90,
-        level: 'Intermediate',
-        uipathTool: 'Studio',
-        contentMd: `# Modern Design Experience in UiPath Studio
-
-Selectors are the backbone of RPA. In the Modern Experience, UiPath combines **Strict Selectors**, **Fuzzy Selectors**, and **Image/Computer Vision anchors** into a unified targeting method.
-
-### Structure of a Robust Selector
-\`\`\`xml
-<html app='chrome.exe' title='ACE Student Portal - Dashboard' />
-<webctrl id='txt_rollNumber' tag='INPUT' type='text' />
-<nav up='1' />
-<webctrl tag='BUTTON' aaname='Search Records' />
-\`\`\`
-
-### Key Best Practices
-1. Avoid dynamic numeric indices like \`idx='4'\`.
-2. Use wildcards \`*\` and \`?\` for fluctuating session tokens.
-3. Always pair text fields with nearest static visual labels (Anchors).`,
-        starterCodeUrl: 'https://github.com/kanchana-Tejaswy/ACE-UiPath-Community/releases/download/v1.0/Modern_Selectors_Starter.xaml',
-        orderIndex: 1
-      },
-      {
-        id: 'mod_as_02',
-        slug: 'orchestrator-queues-and-assets',
-        title: 'Module 2: UiPath Orchestrator Queues & Asset Architecture',
-        summary: 'Decouple automation into Dispatcher and Performer bots using Orchestrator cloud queues and encrypted credentials.',
-        durationMinutes: 120,
-        level: 'Intermediate',
-        uipathTool: 'Orchestrator',
-        contentMd: `# Orchestrator Queues & Assets
-
-Never hardcode credentials or process large lists in a single single-threaded bot.
-
-### The Dispatcher-Performer Pattern
-1. **Dispatcher**: Reads source database/APIs and creates queue items in UiPath Orchestrator.
-2. **Performer**: Fetches queue items one-by-one, processes transactions, and reports status.
-
-\`\`\`csharp
-// Fetching an Orchestrator Credential in Studio
-UiPath.Core.Activities.GetRobotCredential
-// Output: System.Security.SecureString password
-\`\`\``,
-        starterCodeUrl: 'https://github.com/kanchana-Tejaswy/ACE-UiPath-Community/releases/download/v1.0/Dispatcher_Performer_Starter.xaml',
-        orderIndex: 2
-      }
-    ]
-  },
-  {
-    id: 'path_enterprise_architect',
-    slug: 'enterprise-automation-architect-reframework',
-    title: 'Track 3: Enterprise Automation Architect (REFramework)',
-    tagline: 'Build scalable, fault-tolerant robotic workflows ready for Fortune 500 deployments.',
-    level: 'Advanced',
-    targetAudience: '3rd / 4th year students aiming for top RPA enterprise developer roles',
-    estimatedHours: 25,
-    iconName: 'Cpu',
-    description: 'Master State Machines, Robotic Enterprise Framework (REFramework), Config.xlsx management, BusinessRuleException hierarchies, auto-healing screenshots, and Orchestrator integration.',
-    orderIndex: 3,
-    isPublished: true,
-    modules: [
-      {
-        id: 'mod_ea_01',
-        slug: 'reframework-anatomy-and-state-machine',
-        title: 'Module 1: REFramework Anatomy & State Machine Logic',
-        summary: 'Deconstruct Init State, Get Transaction Data, Process Transaction, and End Process state transitions.',
-        durationMinutes: 150,
-        level: 'Advanced',
-        uipathTool: 'Studio',
-        contentMd: `# The Enterprise Framework Anatomy
-
-The Robotic Enterprise Framework provides an out-of-the-box state machine template with built-in retry logic, exception handling, and credential management.
-
-### The 4 Fundamental States
-1. **Initialization**: Reads \`Data/Config.xlsx\`, kills existing applications, initializes settings.
-2. **Get Transaction Data**: Polls Orchestrator Queue or local collection for next work item.
-3. **Process Transaction**: Executes business logic inside a strict Try-Catch block.
-4. **End Process**: Gracefully closes applications and logs execution summary.`,
-        starterCodeUrl: 'https://github.com/kanchana-Tejaswy/ACE-UiPath-Community/releases/download/v1.0/REFramework_Enterprise_Template.zip',
-        orderIndex: 1
-      }
-    ]
-  },
-  {
-    id: 'path_ai_specialist',
-    slug: 'intelligent-automation-ai-center-document-understanding',
-    title: 'Track 4: Intelligent Automation & Document Understanding',
-    tagline: 'Combine RPA with Machine Learning models and Generative AI.',
-    level: 'Specialist',
-    targetAudience: 'Students interested in AI, Machine Learning & Intelligent Document Processing',
-    estimatedHours: 18,
-    iconName: 'Sparkles',
-    description: 'Integrate UiPath AI Center, pre-trained OCR extraction models, Action Center human-in-the-loop validation, and Generative AI activities for natural language automations.',
-    orderIndex: 4,
-    isPublished: true,
-    modules: [
-      {
-        id: 'mod_ai_01',
-        slug: 'document-understanding-taxonomy-and-extractors',
-        title: 'Module 1: Building a Document Understanding Pipeline',
-        summary: 'Configure Taxonomy Manager, Digitization, Document Classification, and ML Extractors for complex invoices.',
-        durationMinutes: 120,
-        level: 'Specialist',
-        uipathTool: 'Document Understanding',
-        contentMd: `# UiPath Document Understanding Architecture
-
-Document Understanding enables robots to read, interpret, and validate structured, semi-structured, and unstructured business documents.
-
-### The 5 Stage DU Pipeline
-1. **Taxonomy**: Define document types and data fields.
-2. **Digitize**: Convert PDF/Scans to text and DOM using OCR engines.
-3. **Classify**: Identify which document type is being handled.
-4. **Extract**: Run ML Extractor, Form Extractor, or RegEx Extractor.
-5. **Validate**: Trigger UiPath Action Center for human approval if confidence score is < 85%.`,
-        starterCodeUrl: 'https://github.com/kanchana-Tejaswy/ACE-UiPath-Community/releases/download/v1.0/Document_Understanding_Pipeline.zip',
-        orderIndex: 1
+* **Use Excel File**: Designates the working workbook.
+* **For Each Row in Excel**: Iterates over data rows with header recognition.
+* **Send Email**: Dispatches formatted HTML messages with attachments.`,
+        practiceExerciseMd: 'Build a StudioX bot that sends an email notification to all students in an Excel list who scored above 80%.'
       }
     ]
   }

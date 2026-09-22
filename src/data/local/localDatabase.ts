@@ -69,7 +69,14 @@ export const localDatabase = {
   getActivities: (): Activity[] => getItem(STORAGE_KEYS.ACTIVITIES, INITIAL_ACTIVITIES),
   saveActivities: (data: Activity[]): void => setItem(STORAGE_KEYS.ACTIVITIES, data),
 
-  getLearningPaths: (): LearningPath[] => getItem(STORAGE_KEYS.LEARNING_PATHS, INITIAL_LEARNING_PATHS),
+  getLearningPaths: (): LearningPath[] => {
+    const loaded = getItem<LearningPath[]>(STORAGE_KEYS.LEARNING_PATHS, INITIAL_LEARNING_PATHS);
+    if (!Array.isArray(loaded) || loaded.length < INITIAL_LEARNING_PATHS.length || !loaded.some(p => p.slug === 'uipath-associate-developer')) {
+      setItem(STORAGE_KEYS.LEARNING_PATHS, INITIAL_LEARNING_PATHS);
+      return INITIAL_LEARNING_PATHS;
+    }
+    return loaded;
+  },
   saveLearningPaths: (data: LearningPath[]): void => setItem(STORAGE_KEYS.LEARNING_PATHS, data),
 
   getProjects: (): ProjectShowcase[] => getItem(STORAGE_KEYS.PROJECTS, INITIAL_PROJECTS),

@@ -1,531 +1,504 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   GraduationCap, 
   Clock, 
-  Zap, 
-  Code, 
-  Cpu, 
-  Sparkles, 
-  ChevronRight, 
-  CheckCircle2, 
-  Download, 
-  PlayCircle,
-  FileCode,
-  ArrowRight,
-  BookOpen
+  Search, 
+  BookOpen, 
+  Sparkles
 } from 'lucide-react';
 import { LearningPath, LearningModule } from '../types';
+import { OfficialAcademyButton } from '../components/academy/OfficialAcademyButton';
+import { YouTubeVideoCard } from '../components/academy/YouTubeVideoCard';
+import { ModuleResourcesList } from '../components/academy/ModuleResourcesList';
+import { ModuleNavigation } from '../components/academy/ModuleNavigation';
+import { CourseModuleList } from '../components/academy/CourseModuleList';
+import { CourseCard } from '../components/academy/CourseCard';
+import { AcademyBreadcrumbs } from '../components/academy/AcademyBreadcrumbs';
 
 interface Props {
   learningPaths: LearningPath[];
   selectedModuleSlug?: string;
-  completedModuleIds?: string[];
-  onToggleModuleCompletion?: (moduleId: string) => void;
   onNavigate: (view: string, detailId?: string) => void;
 }
 
 export const LearnPage: React.FC<Props> = ({
-  learningPaths,
+  learningPaths = [],
   selectedModuleSlug,
-  completedModuleIds = [],
-  onToggleModuleCompletion,
   onNavigate
 }) => {
-  // Find track and module matching selectedModuleSlug if provided
-  let initialPath = learningPaths[0];
-  let initialModule = learningPaths[0]?.modules[0];
-  let isInvalidSlug = false;
+  const [levelFilter, setLevelFilter] = useState<string>('ALL');
+  const [searchQuery, setSearchQuery] = useState<string>('');
 
-  if (selectedModuleSlug) {
-    let found = false;
-    for (const path of learningPaths) {
-      if (path.slug === selectedModuleSlug || path.id === selectedModuleSlug) {
-        initialPath = path;
-        initialModule = path.modules[0];
-        found = true;
-        break;
-      }
-      const modMatch = path.modules.find((m) => m.slug === selectedModuleSlug || m.id === selectedModuleSlug);
-      if (modMatch) {
-        initialPath = path;
-        initialModule = modMatch;
-        found = true;
-        break;
-      }
+  // --------------------------------------------------------------------------
+  // ROUTING & STATE RESOLUTION
+  // Hierarchy: Learning Academy -> Course -> Module -> Content
+  // --------------------------------------------------------------------------
+  const resolvedState = useMemo(() => {
+    if (!selectedModuleSlug || selectedModuleSlug === 'all') {
+      return { viewType: 'catalog' as const, activeCourse: null, activeModule: null };
     }
-    if (!found) {
-      isInvalidSlug = true;
-    }
-  }
 
-  const [selectedPathId, setSelectedPathId] = useState<string>(initialPath?.id || '');
-  const [selectedModuleId, setSelectedModuleId] = useState<string>(initialModule?.id || '');
+    const cleanSlug = selectedModuleSlug.trim().toLowerCase();
 
-  // Keep state in sync if selectedModuleSlug changes
-  useEffect(() => {
-    if (selectedModuleSlug) {
-      for (const path of learningPaths) {
-        if (path.slug === selectedModuleSlug || path.id === selectedModuleSlug) {
-          setSelectedPathId(path.id);
-          if (path.modules.length > 0) setSelectedModuleId(path.modules[0].id);
-          return;
+    // 1. Check for /:courseSlug/:moduleSlug route
+    if (cleanSlug.includes('/')) {
+      const [cSlug, mSlug] = cleanSlug.split('/');
+      const course = learningPaths.find(
+        (p) => (p.slug && p.slug.toLowerCase() === cSlug) || p.id.toLowerCase() === cSlug
+      );
+      if (course) {
+        const module = (course.modules || []).find(
+          (m) => (m.slug && m.slug.toLowerCase() === mSlug) || m.id.toLowerCase() === mSlug
+        );
+        if (module) {
+          return { viewType: 'module' as const, activeCourse: course, activeModule: module };
         }
-        const modMatch = path.modules.find((m) => m.slug === selectedModuleSlug || m.id === selectedModuleSlug);
-        if (modMatch) {
-          setSelectedPathId(path.id);
-          setSelectedModuleId(modMatch.id);
-          return;
-        }
+        return { viewType: 'course' as const, activeCourse: course, activeModule: null };
       }
     }
+
+    // 2. Check for direct course slug match
+    const directCourseMatch = learningPaths.find(
+      (p) => (p.slug && p.slug.toLowerCase() === cleanSlug) || p.id.toLowerCase() === cleanSlug
+    );
+    if (directCourseMatch) {
+      return { viewType: 'course' as const, activeCourse: directCourseMatch, activeModule: null };
+    }
+
+    // 3. Fallback: Check if cleanSlug matches a module directly inside any course
+    for (const course of learningPaths) {
+      const directModuleMatch = (course.modules || []).find(
+        (m) => (m.slug && m.slug.toLowerCase() === cleanSlug) || m.id.toLowerCase() === cleanSlug
+      );
+      if (directModuleMatch) {
+        return { viewType: 'module' as const, activeCourse: course, activeModule: directModuleMatch };
+      }
+    }
+
+    return { viewType: 'catalog' as const, activeCourse: null, activeModule: null };
   }, [selectedModuleSlug, learningPaths]);
 
-  const activePath = learningPaths.find((p) => p.id === selectedPathId) || learningPaths[0];
-  const activeModule = activePath?.modules.find((m) => m.id === selectedModuleId) || activePath?.modules[0];
+  const { viewType, activeCourse, activeModule } = resolvedState;
 
-  const getPathIcon = (iconName: string) => {
-    switch (iconName) {
-      case 'Zap': return Zap;
-      case 'Code': return Code;
-      case 'Cpu': return Cpu;
-      default: return Sparkles;
-    }
+  // Navigation helpers
+  const handleOpenCourse = (course: LearningPath) => {
+    const slug = course.slug || course.id;
+    onNavigate('learn', slug);
   };
 
-  const renderMarkdown = (md: string) => {
-    if (!md) return '';
-    
-    // 1. Extract fenced code blocks with language support
-    const codeBlocks: string[] = [];
-    let processed = md.replace(/```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g, (_, lang, code) => {
-      const escapedCode = code
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;');
-      const isXml = lang.toLowerCase() === 'xml' || lang.toLowerCase() === 'xaml';
-      const isCs = lang.toLowerCase() === 'csharp' || lang.toLowerCase() === 'c#';
-      const borderColor = isCs ? 'rgba(255, 255, 255, 0.12)' : isXml ? 'rgba(250, 70, 22, 0.35)' : 'var(--border-subtle)';
-      const textColor = isCs ? '#E5E7EB' : isXml ? '#FDBA74' : 'var(--text-primary)';
-      const blockHtml = `<pre style="background:#111111;border:1px solid ${borderColor};padding:1.15rem;border-radius:8px;overflow-x:auto;margin:1.25rem 0;font-family:var(--font-mono);font-size:0.875rem;line-height:1.5;color:${textColor}"><code>${escapedCode.trim()}</code></pre>`;
-      const idx = codeBlocks.length;
-      codeBlocks.push(blockHtml);
-      return `__CODE_BLOCK_${idx}__`;
-    });
-
-    // 2. Headings
-    processed = processed.replace(/^# (.*$)/gim, '<h3 style="color:#FFF;margin-top:1.5rem;margin-bottom:0.75rem;font-size:1.35rem;font-weight:700;">$1</h3>');
-    processed = processed.replace(/^## (.*$)/gim, '<h4 style="color:#FFF;margin-top:1.25rem;margin-bottom:0.6rem;font-size:1.15rem;font-weight:600;">$1</h4>');
-    processed = processed.replace(/^### (.*$)/gim, '<h5 style="color:#FED7AA;margin-top:1.25rem;margin-bottom:0.5rem;font-size:1.05rem;font-weight:600;">$1</h5>');
-
-    // 3. Bold & inline code
-    processed = processed.replace(/\\*\\*(.*?)\\*\\*/g, '<strong style="color:var(--text-primary);font-weight:600;">$1</strong>');
-    processed = processed.replace(/`([^`]+)`/g, '<code style="background:#1A1A1A;color:#FDBA74;padding:2px 6px;border-radius:4px;font-size:0.875em;border:1px solid var(--border-subtle);">$1</code>');
-
-    // 4. Split into blocks by double newlines for paragraphs and lists
-    const blocks = processed.split(/\\n\\s*\\n/);
-    const renderedBlocks = blocks.map((block) => {
-      const trimmed = block.trim();
-      if (!trimmed) return '';
-      if (trimmed.startsWith('__CODE_BLOCK_') || trimmed.startsWith('<h3') || trimmed.startsWith('<h4') || trimmed.startsWith('<h5')) {
-        return trimmed;
-      }
-      const lines = trimmed.split('\\n');
-      const isList = lines.every(l => /^\\s*([*\\-]|\d+\\.)\\s+/.test(l));
-      if (isList) {
-        const listItems = lines.map(l => {
-          const itemText = l.replace(/^\\s*([*\\-]|\d+\\.)\\s+/, '');
-          return `<li style="margin-bottom:0.4rem;color:var(--text-secondary);">${itemText}</li>`;
-        }).join('');
-        return `<ul style="margin:0.75rem 0 1.25rem 1.5rem;list-style-type:disc;">${listItems}</ul>`;
-      }
-      return `<p style="margin-bottom:1rem;line-height:1.75;color:var(--text-secondary);">${trimmed.replace(/\\n/g, ' ')}</p>`;
-    });
-
-    let finalHtml = renderedBlocks.join('\\n');
-
-    // 5. Reinsert code blocks
-    codeBlocks.forEach((blockHtml, idx) => {
-      finalHtml = finalHtml.replace(`__CODE_BLOCK_${idx}__`, blockHtml);
-    });
-
-    return finalHtml;
+  const handleOpenModule = (course: LearningPath, module: LearningModule) => {
+    const courseSlug = course.slug || course.id;
+    const moduleSlug = module.slug || module.id;
+    onNavigate('learn', `${courseSlug}/${moduleSlug}`);
   };
 
+  // Filtered courses for catalog view
+  const filteredCourses = useMemo(() => {
+    return learningPaths.filter((c) => {
+      if (c.isPublished === false) return false;
+      if (levelFilter !== 'ALL' && c.level && c.level.toUpperCase() !== levelFilter.toUpperCase()) {
+        return false;
+      }
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const matchesTitle = (c.title || c.name || '').toLowerCase().includes(q);
+        const matchesDesc = (c.description || c.tagline || '').toLowerCase().includes(q);
+        const matchesModules = (c.modules || []).some(
+          (m) => (m.title || m.name || '').toLowerCase().includes(q) || (m.description || m.summary || '').toLowerCase().includes(q)
+        );
+        if (!matchesTitle && !matchesDesc && !matchesModules) return false;
+      }
+      return true;
+    });
+  }, [learningPaths, levelFilter, searchQuery]);
+
+  // --------------------------------------------------------------------------
+  // 1. MODULE PAGE (Focused Entirely on Learning Resources)
+  // --------------------------------------------------------------------------
+  if (viewType === 'module' && activeCourse && activeModule) {
+    const sortedModules = [...(activeCourse.modules || [])].sort(
+      (a, b) => (a.orderIndex || 0) - (b.orderIndex || 0)
+    );
+    const moduleIndex = sortedModules.findIndex((m) => m.id === activeModule.id);
+    const moduleNumber = moduleIndex >= 0 ? String(moduleIndex + 1).padStart(2, '0') : '01';
+    const previousModule = moduleIndex > 0 ? sortedModules[moduleIndex - 1] : undefined;
+    const nextModule = moduleIndex < sortedModules.length - 1 ? sortedModules[moduleIndex + 1] : undefined;
+
+    // Official course link (module-specific or fallback to course)
+    const officialUrl = activeModule.officialAcademyUrl || activeModule.officialResourceUrl || activeCourse.officialAcademyUrl;
+    const youtubeUrl = activeModule.youtubeUrl || activeModule.videoUrl;
+    const moduleDescription = activeModule.description || activeModule.summary || activeModule.contentMd;
+
+    return (
+      <div className="container academy-module-view" style={{ paddingTop: '2rem', paddingBottom: '6rem' }}>
+        {/* Breadcrumb Navigation */}
+        <AcademyBreadcrumbs
+          courseTitle={activeCourse.title || activeCourse.name || 'Course'}
+          courseSlug={activeCourse.slug || activeCourse.id}
+          moduleTitle={`Module ${moduleNumber}: ${activeModule.title || activeModule.name}`}
+          onNavigate={onNavigate}
+        />
+
+        {/* Module Header Card */}
+        <div
+          style={{
+            background: 'var(--bg-secondary, #131722)',
+            border: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.1))',
+            borderRadius: 'var(--radius-lg, 16px)',
+            padding: '2.5rem',
+            marginBottom: '2rem',
+            boxShadow: '0 12px 36px rgba(0, 0, 0, 0.35)'
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1.5rem' }}>
+            <div style={{ flex: 1, minWidth: '280px' }}>
+              {/* Course & Module Index Tag */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
+                <span
+                  style={{
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    color: 'var(--uipath-orange, #FA4616)',
+                    background: 'rgba(250, 70, 22, 0.12)',
+                    border: '1px solid rgba(250, 70, 22, 0.3)',
+                    padding: '0.2rem 0.6rem',
+                    borderRadius: '999px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.04em'
+                  }}
+                >
+                  {activeCourse.title || activeCourse.name}
+                </span>
+
+                <span className="badge badge-slate" style={{ fontSize: '0.75rem' }}>
+                  Module {moduleNumber} of {String(sortedModules.length).padStart(2, '0')}
+                </span>
+
+                {activeModule.durationMinutes && (
+                  <span className="badge badge-neutral" style={{ fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <Clock size={12} /> {activeModule.durationMinutes} mins
+                  </span>
+                )}
+              </div>
+
+              {/* Module Name */}
+              <h1
+                style={{
+                  fontSize: 'clamp(1.8rem, 3.5vw, 2.5rem)',
+                  fontWeight: 800,
+                  color: 'var(--text-primary, #FFFFFF)',
+                  margin: '0 0 0.5rem 0',
+                  lineHeight: 1.25
+                }}
+              >
+                Module {moduleNumber} — {activeModule.title || activeModule.name}
+              </h1>
+            </div>
+
+            {/* Official UiPath Academy Link Button */}
+            {officialUrl && (
+              <OfficialAcademyButton
+                url={officialUrl}
+                label="Complete this course on UiPath Academy ↗"
+                size="lg"
+                variant="glow"
+              />
+            )}
+          </div>
+        </div>
+
+        {/* 1. MODULE DESCRIPTION (About this module) */}
+        {moduleDescription && (
+          <div
+            style={{
+              background: 'var(--bg-secondary, #131722)',
+              border: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.08))',
+              borderRadius: 'var(--radius-lg, 14px)',
+              padding: '2rem 2.25rem',
+              marginBottom: '2rem',
+              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', borderBottom: '1px solid rgba(255, 255, 255, 0.06)', paddingBottom: '0.65rem' }}>
+              <Sparkles size={18} style={{ color: 'var(--uipath-orange, #FA4616)' }} />
+              <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, color: 'var(--text-primary, #FFFFFF)' }}>
+                About this module
+              </h2>
+            </div>
+
+            <div
+              style={{
+                fontSize: '1rem',
+                color: 'var(--text-secondary, #D1D5DB)',
+                lineHeight: 1.7,
+                whiteSpace: 'pre-line'
+              }}
+            >
+              {moduleDescription}
+            </div>
+          </div>
+        )}
+
+        {/* 2. YOUTUBE VIDEO SECTION (Rendered only if YouTube URL is configured) */}
+        {youtubeUrl && (
+          <div style={{ marginBottom: '2rem' }}>
+            <YouTubeVideoCard
+              videoUrl={youtubeUrl}
+              videoDuration={activeModule.videoDuration}
+              moduleTitle={activeModule.title || activeModule.name || 'Module Video'}
+            />
+          </div>
+        )}
+
+        {/* 3. TEMPLATES & RESOURCES SECTION (Rendered only if resources exist) */}
+        <div style={{ marginBottom: '2rem' }}>
+          <ModuleResourcesList
+            resources={activeModule.resources}
+            starterCodeUrl={activeModule.starterCodeUrl}
+          />
+        </div>
+
+        {/* 4. BROWSING NAVIGATION */}
+        <ModuleNavigation
+          courseTitle={activeCourse.title || activeCourse.name || 'Course'}
+          courseSlug={activeCourse.slug || activeCourse.id}
+          currentModule={activeModule}
+          previousModule={previousModule}
+          nextModule={nextModule}
+          onNavigateModule={(mod) => handleOpenModule(activeCourse, mod)}
+          onBackToCourse={() => handleOpenCourse(activeCourse)}
+        />
+      </div>
+    );
+  }
+
+  // --------------------------------------------------------------------------
+  // 2. COURSE PAGE (Course Header + Ordered Modules List, No Progress Bars)
+  // --------------------------------------------------------------------------
+  if (viewType === 'course' && activeCourse) {
+    const totalModules = activeCourse.modules?.length || 0;
+
+    return (
+      <div className="container academy-course-view" style={{ paddingTop: '2rem', paddingBottom: '6rem' }}>
+        {/* Breadcrumbs */}
+        <AcademyBreadcrumbs
+          courseTitle={activeCourse.title || activeCourse.name || 'Course'}
+          courseSlug={activeCourse.slug || activeCourse.id}
+          onNavigate={onNavigate}
+        />
+
+        {/* Course Header Banner */}
+        <div
+          style={{
+            background: 'linear-gradient(135deg, rgba(28, 14, 8, 0.95) 0%, rgba(13, 17, 26, 0.95) 100%)',
+            border: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.12))',
+            borderRadius: 'var(--radius-lg, 16px)',
+            padding: '2.5rem',
+            marginBottom: '2.5rem',
+            boxShadow: '0 12px 36px rgba(0, 0, 0, 0.4)'
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1.5rem' }}>
+            <div style={{ flex: 1, minWidth: '300px' }}>
+              {/* Badges */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
+                {activeCourse.badgeText && (
+                  <span
+                    style={{
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      color: '#FED7AA',
+                      background: 'rgba(250, 70, 22, 0.2)',
+                      border: '1px solid rgba(250, 70, 22, 0.4)',
+                      padding: '0.25rem 0.65rem',
+                      borderRadius: '999px'
+                    }}
+                  >
+                    {activeCourse.badgeText}
+                  </span>
+                )}
+                {activeCourse.level && <span className="badge badge-orange">{activeCourse.level}</span>}
+                {activeCourse.estimatedHours ? <span className="badge badge-slate">{activeCourse.estimatedHours} Hours</span> : null}
+                <span className="badge badge-neutral">{totalModules} {totalModules === 1 ? 'Module' : 'Modules'}</span>
+              </div>
+
+              {/* Course Name */}
+              <h1 style={{ fontSize: 'clamp(2rem, 4vw, 2.75rem)', fontWeight: 800, color: 'var(--text-primary, #FFFFFF)', margin: '0 0 0.85rem 0', lineHeight: 1.2 }}>
+                {activeCourse.title || activeCourse.name}
+              </h1>
+
+              {/* Course Description */}
+              <p style={{ fontSize: '1.1rem', color: 'var(--text-secondary, #D1D5DB)', lineHeight: 1.6, maxWidth: '800px', margin: 0 }}>
+                {activeCourse.description || activeCourse.tagline}
+              </p>
+            </div>
+
+            {/* Official Academy Button (Admin Controlled) */}
+            {activeCourse.officialAcademyUrl && (
+              <OfficialAcademyButton
+                url={activeCourse.officialAcademyUrl}
+                label="Complete this course on UiPath Academy ↗"
+                size="lg"
+                variant="glow"
+              />
+            )}
+          </div>
+        </div>
+
+        {/* Modules Section Header */}
+        <div style={{ marginBottom: '1.5rem' }}>
+          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--uipath-orange, #FA4616)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.25rem' }}>
+            CURRICULUM
+          </div>
+          <h2 style={{ fontSize: '1.65rem', fontWeight: 800, color: 'var(--text-primary, #FFFFFF)', margin: 0 }}>
+            Modules
+          </h2>
+        </div>
+
+        {/* Ordered Modules List */}
+        <CourseModuleList
+          modules={activeCourse.modules || []}
+          onSelectModule={(mod) => handleOpenModule(activeCourse, mod)}
+        />
+      </div>
+    );
+  }
+
+  // --------------------------------------------------------------------------
+  // 3. LEARNING ACADEMY LANDING PAGE (Pure Structured Digital Library)
+  // --------------------------------------------------------------------------
   return (
-    <div className="container" style={{ paddingTop: '3rem', paddingBottom: '6rem' }}>
-      {/* Header */}
+    <div className="container academy-landing-page" style={{ paddingTop: '2.5rem', paddingBottom: '6rem' }}>
+      {/* Library Hero Header */}
       <div style={{ marginBottom: '3rem' }}>
-        <span className="badge badge-orange" style={{ marginBottom: '0.5rem' }}>
-          UiPath Student Academy
-        </span>
-        <h1 style={{ fontSize: 'clamp(2rem, 4vw, 2.8rem)', fontWeight: 800, marginBottom: '1rem' }}>
-          Structured UiPath Automation Roadmaps
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+          <span className="badge badge-orange" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontWeight: 700 }}>
+            <GraduationCap size={14} /> Learning Academy Library
+          </span>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted, #9CA3AF)' }}>
+            • ACE Engineering College Student Chapter
+          </span>
+        </div>
+
+        <h1 style={{ fontSize: 'clamp(2.2rem, 4.5vw, 3.2rem)', fontWeight: 800, letterSpacing: '-0.02em', marginBottom: '1rem', lineHeight: 1.15 }}>
+          Explore UiPath Automation Courses
         </h1>
-        <p style={{ fontSize: '1.05rem', color: 'var(--text-secondary)', maxWidth: '820px' }}>
-          Zero-to-hero learning curricula curated specifically for engineering students. Select a track, master enterprise RPA concepts, and download starter `.XAML` workflows.
+
+        <p style={{ fontSize: '1.15rem', color: 'var(--text-secondary, #D1D5DB)', maxWidth: '800px', lineHeight: 1.6, margin: 0 }}>
+          Structured learning roadmaps from foundational RPA to advanced Agentic AI Automation. Browse our curated modules, download starter templates, and access official certification training.
         </p>
       </div>
 
-      {/* "Where should I start?" Guidance Section */}
-      <div style={{
-        background: 'var(--bg-secondary)',
-        border: '1px solid var(--border-subtle)',
-        borderRadius: 'var(--radius-lg)',
-        padding: '2rem',
-        marginBottom: '2.5rem'
-      }}>
-        <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--uipath-orange)', textTransform: 'uppercase', marginBottom: '0.35rem' }}>
-          RECOMMENDED STARTING POINT
-        </div>
-        <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '1.25rem' }}>
-          Where should you start?
-        </h2>
-
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-          gap: '1rem'
-        }}>
-          <div
-            onClick={() => {
-              const p = learningPaths.find((lp) => lp.level === 'Beginner') || learningPaths[0];
-              if (p) {
-                setSelectedPathId(p.id);
-                if (p.modules.length > 0) setSelectedModuleId(p.modules[0].id);
-              }
-            }}
-            style={{
-              padding: '1.25rem',
-              background: 'var(--bg-primary)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: 'var(--radius-md)',
-              cursor: 'pointer'
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-              <span className="badge badge-green">New to automation?</span>
-            </div>
-            <div style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.25rem' }}>
-              Beginner: StudioX Track
-            </div>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>
-              No complex coding needed. Automate Excel, Gmail, and routine desktop tasks.
-            </p>
-            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--uipath-orange)', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
-              Start Beginner Track <ArrowRight size={13} />
-            </span>
-          </div>
-
-          <div
-            onClick={() => {
-              const p = learningPaths.find((lp) => lp.level === 'Intermediate') || learningPaths[1] || learningPaths[0];
-              if (p) {
-                setSelectedPathId(p.id);
-                if (p.modules.length > 0) setSelectedModuleId(p.modules[0].id);
-              }
-            }}
-            style={{
-              padding: '1.25rem',
-              background: 'var(--bg-primary)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: 'var(--radius-md)',
-              cursor: 'pointer'
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-              <span className="badge badge-neutral">Know the basics?</span>
-            </div>
-            <div style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.25rem' }}>
-              Intermediate: Studio & Queues
-            </div>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>
-              Master modern selectors, UI automation, and Orchestrator transactions.
-            </p>
-            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--uipath-orange)', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
-              Continue Intermediate <ArrowRight size={13} />
-            </span>
-          </div>
-
-          <div
-            onClick={() => {
-              const p = learningPaths.find((lp) => lp.level === 'Advanced' || lp.level === 'Specialist') || learningPaths[2] || learningPaths[0];
-              if (p) {
-                setSelectedPathId(p.id);
-                if (p.modules.length > 0) setSelectedModuleId(p.modules[0].id);
-              }
-            }}
-            style={{
-              padding: '1.25rem',
-              background: 'var(--bg-primary)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: 'var(--radius-md)',
-              cursor: 'pointer'
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-              <span className="badge badge-orange">Ready for enterprise?</span>
-            </div>
-            <div style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.25rem' }}>
-              Advanced: REFramework & AI
-            </div>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>
-              Build transactional State Machines, Document Understanding ML, and scalable bots.
-            </p>
-            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#FDBA74', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
-              Open Architect Track <ArrowRight size={13} />
-            </span>
-          </div>
-        </div>
-      </div>
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-        gap: '1rem',
-        marginBottom: '2.5rem'
-      }}>
-        {learningPaths.map((path) => {
-          const Icon = getPathIcon(path.iconName);
-          const isSelected = path.id === selectedPathId;
-          const completedCount = path.modules.filter((m) => completedModuleIds.includes(m.id)).length;
-          const progressPercent = path.modules.length > 0 ? Math.round((completedCount / path.modules.length) * 100) : 0;
-
-          return (
-            <div
-              key={path.id}
-              onClick={() => {
-                setSelectedPathId(path.id);
-                if (path.modules.length > 0) {
-                  setSelectedModuleId(path.modules[0].id);
-                  const targetSlug = path.modules[0].slug || path.modules[0].id;
-                  onNavigate('learn', targetSlug);
-                } else {
-                  onNavigate('learn', path.slug || path.id);
-                }
-              }}
-              className="glass-card"
-              style={{
-                padding: '1.25rem',
-                cursor: 'pointer',
-                background: isSelected ? 'var(--bg-surface)' : 'var(--bg-tertiary)',
-                borderColor: isSelected ? 'var(--uipath-orange)' : 'var(--border-subtle)',
-                boxShadow: isSelected ? 'var(--shadow-glow)' : 'none'
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-                <div style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: '8px',
-                  background: isSelected ? 'var(--uipath-orange)' : 'var(--bg-secondary)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: isSelected ? '#FFFFFF' : 'var(--uipath-orange)'
-                }}>
-                  <Icon size={18} />
-                </div>
-                <span className="badge badge-slate" style={{ fontSize: '0.65rem' }}>
-                  {path.level}
-                </span>
-              </div>
-
-              <h4 style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: '0.25rem' }}>
-                {path.title}
-              </h4>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.75rem' }}>
-                {path.estimatedHours} Hours • {completedCount}/{path.modules.length} Completed ({progressPercent}%)
-              </div>
-
-              {/* Progress Rail */}
-              <div style={{ width: '100%', height: '4px', background: 'var(--bg-secondary)', borderRadius: '999px', overflow: 'hidden' }}>
-                <div style={{ width: `${progressPercent}%`, height: '100%', background: 'var(--uipath-orange)', transition: 'width var(--transition-smooth)' }} />
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Main Track & Module Workspace (2 Columns: Module List & Active Content) */}
-      {activePath && (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: '320px minmax(0, 1fr)',
-          gap: '2rem'
-        }} className="learn-workspace">
-          {/* Module Nav Sidebar */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div className="glass-card" style={{ padding: '1.5rem' }}>
-              <div style={{ marginBottom: '1.25rem' }}>
-                <h3 style={{ fontSize: '1.1rem', marginBottom: '0.25rem' }}>Track Modules</h3>
-                <p style={{ fontSize: '0.775rem', color: 'var(--text-muted)' }}>
-                  Target: {activePath.targetAudience}
-                </p>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                {activePath.modules.map((mod, mIdx) => {
-                  const isModSelected = mod.id === activeModule?.id;
-                  return (
-                    <div
-                      key={mod.id}
-                      onClick={() => {
-                        setSelectedModuleId(mod.id);
-                        onNavigate('learn', mod.slug || mod.id);
-                      }}
-                      style={{
-                        padding: '0.85rem 1rem',
-                        borderRadius: 'var(--radius-md)',
-                        background: isModSelected ? 'var(--uipath-orange-subtle)' : 'var(--bg-tertiary)',
-                        border: isModSelected ? '1px solid var(--uipath-orange)' : '1px solid transparent',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        gap: '0.75rem',
-                        transition: 'all var(--transition-fast)'
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-                        <span style={{
-                          width: '22px',
-                          height: '22px',
-                          borderRadius: '50%',
-                          background: isModSelected ? 'var(--uipath-orange)' : 'var(--bg-surface)',
-                          color: isModSelected ? '#FFF' : 'var(--text-muted)',
-                          fontSize: '0.7rem',
-                          fontWeight: 700,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          flexShrink: 0
-                        }}>
-                          {mIdx + 1}
-                        </span>
-                        <div>
-                          <div style={{ fontWeight: 600, fontSize: '0.85rem', color: isModSelected ? '#FFF' : 'var(--text-primary)' }}>
-                            {mod.title.split(':')[1] || mod.title}
-                          </div>
-                          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                            {mod.durationMinutes} mins • {mod.uipathTool}
-                          </div>
-                        </div>
-                      </div>
-                      <ChevronRight size={14} style={{ color: isModSelected ? 'var(--uipath-orange)' : 'var(--text-muted)' }} />
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Official Certification Card */}
-            <div className="glass-panel" style={{ padding: '1.25rem', background: 'linear-gradient(135deg, rgba(28, 10, 4, 0.8) 0%, rgba(13, 15, 22, 0.9) 100%)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                <GraduationCap size={16} style={{ color: 'var(--uipath-orange)' }} />
-                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#FED7AA' }}>UiPath Certification</span>
-              </div>
-              <p style={{ fontSize: '0.775rem', color: 'var(--text-secondary)', marginBottom: '0.85rem' }}>
-                Completing this track prepares you for the official <strong>UiPath Certified Professional (UiRPA)</strong> exam.
-              </p>
-              <button onClick={() => onNavigate('resources')} className="btn btn-outline btn-sm" style={{ width: '100%' }}>
-                View Mock Exam Papers
+      {/* Filter and Search Bar */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '1rem',
+          marginBottom: '2.5rem'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+          {[
+            { id: 'ALL', label: 'All Courses' },
+            { id: 'BEGINNER', label: 'Beginner' },
+            { id: 'INTERMEDIATE', label: 'Intermediate' },
+            { id: 'ADVANCED', label: 'Advanced' },
+            { id: 'SPECIALIST', label: 'Agentic & Specialist' }
+          ].map((item) => {
+            const isActive = levelFilter === item.id;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setLevelFilter(item.id)}
+                style={{
+                  background: isActive ? 'var(--uipath-orange, #FA4616)' : 'var(--bg-secondary, #131722)',
+                  color: isActive ? '#FFFFFF' : 'var(--text-secondary, #D1D5DB)',
+                  border: `1px solid ${isActive ? 'transparent' : 'var(--border-subtle, rgba(255, 255, 255, 0.1))'}`,
+                  borderRadius: 'var(--radius-md, 8px)',
+                  padding: '0.45rem 0.95rem',
+                  fontSize: '0.825rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                {item.label}
               </button>
-            </div>
-          </div>
+            );
+          })}
+        </div>
 
-          {/* Active Module Lesson Reader */}
-          {activeModule && (
-            <div className="glass-panel" style={{ padding: '2.5rem', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-              {/* Module Header */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
-                <div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                    <span className="badge badge-orange">{activeModule.uipathTool}</span>
-                    <span className="badge badge-neutral">{activeModule.level}</span>
-                    <span className="badge badge-slate">{activeModule.durationMinutes} Minutes</span>
-                    {completedModuleIds.includes(activeModule.id) && (
-                      <span className="badge badge-green">Completed</span>
-                    )}
-                  </div>
-                  <h2 style={{ fontSize: '1.85rem', marginBottom: '0.75rem' }}>{activeModule.title}</h2>
-                  <p style={{ fontSize: '1rem', color: 'var(--text-secondary)' }}>{activeModule.summary}</p>
-                </div>
+        <div style={{ position: 'relative', minWidth: '260px' }}>
+          <Search size={15} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted, #9CA3AF)' }} />
+          <input
+            type="text"
+            placeholder="Search courses..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '0.5rem 0.85rem 0.5rem 2.25rem',
+              background: 'var(--bg-secondary, #131722)',
+              border: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.1))',
+              borderRadius: 'var(--radius-md, 8px)',
+              color: 'var(--text-primary, #FFFFFF)',
+              fontSize: '0.85rem'
+            }}
+          />
+        </div>
+      </div>
 
-                <button
-                  onClick={() => onToggleModuleCompletion && onToggleModuleCompletion(activeModule.id)}
-                  className={`btn ${completedModuleIds.includes(activeModule.id) ? 'btn-secondary' : 'btn-primary'}`}
-                  style={{ gap: '0.4rem' }}
-                >
-                  <CheckCircle2 size={16} style={{ color: completedModuleIds.includes(activeModule.id) ? '#10B981' : '#FFF' }} />
-                  <span>{completedModuleIds.includes(activeModule.id) ? 'Marked Complete' : 'Mark Lesson Complete'}</span>
-                </button>
-              </div>
+      {/* Courses Grid */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+          gap: '1.75rem',
+          marginBottom: '4rem'
+        }}
+      >
+        {filteredCourses.map((course) => (
+          <CourseCard
+            key={course.id}
+            course={course}
+            onOpenCourse={handleOpenCourse}
+          />
+        ))}
+      </div>
 
-              {/* Starter Code Download Action */}
-              {activeModule.starterCodeUrl && (
-                <div style={{
-                  padding: '1.25rem',
-                  background: 'var(--bg-tertiary)',
-                  borderRadius: 'var(--radius-md)',
-                  border: '1px solid var(--border-subtle)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  flexWrap: 'wrap',
-                  gap: '1rem'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <FileCode size={24} style={{ color: 'var(--uipath-orange)' }} />
-                    <div>
-                      <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>Starter Workflow Project (.XAML)</div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Pre-configured skeleton ready to open in UiPath Studio</div>
-                    </div>
-                  </div>
-                  <a
-                    href={activeModule.starterCodeUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="btn btn-primary btn-sm"
-                  >
-                    <Download size={14} /> Download Starter .XAML
-                  </a>
-                </div>
-              )}
-
-              {/* Lesson Markdown Content */}
-              <div className="markdown-body" style={{ color: 'var(--text-secondary)', fontSize: '1rem', lineHeight: 1.7 }}>
-                <div dangerouslySetInnerHTML={{
-                  __html: renderMarkdown(activeModule.contentMd)
-                }} />
-              </div>
-
-              {/* Practice Exercise */}
-              {activeModule.practiceExerciseMd && (
-                <div style={{
-                  padding: '1.5rem',
-                  background: 'rgba(16, 185, 129, 0.08)',
-                  border: '1px solid rgba(16, 185, 129, 0.25)',
-                  borderRadius: 'var(--radius-md)'
-                }}>
-                  <h4 style={{ color: '#34D399', fontSize: '1rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                    <CheckCircle2 size={16} /> Hands-on Practice Lab
-                  </h4>
-                  <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-                    {activeModule.practiceExerciseMd}
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
+      {filteredCourses.length === 0 && (
+        <div
+          style={{
+            padding: '4rem 2rem',
+            textAlign: 'center',
+            background: 'var(--bg-secondary, #131722)',
+            borderRadius: 'var(--radius-lg, 14px)',
+            border: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.1))'
+          }}
+        >
+          <GraduationCap size={48} style={{ color: 'var(--text-muted, #9CA3AF)', marginBottom: '1rem', opacity: 0.5 }} />
+          <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary, #FFFFFF)', marginBottom: '0.5rem' }}>
+            No Courses Found
+          </h3>
+          <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary, #9CA3AF)', maxWidth: '400px', margin: '0 auto 1.5rem auto' }}>
+            No courses match the selected filters or search terms.
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              setLevelFilter('ALL');
+              setSearchQuery('');
+            }}
+            className="btn btn-secondary btn-sm"
+          >
+            Reset Filters
+          </button>
         </div>
       )}
-
-      <style>{`
-        @media (max-width: 900px) {
-          .learn-workspace {
-            grid-template-columns: 1fr !important;
-          }
-        }
-      `}</style>
     </div>
   );
 };

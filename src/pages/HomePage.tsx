@@ -13,7 +13,10 @@ import {
   CheckCircle2,
   ChevronRight,
   ShieldCheck,
-  Newspaper
+  Newspaper,
+  GraduationCap,
+  Award,
+  Sparkles
 } from 'lucide-react';
 import { Activity, LearningPath, ProjectShowcase, Challenge, SiteSettings, User, Article } from '../types';
 
@@ -59,6 +62,16 @@ export const HomePage: React.FC<Props> = ({
         { id: 's4', title: 'Hours Automated', value: '3,800+', description: 'Saved in academic grading and records handling', visible: true, order: 4 }
       ];
 
+  const getStatIcon = (index: number) => {
+    switch (index % 4) {
+      case 0: return <GraduationCap size={18} style={{ color: 'var(--uipath-orange)' }} />;
+      case 1: return <Code size={18} style={{ color: 'var(--uipath-orange)' }} />;
+      case 2: return <Award size={18} style={{ color: '#FBBF24' }} />;
+      case 3: return <Clock size={18} style={{ color: '#34D399' }} />;
+      default: return <Sparkles size={18} style={{ color: 'var(--uipath-orange)' }} />;
+    }
+  };
+
   // Helper to render gradient on "Community"
   const renderHeroHeading = (text: string) => {
     const cleanText = text.replace('Student Community', 'Community');
@@ -67,12 +80,7 @@ export const HomePage: React.FC<Props> = ({
       return (
         <>
           {parts[0]}
-          <span style={{
-            background: 'linear-gradient(135deg, #FFFFFF 25%, #FA4616 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            display: 'inline'
-          }}>
+          <span className="text-gradient-orange">
             Community
           </span>
           {parts.slice(1).join('Community')}
@@ -96,7 +104,7 @@ export const HomePage: React.FC<Props> = ({
   // Recent highlights (completed activities)
   const recentHighlights = activities.filter((a) => a.id !== featuredActivity?.id).slice(0, 3);
 
-  // Featured Technical Publication (Only publicly eligible: published or scheduled whose time has elapsed)
+  // Featured Technical Publication
   const publiclyVisibleArticles = articles.filter((a) => {
     if (a.status === 'PUBLISHED') return true;
     if (a.status === 'SCHEDULED' && a.scheduledAt && new Date(a.scheduledAt).getTime() <= Date.now()) return true;
@@ -110,49 +118,51 @@ export const HomePage: React.FC<Props> = ({
 
   return (
     <div style={{ paddingBottom: '5rem' }}>
-      {/* 1. HERO SECTION */}
       {/* 1. HERO SECTION & INTEGRATED STATS GRID */}
       <section style={{
-        paddingTop: '3.5rem',
-        paddingBottom: '3.75rem',
-        background: 'radial-gradient(ellipse 70% 45% at 50% 0%, rgba(250, 70, 22, 0.10), transparent 70%)',
+        paddingTop: '4rem',
+        paddingBottom: '4.5rem',
         borderBottom: '1px solid var(--border-subtle)',
-        position: 'relative'
+        position: 'relative',
+        overflow: 'hidden'
       }}>
-        <div className="container" style={{ maxWidth: '1240px' }}>
+        {/* Soft Ambient Breathing Backlight */}
+        <div className="hero-ambient-glow" />
+
+        <div className="container" style={{ maxWidth: '1240px', position: 'relative', zIndex: 1 }}>
           <div style={{ maxWidth: '920px', margin: '0 auto', textAlign: 'center' }}>
             {/* Institution Chapter Eyebrow Badge */}
             <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem' }}>
               <span style={{
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '0.45rem',
-                background: 'rgba(255, 70, 22, 0.08)',
-                border: '1px solid rgba(255, 70, 22, 0.25)',
+                gap: '0.5rem',
+                background: 'rgba(250, 70, 22, 0.09)',
+                border: '1px solid rgba(250, 70, 22, 0.28)',
                 borderRadius: '9999px',
-                padding: '0.35rem 0.95rem',
+                padding: '0.35rem 1rem',
                 fontSize: '0.75rem',
                 fontWeight: 600,
                 letterSpacing: '0.04em',
                 textTransform: 'uppercase',
                 color: '#FA4616',
-                boxShadow: '0 0 12px rgba(255, 70, 22, 0.12)',
-                backdropFilter: 'blur(8px)',
-                WebkitBackdropFilter: 'blur(8px)'
+                boxShadow: '0 0 16px rgba(250, 70, 22, 0.15)',
+                backdropFilter: 'blur(10px)',
+                WebkitBackdropFilter: 'blur(10px)'
               }}>
-                <ShieldCheck size={13} style={{ color: '#FA4616', flexShrink: 0 }} />
+                <span className="status-dot-pulse status-dot-pulse-orange" />
                 <span>UiPath Academic Alliance &bull; ACE Engineering College</span>
               </span>
             </div>
 
             {/* Main Headline */}
             <h1 style={{
-              fontSize: 'clamp(2.25rem, 4.2vw, 3.25rem)',
+              fontSize: 'clamp(2.35rem, 4.5vw, 3.5rem)',
               lineHeight: 1.15,
               fontWeight: 800,
               letterSpacing: '-0.03em',
               color: '#FFFFFF',
-              marginBottom: '1rem',
+              marginBottom: '1.15rem',
               maxWidth: '900px',
               marginLeft: 'auto',
               marginRight: 'auto',
@@ -165,80 +175,25 @@ export const HomePage: React.FC<Props> = ({
             <p style={{
               fontSize: 'clamp(1rem, 1.8vw, 1.15rem)',
               color: '#D1D5DB',
-              lineHeight: 1.6,
+              lineHeight: 1.65,
               maxWidth: '680px',
-              margin: '0 auto 2rem auto'
+              margin: '0 auto 2.25rem auto'
             }}>
               {heroTagline}
             </p>
 
-            {/* Primary & Secondary Action Buttons (Equal h-11, text-sm font-medium, rounded-xl) */}
+            {/* Primary & Secondary Action Buttons */}
             <div style={{ display: 'flex', justifyContent: 'center', gap: '0.85rem', flexWrap: 'wrap', alignItems: 'center' }}>
-              {/* Primary CTA */}
               <button
                 onClick={() => onNavigate(primaryCtaLink)}
-                style={{
-                  height: '2.75rem',
-                  paddingLeft: '1.5rem',
-                  paddingRight: '1.5rem',
-                  fontSize: '0.875rem',
-                  fontWeight: 500,
-                  borderRadius: '0.75rem',
-                  background: '#FA4616',
-                  color: '#FFFFFF',
-                  border: '1px solid transparent',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.5rem',
-                  cursor: 'pointer',
-                  transition: 'all 200ms ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = '#ff5722';
-                  e.currentTarget.style.boxShadow = '0 0 20px rgba(250, 70, 22, 0.4)';
-                  e.currentTarget.style.transform = 'translateY(-1px)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = '#FA4616';
-                  e.currentTarget.style.boxShadow = 'none';
-                  e.currentTarget.style.transform = 'translateY(0)';
-                }}
+                className="btn btn-primary btn-lg"
               >
                 <span>{primaryCtaText}</span> <span style={{ fontSize: '1rem', lineHeight: 1 }}>&rarr;</span>
               </button>
 
-              {/* Secondary CTA */}
               <button
                 onClick={() => onNavigate(secondaryCtaLink)}
-                style={{
-                  height: '2.75rem',
-                  paddingLeft: '1.5rem',
-                  paddingRight: '1.5rem',
-                  fontSize: '0.875rem',
-                  fontWeight: 500,
-                  borderRadius: '0.75rem',
-                  background: 'rgba(23, 23, 23, 0.60)',
-                  border: '1px solid rgba(64, 64, 64, 0.80)',
-                  color: '#E5E5E5',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  transition: 'all 200ms ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = '#262626';
-                  e.currentTarget.style.borderColor = '#525252';
-                  e.currentTarget.style.color = '#FFFFFF';
-                  e.currentTarget.style.transform = 'translateY(-1px)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'rgba(23, 23, 23, 0.60)';
-                  e.currentTarget.style.borderColor = 'rgba(64, 64, 64, 0.80)';
-                  e.currentTarget.style.color = '#E5E5E5';
-                  e.currentTarget.style.transform = 'translateY(0)';
-                }}
+                className="btn btn-secondary btn-lg"
               >
                 {secondaryCtaText}
               </button>
@@ -249,77 +204,65 @@ export const HomePage: React.FC<Props> = ({
           <div
             className="stats-responsive-grid"
             style={{
-              maxWidth: '72rem',
+              maxWidth: '74rem',
               marginLeft: 'auto',
               marginRight: 'auto',
-              paddingLeft: '1rem',
-              paddingRight: '1rem',
-              marginTop: '2.75rem'
+              marginTop: '3.25rem'
             }}
           >
-            {statisticsList.map((stat) => (
+            {statisticsList.map((stat, idx) => (
               <div
                 key={stat.id}
                 className="stat-card"
-                style={{
-                  background: 'rgba(23, 23, 23, 0.40)',
-                  border: '1px solid rgba(38, 38, 38, 0.80)',
-                  borderRadius: '1rem',
-                  padding: '1.5rem',
-                  backdropFilter: 'blur(4px)',
-                  WebkitBackdropFilter: 'blur(4px)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  transition: 'all 300ms ease',
-                  cursor: 'default'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = '#404040';
-                  e.currentTarget.style.transform = 'translateY(-4px)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = 'rgba(38, 38, 38, 0.80)';
-                  e.currentTarget.style.transform = 'translateY(0)';
-                }}
               >
-                <div>
-                  {/* Numbers: text-3xl md:text-4xl font-extrabold text-[#FA4616] tracking-tight */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
                   <div
                     style={{
-                      fontSize: 'clamp(1.875rem, 3.2vw, 2.25rem)',
+                      fontSize: 'clamp(2rem, 3.4vw, 2.35rem)',
                       fontWeight: 800,
                       color: '#FA4616',
-                      letterSpacing: '-0.025em',
-                      lineHeight: 1.1
+                      letterSpacing: '-0.03em',
+                      lineHeight: 1,
+                      fontVariantNumeric: 'tabular-nums'
                     }}
                   >
                     {stat.value}
                   </div>
-                  {/* Label: text-sm font-semibold text-white mt-2 */}
                   <div style={{
-                    fontSize: '0.875rem',
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '8px',
+                    background: 'rgba(255, 255, 255, 0.04)',
+                    border: '1px solid var(--border-subtle)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    {getStatIcon(idx)}
+                  </div>
+                </div>
+
+                <div>
+                  <div style={{
+                    fontSize: '0.9rem',
                     fontWeight: 600,
                     color: '#FFFFFF',
-                    marginTop: '0.5rem',
-                    letterSpacing: '-0.01em'
+                    letterSpacing: '-0.01em',
+                    marginBottom: '0.25rem'
                   }}>
                     {stat.title}
                   </div>
-                </div>
-                {/* Description: text-xs text-neutral-400 mt-1 leading-relaxed line-clamp-2 */}
-                <div style={{
-                  fontSize: '0.75rem',
-                  color: '#A3A3A3',
-                  marginTop: '0.25rem',
-                  lineHeight: 1.625,
-                  display: '-webkit-box',
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: 'vertical',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis'
-                }}>
-                  {stat.description}
+                  <div style={{
+                    fontSize: '0.775rem',
+                    color: '#9CA3AF',
+                    lineHeight: 1.5,
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden'
+                  }}>
+                    {stat.description}
+                  </div>
                 </div>
               </div>
             ))}
@@ -711,10 +654,10 @@ export const HomePage: React.FC<Props> = ({
         </section>
       )}
 
-      {/* 4. WHAT WE DO - 4 Editorial Pillars (No nested card chaos) */}
-      <section className="section-divider" style={{ background: 'var(--bg-secondary)' }}>
+      {/* 4. WHAT WE DO - 4 Editorial Pillars */}
+      <section className="section-divider">
         <div className="container">
-          <div style={{ maxWidth: '640px', marginBottom: '3rem' }}>
+          <div style={{ maxWidth: '640px', marginBottom: '2.5rem' }}>
             <div className="section-tag">WHAT WE DO</div>
             <h2 className="section-title">How Our Community Operates</h2>
             <p className="section-subtitle">
@@ -725,14 +668,16 @@ export const HomePage: React.FC<Props> = ({
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-            gap: '2rem'
+            gap: '1.5rem'
           }}>
-            <div style={{ borderTop: '2px solid var(--uipath-orange)', paddingTop: '1.5rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                <BookOpen size={20} style={{ color: 'var(--uipath-orange)' }} />
-                <h3 style={{ fontSize: '1.2rem', color: 'var(--text-primary)' }}>1. Learn</h3>
+            <div className="glass-card" style={{ padding: '1.75rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.75rem' }}>
+                <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(250, 70, 22, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--uipath-orange)' }}>
+                  <BookOpen size={18} />
+                </div>
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-primary)' }}>1. Learn</h3>
               </div>
-              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '1rem' }}>
                 Guided curricular tracks from zero-code StudioX basics to professional enterprise architecture with REFramework.
               </p>
               <button
@@ -741,26 +686,27 @@ export const HomePage: React.FC<Props> = ({
                   background: 'none',
                   border: 'none',
                   color: 'var(--uipath-orange)',
-                  fontSize: '0.85rem',
+                  fontSize: '0.825rem',
                   fontWeight: 600,
                   cursor: 'pointer',
-                  padding: '0.5rem 0',
+                  padding: 0,
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: '0.35rem',
-                  marginTop: '0.5rem'
+                  gap: '0.3rem'
                 }}
               >
-                Explore Courses <ChevronRight size={14} />
+                Explore Courses <ChevronRight size={13} />
               </button>
             </div>
 
-            <div style={{ borderTop: '2px solid rgba(255, 255, 255, 0.14)', paddingTop: '1.5rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                <Code size={20} style={{ color: 'var(--text-primary)' }} />
-                <h3 style={{ fontSize: '1.2rem', color: 'var(--text-primary)' }}>2. Build</h3>
+            <div className="glass-card" style={{ padding: '1.75rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.75rem' }}>
+                <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(255, 255, 255, 0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-primary)' }}>
+                  <Code size={18} />
+                </div>
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-primary)' }}>2. Build</h3>
               </div>
-              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '1rem' }}>
                 Students develop working bots that automate campus tasks, university result extraction, and business invoice processing.
               </p>
               <button
@@ -769,26 +715,27 @@ export const HomePage: React.FC<Props> = ({
                   background: 'none',
                   border: 'none',
                   color: 'var(--text-primary)',
-                  fontSize: '0.85rem',
+                  fontSize: '0.825rem',
                   fontWeight: 600,
                   cursor: 'pointer',
-                  padding: '0.5rem 0',
+                  padding: 0,
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: '0.35rem',
-                  marginTop: '0.5rem'
+                  gap: '0.3rem'
                 }}
               >
-                View Student Projects <ChevronRight size={14} />
+                View Student Projects <ChevronRight size={13} />
               </button>
             </div>
 
-            <div style={{ borderTop: '2px solid rgba(255, 255, 255, 0.14)', paddingTop: '1.5rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                <Trophy size={20} style={{ color: 'var(--text-primary)' }} />
-                <h3 style={{ fontSize: '1.2rem', color: 'var(--text-primary)' }}>3. Compete</h3>
+            <div className="glass-card" style={{ padding: '1.75rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.75rem' }}>
+                <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(245, 158, 11, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FBBF24' }}>
+                  <Trophy size={18} />
+                </div>
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-primary)' }}>3. Compete</h3>
               </div>
-              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '1rem' }}>
                 Annual hackathons, national automation sprints, and monthly bug bashes with peer evaluation and recognized awards.
               </p>
               <button
@@ -797,26 +744,27 @@ export const HomePage: React.FC<Props> = ({
                   background: 'none',
                   border: 'none',
                   color: 'var(--text-primary)',
-                  fontSize: '0.85rem',
+                  fontSize: '0.825rem',
                   fontWeight: 600,
                   cursor: 'pointer',
-                  padding: '0.5rem 0',
+                  padding: 0,
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: '0.35rem',
-                  marginTop: '0.5rem'
+                  gap: '0.3rem'
                 }}
               >
-                See Competitions <ChevronRight size={14} />
+                See Competitions <ChevronRight size={13} />
               </button>
             </div>
 
-            <div style={{ borderTop: '2px solid rgba(255, 255, 255, 0.14)', paddingTop: '1.5rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                <Users size={20} style={{ color: 'var(--text-primary)' }} />
-                <h3 style={{ fontSize: '1.2rem', color: 'var(--text-primary)' }}>4. Share</h3>
+            <div className="glass-card" style={{ padding: '1.75rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.75rem' }}>
+                <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(16, 185, 129, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#34D399' }}>
+                  <Users size={18} />
+                </div>
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-primary)' }}>4. Share</h3>
               </div>
-              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '1rem' }}>
                 Open-source starter templates, slide archives, peer mentoring, and alumni placement guidance for upcoming batches.
               </p>
               <button
@@ -825,17 +773,16 @@ export const HomePage: React.FC<Props> = ({
                   background: 'none',
                   border: 'none',
                   color: 'var(--text-primary)',
-                  fontSize: '0.85rem',
+                  fontSize: '0.825rem',
                   fontWeight: 600,
                   cursor: 'pointer',
-                  padding: '0.5rem 0',
+                  padding: 0,
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: '0.35rem',
-                  marginTop: '0.5rem'
+                  gap: '0.3rem'
                 }}
               >
-                Download Templates <ChevronRight size={14} />
+                Download Templates <ChevronRight size={13} />
               </button>
             </div>
           </div>
@@ -864,16 +811,14 @@ export const HomePage: React.FC<Props> = ({
 
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
-            gap: '1.75rem'
+            gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+            gap: '1.5rem'
           }}>
             {featuredProjects.map((project) => (
               <div
                 key={project.id}
+                className="glass-card"
                 style={{
-                  background: 'var(--bg-secondary)',
-                  border: '1px solid var(--border-subtle)',
-                  borderRadius: 'var(--radius-md)',
                   padding: '1.75rem',
                   display: 'flex',
                   flexDirection: 'column',
@@ -881,7 +826,7 @@ export const HomePage: React.FC<Props> = ({
                 }}
               >
                 <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
                     {project.uipathToolsUsed.slice(0, 2).map((tool, idx) => (
                       <span key={idx} className="badge badge-slate" style={{ fontSize: '0.7rem' }}>
                         {tool}
@@ -892,20 +837,20 @@ export const HomePage: React.FC<Props> = ({
                     </span>
                   </div>
 
-                  <h4 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
+                  <h4 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.4rem', lineHeight: 1.35 }}>
                     {project.title}
                   </h4>
 
-                  <div style={{ fontSize: '0.85rem', color: 'var(--uipath-orange)', fontWeight: 600, marginBottom: '0.75rem' }}>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--uipath-orange)', fontWeight: 600, marginBottom: '0.75rem' }}>
                     Impact: {project.roiMetrics}
                   </div>
 
-                  <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.55, marginBottom: '1.25rem' }}>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.55, marginBottom: '1.25rem' }}>
                     {project.problemStatement || project.summary}
                   </p>
                 </div>
 
-                <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '0.85rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
                     <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)' }}>
                       {project.authorName}
