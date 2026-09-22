@@ -64,7 +64,7 @@ export const supabaseAdapter: DataAdapter = {
     if (!isSupabaseConfigured()) return localAdapter.getActivities();
     try {
       const remote = await fetchActivitiesFromSupabase();
-      if (remote && remote.length > 0) {
+      if (remote !== null && Array.isArray(remote)) {
         localDatabase.saveActivities(remote);
         return remote;
       }
@@ -101,7 +101,7 @@ export const supabaseAdapter: DataAdapter = {
     if (!isSupabaseConfigured()) return localAdapter.getProjects();
     try {
       const remote = await fetchProjectsFromSupabase();
-      if (remote && remote.length > 0) {
+      if (remote !== null && Array.isArray(remote)) {
         localDatabase.saveProjects(remote);
         return remote;
       }
@@ -155,7 +155,7 @@ export const supabaseAdapter: DataAdapter = {
     if (!isSupabaseConfigured()) return localAdapter.getLearningPaths();
     try {
       const remote = await fetchLearningPathsFromSupabase();
-      if (remote && remote.length > 0) {
+      if (remote !== null && Array.isArray(remote)) {
         localDatabase.saveLearningPaths(remote);
         return remote;
       }
@@ -200,7 +200,7 @@ export const supabaseAdapter: DataAdapter = {
     if (!isSupabaseConfigured()) return localAdapter.getChallenges();
     try {
       const remote = await fetchChallengesFromSupabase();
-      if (remote && remote.length > 0) {
+      if (remote !== null && Array.isArray(remote)) {
         localDatabase.saveChallenges(remote);
         return remote;
       }
@@ -237,7 +237,7 @@ export const supabaseAdapter: DataAdapter = {
     if (!isSupabaseConfigured()) return localAdapter.getResources();
     try {
       const remote = await fetchResourcesFromSupabase();
-      if (remote && remote.length > 0) {
+      if (remote !== null && Array.isArray(remote)) {
         localDatabase.saveResources(remote);
         return remote;
       }
@@ -291,7 +291,7 @@ export const supabaseAdapter: DataAdapter = {
     if (!isSupabaseConfigured()) return localAdapter.getLeadership();
     try {
       const remote = await fetchLeadershipFromSupabase();
-      if (remote && remote.length > 0) {
+      if (remote !== null && Array.isArray(remote)) {
         localDatabase.saveLeadership(remote);
         return remote;
       }
@@ -328,7 +328,7 @@ export const supabaseAdapter: DataAdapter = {
     if (!isSupabaseConfigured()) return localAdapter.getActivityDrafts();
     try {
       const remote = await fetchActivityDraftsFromSupabase();
-      if (remote && remote.length > 0) {
+      if (remote !== null && Array.isArray(remote)) {
         localDatabase.saveActivityDrafts(remote);
         return remote;
       }
@@ -375,7 +375,7 @@ export const supabaseAdapter: DataAdapter = {
     if (!isSupabaseConfigured()) return localAdapter.getArticles();
     try {
       const remote = await fetchArticlesFromSupabase();
-      if (remote && remote.length > 0) {
+      if (remote !== null && Array.isArray(remote)) {
         localDatabase.saveArticles(remote);
         return remote;
       }

@@ -70,8 +70,8 @@ export const localDatabase = {
   saveActivities: (data: Activity[]): void => setItem(STORAGE_KEYS.ACTIVITIES, data),
 
   getLearningPaths: (): LearningPath[] => {
-    const loaded = getItem<LearningPath[]>(STORAGE_KEYS.LEARNING_PATHS, INITIAL_LEARNING_PATHS);
-    if (!Array.isArray(loaded) || loaded.length === 0) {
+    const loaded = getItem<LearningPath[] | null>(STORAGE_KEYS.LEARNING_PATHS, null);
+    if (!loaded || !Array.isArray(loaded)) {
       setItem(STORAGE_KEYS.LEARNING_PATHS, INITIAL_LEARNING_PATHS);
       return INITIAL_LEARNING_PATHS;
     }

@@ -97,7 +97,7 @@ export async function fetchActivitiesFromSupabase(): Promise<Activity[] | null> 
       .select('*')
       .order('activity_date', { ascending: false });
 
-    if (error || !data || data.length === 0) {
+    if (error || !data) {
       return null;
     }
     return (data as DatabaseActivityRow[]).map(mapActivityRowToEntity);
@@ -149,7 +149,7 @@ export async function fetchProjectsFromSupabase(): Promise<ProjectShowcase[] | n
       .select('*')
       .order('created_at', { ascending: false });
 
-    if (error || !data || data.length === 0) {
+    if (error || !data) {
       return null;
     }
     return (data as DatabaseProjectRow[]).map(mapProjectRowToEntity);
@@ -216,7 +216,7 @@ export async function fetchResourcesFromSupabase(): Promise<CommunityResource[] 
       .select('*')
       .order('created_at', { ascending: false });
 
-    if (error || !data || data.length === 0) {
+    if (error || !data) {
       return null;
     }
     return (data as DatabaseResourceRow[]).map(mapResourceRowToEntity);
@@ -283,7 +283,7 @@ export async function fetchLearningPathsFromSupabase(): Promise<LearningPath[] |
       .select('*')
       .order('order_index', { ascending: true });
 
-    if (error || !data || data.length === 0) {
+    if (error || !data) {
       return null;
     }
     return (data as DatabaseLearningPathRow[]).map(mapLearningPathRowToEntity);
@@ -335,7 +335,7 @@ export async function fetchChallengesFromSupabase(): Promise<Challenge[] | null>
       .select('*')
       .order('start_date', { ascending: false });
 
-    if (error || !data || data.length === 0) {
+    if (error || !data) {
       return null;
     }
     return (data as DatabaseChallengeRow[]).map(mapChallengeRowToEntity);
@@ -387,7 +387,7 @@ export async function fetchLeadershipFromSupabase(): Promise<LeadershipMember[] 
       .select('*')
       .order('order_index', { ascending: true });
 
-    if (error || !data || data.length === 0) {
+    if (error || !data) {
       return null;
     }
     return (data as DatabaseLeadershipRow[]).map(mapLeadershipRowToEntity);
@@ -456,7 +456,7 @@ export async function fetchActivityDraftsFromSupabase(): Promise<ActivityDraft[]
       .select('*')
       .order('updated_at', { ascending: false });
 
-    if (error || !data || data.length === 0) {
+    if (error || !data) {
       return null;
     }
     return (data as DatabaseActivityDraftRow[]).map(mapActivityDraftRowToEntity);
@@ -636,7 +636,7 @@ export async function fetchArticlesFromSupabase(): Promise<Article[] | null> {
       .select('*')
       .order('published_at', { ascending: false, nullsFirst: false });
 
-    if (error || !data || data.length === 0) {
+    if (error || !data) {
       return null;
     }
     return (data as DatabaseArticleRow[]).map(mapArticleRowToEntity);

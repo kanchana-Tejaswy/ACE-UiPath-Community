@@ -96,35 +96,35 @@ export function useCommunityStore() {
             setSettings(remoteSettings);
             localDatabase.saveSettings(remoteSettings);
           }
-          if (remoteActivities && remoteActivities.length > 0) {
+          if (remoteActivities !== null && Array.isArray(remoteActivities) && remoteActivities.length > 0) {
             setActivities(remoteActivities);
             localDatabase.saveActivities(remoteActivities);
           }
-          if (remoteProjects && remoteProjects.length > 0) {
+          if (remoteProjects !== null && Array.isArray(remoteProjects) && remoteProjects.length > 0) {
             setProjects(remoteProjects);
             localDatabase.saveProjects(remoteProjects);
           }
-          if (remoteResources && remoteResources.length > 0) {
+          if (remoteResources !== null && Array.isArray(remoteResources) && remoteResources.length > 0) {
             setResources(remoteResources);
             localDatabase.saveResources(remoteResources);
           }
-          if (remoteLearningPaths && remoteLearningPaths.length > 0) {
+          if (remoteLearningPaths !== null && Array.isArray(remoteLearningPaths)) {
             setLearningPaths(remoteLearningPaths);
             localDatabase.saveLearningPaths(remoteLearningPaths);
           }
-          if (remoteChallenges && remoteChallenges.length > 0) {
+          if (remoteChallenges !== null && Array.isArray(remoteChallenges) && remoteChallenges.length > 0) {
             setChallenges(remoteChallenges);
             localDatabase.saveChallenges(remoteChallenges);
           }
-          if (remoteLeadership && remoteLeadership.length > 0) {
+          if (remoteLeadership !== null && Array.isArray(remoteLeadership) && remoteLeadership.length > 0) {
             setLeadership(remoteLeadership);
             localDatabase.saveLeadership(remoteLeadership);
           }
-          if (remoteDrafts && remoteDrafts.length > 0) {
+          if (remoteDrafts !== null && Array.isArray(remoteDrafts) && remoteDrafts.length > 0) {
             setActivityDrafts(remoteDrafts);
             localDatabase.saveActivityDrafts(remoteDrafts);
           }
-          if (remoteArticles && remoteArticles.length > 0) {
+          if (remoteArticles !== null && Array.isArray(remoteArticles) && remoteArticles.length > 0) {
             setArticles(remoteArticles);
             localDatabase.saveArticles(remoteArticles);
           }
@@ -1001,9 +1001,6 @@ export function useCommunityStore() {
 
   const saveLearningPath = async (path: LearningPath): Promise<{ success: boolean; error?: string }> => {
     try {
-      if (activeAdapter.isCloudConnected()) {
-        await activeAdapter.saveLearningPath(path);
-      }
       const all = learningRepository.getAll();
       const idx = all.findIndex((p) => p.id === path.id);
       let updated: LearningPath[];
@@ -1015,6 +1012,11 @@ export function useCommunityStore() {
       }
       setLearningPaths(updated);
       localDatabase.saveLearningPaths(updated);
+
+      if (activeAdapter.isCloudConnected()) {
+        await activeAdapter.saveLearningPath(path);
+      }
+
       localDatabase.addAuditLog({
         action: 'ADMIN_SAVED_LEARNING_PATH',
         entityType: 'LEARNING_PATH',
@@ -1032,11 +1034,14 @@ export function useCommunityStore() {
 
   const deleteLearningPath = async (id: string): Promise<{ success: boolean; error?: string }> => {
     try {
+      const updated = learningRepository.delete(id);
+      setLearningPaths(updated);
+      localDatabase.saveLearningPaths(updated);
+
       if (activeAdapter.isCloudConnected()) {
         await activeAdapter.deleteLearningPath(id);
       }
-      const updated = learningRepository.delete(id);
-      setLearningPaths(updated);
+
       localDatabase.addAuditLog({
         action: 'ADMIN_DELETED_LEARNING_PATH',
         entityType: 'LEARNING_PATH',

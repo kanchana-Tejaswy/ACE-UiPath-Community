@@ -2,7 +2,7 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 // Production Supabase Configuration
 const DEFAULT_SUPABASE_URL = 'https://ghspsvybzjamapdnjctj.supabase.co';
-const DEFAULT_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdoc3BzdnliemphbWFwZG5qY3RqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg4NDUxMzUsImV4cCI6MjEwNDQyMTEzNX0.H6IUyVBIWbiKwwBN6zE8BfrpWgDK6dx7OrhhoaJ8joM';
+const DEFAULT_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdoc3BzdnliemphbWFwZG5qY3RqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4ODg0NTEzNSwiZXhwIjoyMTA0NDIxMTM1fQ.1vaWlRJK6d9pFlJ_4xhv1NDYaAkEDZpcTgvmNmAOV3U';
 
 // Access environment variables safely with Vite fallback
 const rawUrl = (import.meta.env.VITE_SUPABASE_URL || DEFAULT_SUPABASE_URL).trim();
