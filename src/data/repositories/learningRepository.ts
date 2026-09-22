@@ -23,5 +23,12 @@ export const learningRepository = {
     }
     localDatabase.saveLearningPaths(updated);
     return updated;
+  },
+
+  delete: (id: string): LearningPath[] => {
+    const paths = localDatabase.getLearningPaths();
+    const updated = paths.filter((p) => p.id !== id);
+    localDatabase.saveLearningPaths(updated);
+    return updated;
   }
 };

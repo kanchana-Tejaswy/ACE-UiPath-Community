@@ -71,7 +71,7 @@ export const localDatabase = {
 
   getLearningPaths: (): LearningPath[] => {
     const loaded = getItem<LearningPath[]>(STORAGE_KEYS.LEARNING_PATHS, INITIAL_LEARNING_PATHS);
-    if (!Array.isArray(loaded) || loaded.length < INITIAL_LEARNING_PATHS.length || !loaded.some(p => p.slug === 'uipath-associate-developer')) {
+    if (!Array.isArray(loaded) || loaded.length === 0) {
       setItem(STORAGE_KEYS.LEARNING_PATHS, INITIAL_LEARNING_PATHS);
       return INITIAL_LEARNING_PATHS;
     }
@@ -112,10 +112,14 @@ export const localDatabase = {
     const heroHeading = (loaded?.heroHeading && !loaded.heroHeading.includes('Student Community'))
       ? loaded.heroHeading
       : INITIAL_SETTINGS.heroHeading;
+    const storyImage = (!loaded?.communityStoryImageUrl || loaded.communityStoryImageUrl.includes('photo-1522071820081'))
+      ? INITIAL_SETTINGS.communityStoryImageUrl
+      : loaded.communityStoryImageUrl;
     return {
       ...INITIAL_SETTINGS,
       ...loaded,
       heroHeading,
+      communityStoryImageUrl: storyImage,
       statistics: loaded?.statistics && loaded.statistics.length > 0 ? loaded.statistics : INITIAL_SETTINGS.statistics,
       announcements: loaded?.announcements && loaded.announcements.length > 0 ? loaded.announcements : INITIAL_SETTINGS.announcements,
       timelineMilestones: loaded?.timelineMilestones && loaded.timelineMilestones.length > 0 ? loaded.timelineMilestones : INITIAL_SETTINGS.timelineMilestones

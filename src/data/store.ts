@@ -90,6 +90,9 @@ export function useCommunityStore() {
 
         if (isMounted) {
           if (remoteSettings && remoteSettings.heroHeading) {
+            if (!remoteSettings.communityStoryImageUrl || remoteSettings.communityStoryImageUrl.includes('photo-1522071820081')) {
+              remoteSettings.communityStoryImageUrl = '/ace-campus.jpg';
+            }
             setSettings(remoteSettings);
             localDatabase.saveSettings(remoteSettings);
           }
@@ -177,10 +180,12 @@ export function useCommunityStore() {
     };
 
     window.addEventListener(DB_CHANGE_EVENT, handleUpdate);
+    window.addEventListener('storage', handleUpdate);
     return () => {
       isMounted = false;
       clearInterval(scheduledTimer);
       window.removeEventListener(DB_CHANGE_EVENT, handleUpdate);
+      window.removeEventListener('storage', handleUpdate);
     };
   }, []);
 
@@ -498,13 +503,14 @@ export function useCommunityStore() {
       if (activeAdapter.isCloudConnected()) {
         await activeAdapter.saveChallenge(chal);
       }
-      const existingIndex = challenges.findIndex((c) => c.id === chal.id);
+      const currentChallenges = localDatabase.getChallenges();
+      const existingIndex = currentChallenges.findIndex((c) => c.id === chal.id);
       let updated: Challenge[];
       if (existingIndex >= 0) {
-        updated = [...challenges];
+        updated = [...currentChallenges];
         updated[existingIndex] = chal;
       } else {
-        updated = [chal, ...challenges];
+        updated = [chal, ...currentChallenges];
       }
       setChallenges(updated);
       localDatabase.saveChallenges(updated);
@@ -525,11 +531,12 @@ export function useCommunityStore() {
 
   const deleteChallenge = async (id: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      const chal = challenges.find((c) => c.id === id);
+      const currentChallenges = localDatabase.getChallenges();
+      const chal = currentChallenges.find((c) => c.id === id);
       if (activeAdapter.isCloudConnected()) {
         await activeAdapter.deleteChallenge(id);
       }
-      const updated = challenges.filter((c) => c.id !== id);
+      const updated = currentChallenges.filter((c) => c.id !== id);
       setChallenges(updated);
       localDatabase.saveChallenges(updated);
       localDatabase.addAuditLog({
@@ -874,7 +881,7 @@ export function useCommunityStore() {
   };
 
   const saveStatistic = async (stat: CommunityStatistic): Promise<{ success: boolean; error?: string }> => {
-    const currentStats = settings.statistics || [];
+    const currentStats = settingsRepository.get().statistics || [];
     const idx = currentStats.findIndex((s) => s.id === stat.id);
     let updatedStats: CommunityStatistic[];
     if (idx >= 0) {
@@ -887,13 +894,13 @@ export function useCommunityStore() {
   };
 
   const deleteStatistic = async (id: string): Promise<{ success: boolean; error?: string }> => {
-    const currentStats = settings.statistics || [];
+    const currentStats = settingsRepository.get().statistics || [];
     const updatedStats = currentStats.filter((s) => s.id !== id);
     return updateSettings({ statistics: updatedStats });
   };
 
   const saveAnnouncement = async (ann: Announcement): Promise<{ success: boolean; error?: string }> => {
-    const currentAnns = settings.announcements || [];
+    const currentAnns = settingsRepository.get().announcements || [];
     const idx = currentAnns.findIndex((a) => a.id === ann.id);
     let updatedAnns: Announcement[];
     if (idx >= 0) {
@@ -906,13 +913,13 @@ export function useCommunityStore() {
   };
 
   const deleteAnnouncement = async (id: string): Promise<{ success: boolean; error?: string }> => {
-    const currentAnns = settings.announcements || [];
+    const currentAnns = settingsRepository.get().announcements || [];
     const updatedAnns = currentAnns.filter((a) => a.id !== id);
     return updateSettings({ announcements: updatedAnns });
   };
 
   const saveTimelineMilestone = async (milestone: TimelineMilestone): Promise<{ success: boolean; error?: string }> => {
-    const currentMilestones = settings.timelineMilestones || [];
+    const currentMilestones = settingsRepository.get().timelineMilestones || [];
     const idx = currentMilestones.findIndex((m) => m.id === milestone.id);
     let updatedMilestones: TimelineMilestone[];
     if (idx >= 0) {
@@ -925,7 +932,7 @@ export function useCommunityStore() {
   };
 
   const deleteTimelineMilestone = async (id: string): Promise<{ success: boolean; error?: string }> => {
-    const currentMilestones = settings.timelineMilestones || [];
+    const currentMilestones = settingsRepository.get().timelineMilestones || [];
     const updatedMilestones = currentMilestones.filter((m) => m.id !== id);
     return updateSettings({ timelineMilestones: updatedMilestones });
   };
@@ -1028,9 +1035,8 @@ export function useCommunityStore() {
       if (activeAdapter.isCloudConnected()) {
         await activeAdapter.deleteLearningPath(id);
       }
-      const all = learningPaths.filter((p) => p.id !== id);
-      setLearningPaths(all);
-      localDatabase.saveLearningPaths(all);
+      const updated = learningRepository.delete(id);
+      setLearningPaths(updated);
       localDatabase.addAuditLog({
         action: 'ADMIN_DELETED_LEARNING_PATH',
         entityType: 'LEARNING_PATH',

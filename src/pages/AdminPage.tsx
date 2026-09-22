@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Settings, 
   Layers, 
@@ -196,6 +196,25 @@ export const AdminPage: React.FC<Props> = ({
   const [storyImageUrl, setStoryImageUrl] = useState(settings.communityStoryImageUrl || '/ace-campus.jpg');
   const [allianceId, setAllianceId] = useState(settings.uipathAllianceId || '');
   const [communityEmail, setCommunityEmail] = useState(settings.communityEmail || 'uipath.community@aceec.ac.in');
+  const campusImageFileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Sync state whenever settings update from upstream database/cloud
+  useEffect(() => {
+    setHeroHeading(settings.heroHeading || 'ACE UiPath Community');
+    setHeroTagline(settings.heroTagline || 'A student community at ACE Engineering College focused on learning, building and exploring automation.');
+    setHeroSubheadline(settings.heroSubheadline || '');
+    setPrimaryCtaText(settings.primaryCtaText || 'Explore the Community');
+    setPrimaryCtaLink(settings.primaryCtaLink || 'activities');
+    setSecondaryCtaText(settings.secondaryCtaText || 'Start Learning');
+    setSecondaryCtaLink(settings.secondaryCtaLink || 'learn');
+    setFeaturedActivityId(settings.featuredActivityId || activities[0]?.id || '');
+    setStoryHeading(settings.communityStoryHeading || 'Built by Students, Powered by UiPath');
+    setStoryText(settings.communityStoryText || '');
+    setStoryHighlight(settings.communityStoryHighlight || '');
+    setStoryImageUrl(settings.communityStoryImageUrl || '/ace-campus.jpg');
+    setAllianceId(settings.uipathAllianceId || '');
+    setCommunityEmail(settings.communityEmail || 'uipath.community@aceec.ac.in');
+  }, [settings, activities]);
 
   const handleSaveHomepage = (e: React.FormEvent) => {
     e.preventDefault();
@@ -1018,14 +1037,70 @@ export const AdminPage: React.FC<Props> = ({
                       />
                     </div>
                     <div>
-                      <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>STORY IMAGE URL (Campus / Community Visual)</label>
-                      <input
-                        type="text"
-                        value={storyImageUrl}
-                        onChange={(e) => setStoryImageUrl(e.target.value)}
-                        placeholder="/ace-campus.jpg"
-                        style={{ width: '100%', padding: '0.65rem', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', color: '#FFF', marginTop: '0.25rem' }}
-                      />
+                      <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>STORY IMAGE (Campus / Community Visual)</label>
+                      <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.25rem', alignItems: 'center' }}>
+                        <input
+                          type="text"
+                          value={storyImageUrl}
+                          onChange={(e) => setStoryImageUrl(e.target.value)}
+                          placeholder="/ace-campus.jpg"
+                          style={{ flex: 1, padding: '0.65rem', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', color: '#FFF' }}
+                        />
+                        <input
+                          type="file"
+                          ref={campusImageFileInputRef}
+                          accept="image/*"
+                          style={{ display: 'none' }}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              if (file.size > 5 * 1024 * 1024) {
+                                alert('Image exceeds 5MB limit.');
+                                return;
+                              }
+                              const reader = new FileReader();
+                              reader.onload = (evt) => {
+                                const result = evt.target?.result as string;
+                                if (result) {
+                                  setStoryImageUrl(result);
+                                }
+                              };
+                              reader.readAsDataURL(file);
+                            }
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => campusImageFileInputRef.current?.click()}
+                          className="btn btn-secondary btn-sm"
+                          style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', whiteSpace: 'nowrap' }}
+                        >
+                          <Upload size={14} /> Upload Image
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setStoryImageUrl('/ace-campus.jpg')}
+                          className="btn btn-secondary btn-sm"
+                          title="Reset to default ACE Campus Photo"
+                          style={{ whiteSpace: 'nowrap' }}
+                        >
+                          Use Campus Default
+                        </button>
+                      </div>
+
+                      {/* Live Image Preview */}
+                      {storyImageUrl && (
+                        <div style={{ marginTop: '0.75rem', maxWidth: '360px', borderRadius: 'var(--radius-sm)', overflow: 'hidden', border: '1px solid var(--border-subtle)' }}>
+                          <img
+                            src={storyImageUrl}
+                            alt="Campus Preview"
+                            style={{ width: '100%', maxHeight: '180px', objectFit: 'cover', display: 'block' }}
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = '/ace-campus.jpg';
+                            }}
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
