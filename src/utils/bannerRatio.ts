@@ -18,27 +18,27 @@ export interface AspectRatioOption {
 export const BANNER_ASPECT_RATIO_OPTIONS: AspectRatioOption[] = [
   {
     id: 'default',
-    label: 'Default',
-    ratioBadge: '4:1',
-    description: 'Ultra-wide banner'
-  },
-  {
-    id: '21/9',
-    label: '21:9',
-    ratioBadge: '21:9',
-    description: 'Wide cinematic landscape'
+    label: 'Standard',
+    ratioBadge: '16:9',
+    description: 'Perfect for blog covers & technical articles'
   },
   {
     id: '16/9',
     label: '16:9',
     ratioBadge: '16:9',
-    description: 'Standard landscape'
+    description: 'Standard widescreen landscape'
+  },
+  {
+    id: '21/9',
+    label: 'Cinematic',
+    ratioBadge: '21:9',
+    description: 'Ultra-wide panoramic header'
   },
   {
     id: 'auto',
-    label: 'Auto',
+    label: 'Natural Fit',
     ratioBadge: 'Original',
-    description: 'Natural image proportions'
+    description: 'Displays full uncropped image with subtle backdrop'
   }
 ];
 
@@ -47,20 +47,20 @@ export function getBannerContainerClasses(aspectRatio: BannerAspectRatio = 'defa
     case '21/9':
       return 'aspect-[21/9] w-full';
     case '16/9':
-      return 'aspect-video w-full';
-    case 'auto':
-      return 'h-auto max-h-[420px] w-full';
     case 'default':
+      return 'aspect-video w-full min-h-[220px]';
+    case 'auto':
+      return 'h-auto max-h-[480px] w-full';
     default:
-      return 'aspect-[4/1] min-h-[140px] w-full';
+      return 'aspect-video w-full min-h-[220px]';
   }
 }
 
 export function getBannerImageClasses(aspectRatio: BannerAspectRatio = 'default'): string {
   if (aspectRatio === 'auto') {
-    return 'w-full h-auto max-h-[420px] object-contain';
+    return 'w-full h-auto max-h-[480px] object-contain';
   }
-  return 'w-full h-full object-cover';
+  return 'w-full h-full object-cover object-center';
 }
 
 export function getBannerContainerStyle(aspectRatio: BannerAspectRatio = 'default'): React.CSSProperties {
@@ -69,28 +69,33 @@ export function getBannerContainerStyle(aspectRatio: BannerAspectRatio = 'defaul
       return {
         width: '100%',
         aspectRatio: '21 / 9',
-        overflow: 'hidden'
+        overflow: 'hidden',
+        background: '#0D0F14'
       };
     case '16/9':
+    case 'default':
       return {
         width: '100%',
         aspectRatio: '16 / 9',
-        overflow: 'hidden'
+        minHeight: '220px',
+        overflow: 'hidden',
+        background: '#0D0F14'
       };
     case 'auto':
       return {
         width: '100%',
         height: 'auto',
-        maxHeight: '420px',
-        overflow: 'hidden'
+        maxHeight: '480px',
+        overflow: 'hidden',
+        background: '#0D0F14'
       };
-    case 'default':
     default:
       return {
         width: '100%',
-        aspectRatio: '4 / 1',
-        minHeight: '140px',
-        overflow: 'hidden'
+        aspectRatio: '16 / 9',
+        minHeight: '220px',
+        overflow: 'hidden',
+        background: '#0D0F14'
       };
   }
 }
@@ -100,8 +105,9 @@ export function getBannerImageStyle(aspectRatio: BannerAspectRatio = 'default'):
     return {
       width: '100%',
       height: 'auto',
-      maxHeight: '420px',
+      maxHeight: '480px',
       objectFit: 'contain',
+      objectPosition: 'center',
       display: 'block',
       margin: '0 auto'
     };
@@ -110,6 +116,8 @@ export function getBannerImageStyle(aspectRatio: BannerAspectRatio = 'default'):
     width: '100%',
     height: '100%',
     objectFit: 'cover',
+    objectPosition: 'center',
     display: 'block'
   };
 }
+

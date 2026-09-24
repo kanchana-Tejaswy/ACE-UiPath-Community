@@ -606,7 +606,7 @@ export const ArticleEditorPage: React.FC<Props> = ({
             </button>
           </div>
 
-          {/* Save Draft */}
+          {/* Save Draft / Save as Draft */}
           <button
             type="button"
             disabled={isSaving}
@@ -622,11 +622,12 @@ export const ArticleEditorPage: React.FC<Props> = ({
               borderRadius: '0.5rem',
               cursor: 'pointer',
               fontSize: '0.84rem',
-              fontWeight: 500
+              fontWeight: 500,
+              transition: 'all 0.15s ease'
             }}
           >
             <Save size={14} />
-            <span>Save Draft</span>
+            <span>{existingArticle?.status === 'PUBLISHED' ? 'Revert to Draft' : 'Save Draft'}</span>
           </button>
 
           {/* Schedule */}
@@ -645,14 +646,15 @@ export const ArticleEditorPage: React.FC<Props> = ({
               borderRadius: '0.5rem',
               cursor: 'pointer',
               fontSize: '0.84rem',
-              fontWeight: 500
+              fontWeight: 500,
+              transition: 'all 0.15s ease'
             }}
           >
             <Calendar size={14} />
             <span>Schedule...</span>
           </button>
 
-          {/* Publish Now */}
+          {/* Main Save / Publish Action */}
           <button
             type="button"
             disabled={isSaving}
@@ -669,11 +671,21 @@ export const ArticleEditorPage: React.FC<Props> = ({
               cursor: 'pointer',
               fontSize: '0.84rem',
               fontWeight: 600,
-              boxShadow: '0 4px 14px rgba(250, 70, 22, 0.35)'
+              boxShadow: '0 4px 14px rgba(250, 70, 22, 0.35)',
+              transition: 'all 0.15s ease'
             }}
           >
-            <Send size={14} />
-            <span>Publish Now</span>
+            {existingArticle?.status === 'PUBLISHED' ? (
+              <>
+                <Check size={15} />
+                <span>Save Changes</span>
+              </>
+            ) : (
+              <>
+                <Send size={14} />
+                <span>Publish Now</span>
+              </>
+            )}
           </button>
         </div>
       </header>
@@ -1573,43 +1585,20 @@ export const ArticleEditorPage: React.FC<Props> = ({
                 <div style={{ maxWidth: '800px', margin: '0 auto' }}>
                   {coverImageUrl && (
                     <div
-                      className={`relative overflow-hidden rounded-xl border border-white/10 bg-[#0F1117] transition-all duration-300 ${
-                        aspectRatio === 'default'
-                          ? 'aspect-[4/1] min-h-[140px]'
-                          : aspectRatio === '21/9'
-                          ? 'aspect-[21/9]'
-                          : aspectRatio === '16/9'
-                          ? 'aspect-video'
-                          : 'h-auto max-h-[420px]'
-                      }`}
                       style={{
                         position: 'relative',
                         borderRadius: '0.75rem',
                         overflow: 'hidden',
                         border: '1px solid var(--border-subtle)',
-                        background: '#0F1117',
+                        background: '#0D0F14',
                         marginBottom: '1.5rem',
-                        ...(aspectRatio === 'default'
-                          ? { aspectRatio: '4 / 1', minHeight: '140px', width: '100%' }
-                          : aspectRatio === '21/9'
-                          ? { aspectRatio: '21 / 9', width: '100%' }
-                          : aspectRatio === '16/9'
-                          ? { aspectRatio: '16 / 9', width: '100%' }
-                          : { height: 'auto', maxHeight: '420px', width: '100%' })
+                        ...getBannerContainerStyle(aspectRatio)
                       }}
                     >
                       <img
                         src={coverImageUrl}
                         alt={title || 'Article Cover'}
-                        className={aspectRatio === 'auto' ? 'w-full h-auto max-h-[420px] object-contain' : 'w-full h-full object-cover'}
-                        style={{
-                          width: '100%',
-                          height: aspectRatio === 'auto' ? 'auto' : '100%',
-                          maxHeight: aspectRatio === 'auto' ? '420px' : undefined,
-                          objectFit: aspectRatio === 'auto' ? 'contain' : 'cover',
-                          display: 'block',
-                          margin: aspectRatio === 'auto' ? '0 auto' : undefined
-                        }}
+                        style={getBannerImageStyle(aspectRatio)}
                       />
                     </div>
                   )}
@@ -1650,6 +1639,82 @@ export const ArticleEditorPage: React.FC<Props> = ({
           </div>
         </section>
       </main>
+
+      {/* FOOTER ACTION BAR */}
+      <footer
+        style={{
+          position: 'sticky',
+          bottom: 0,
+          zIndex: 40,
+          background: 'rgba(17, 19, 24, 0.95)',
+          backdropFilter: 'blur(12px)',
+          borderTop: '1px solid var(--border-subtle)',
+          padding: '0.85rem 1.5rem',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '1rem',
+          flexWrap: 'wrap'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+          <span>Editing Mode: <strong style={{ color: '#FFF' }}>{existingArticle ? (existingArticle.status === 'PUBLISHED' ? 'Published Article' : 'Draft Article') : 'New Article'}</strong></span>
+          <span>•</span>
+          <span>{wordCount} words</span>
+          {isDirty && (
+            <span style={{ color: '#F59E0B', fontWeight: 600 }}>• Unsaved edits</span>
+          )}
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <button
+            type="button"
+            onClick={() => onNavigate('blogs')}
+            className="btn btn-secondary btn-sm"
+            style={{ fontSize: '0.84rem' }}
+          >
+            Cancel
+          </button>
+
+          <button
+            type="button"
+            disabled={isSaving}
+            onClick={() => handleSave('DRAFT')}
+            className="btn btn-secondary btn-sm"
+            style={{ fontSize: '0.84rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
+          >
+            <Save size={14} />
+            <span>{existingArticle?.status === 'PUBLISHED' ? 'Save as Draft' : 'Save Draft'}</span>
+          </button>
+
+          <button
+            type="button"
+            disabled={isSaving}
+            onClick={() => handleSave('PUBLISHED')}
+            className="btn btn-primary btn-sm"
+            style={{
+              fontSize: '0.84rem',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              background: '#FA4616',
+              boxShadow: '0 4px 12px rgba(250, 70, 22, 0.3)'
+            }}
+          >
+            {existingArticle?.status === 'PUBLISHED' ? (
+              <>
+                <Check size={14} />
+                <span>Save Edited Article</span>
+              </>
+            ) : (
+              <>
+                <Send size={14} />
+                <span>Publish Article</span>
+              </>
+            )}
+          </button>
+        </div>
+      </footer>
     </div>
   );
 };

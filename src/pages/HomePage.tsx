@@ -120,8 +120,8 @@ export const HomePage: React.FC<Props> = ({
     <div style={{ paddingBottom: '5rem' }}>
       {/* 1. HERO SECTION & INTEGRATED STATS GRID */}
       <section style={{
-        paddingTop: '4rem',
-        paddingBottom: '4.5rem',
+        paddingTop: '4.5rem',
+        paddingBottom: '4.75rem',
         borderBottom: '1px solid var(--border-subtle)',
         position: 'relative',
         overflow: 'hidden'
@@ -132,23 +132,24 @@ export const HomePage: React.FC<Props> = ({
         <div className="container" style={{ maxWidth: '1240px', position: 'relative', zIndex: 1 }}>
           <div style={{ maxWidth: '920px', margin: '0 auto', textAlign: 'center' }}>
             {/* Institution Chapter Eyebrow Badge */}
-            <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.25rem' }}>
+            <div className="animate-fade-up stagger-1" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.35rem' }}>
               <span style={{
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '0.5rem',
-                background: 'rgba(250, 70, 22, 0.09)',
-                border: '1px solid rgba(250, 70, 22, 0.28)',
+                gap: '0.55rem',
+                background: 'rgba(250, 70, 22, 0.08)',
+                border: '1px solid rgba(250, 70, 22, 0.26)',
                 borderRadius: '9999px',
-                padding: '0.35rem 1rem',
-                fontSize: '0.75rem',
+                padding: '0.4rem 1.15rem',
+                fontSize: '0.775rem',
                 fontWeight: 600,
                 letterSpacing: '0.04em',
                 textTransform: 'uppercase',
                 color: '#FA4616',
-                boxShadow: '0 0 16px rgba(250, 70, 22, 0.15)',
-                backdropFilter: 'blur(10px)',
-                WebkitBackdropFilter: 'blur(10px)'
+                boxShadow: '0 2px 12px rgba(250, 70, 22, 0.12)',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
+                transition: 'all 200ms ease'
               }}>
                 <span className="status-dot-pulse status-dot-pulse-orange" />
                 <span>UiPath Academic Alliance &bull; ACE Engineering College</span>
@@ -156,14 +157,14 @@ export const HomePage: React.FC<Props> = ({
             </div>
 
             {/* Main Headline */}
-            <h1 style={{
-              fontSize: 'clamp(2.35rem, 4.5vw, 3.5rem)',
-              lineHeight: 1.15,
+            <h1 className="animate-fade-up stagger-2" style={{
+              fontSize: 'clamp(2.4rem, 4.8vw, 3.75rem)',
+              lineHeight: 1.14,
               fontWeight: 800,
-              letterSpacing: '-0.03em',
+              letterSpacing: '-0.035em',
               color: '#FFFFFF',
-              marginBottom: '1.15rem',
-              maxWidth: '900px',
+              marginBottom: '1.25rem',
+              maxWidth: '920px',
               marginLeft: 'auto',
               marginRight: 'auto',
               whiteSpace: 'normal'
@@ -172,28 +173,31 @@ export const HomePage: React.FC<Props> = ({
             </h1>
 
             {/* Sub-headline */}
-            <p style={{
+            <p className="animate-fade-up stagger-3" style={{
               fontSize: 'clamp(1rem, 1.8vw, 1.15rem)',
               color: '#D1D5DB',
-              lineHeight: 1.65,
+              lineHeight: 1.68,
               maxWidth: '680px',
-              margin: '0 auto 2.25rem auto'
+              margin: '0 auto 2.35rem auto'
             }}>
               {heroTagline}
             </p>
 
             {/* Primary & Secondary Action Buttons */}
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '0.85rem', flexWrap: 'wrap', alignItems: 'center' }}>
+            <div className="animate-fade-up stagger-4" style={{ display: 'flex', justifyContent: 'center', gap: '0.9rem', flexWrap: 'wrap', alignItems: 'center' }}>
               <button
                 onClick={() => onNavigate(primaryCtaLink)}
-                className="btn btn-primary btn-lg"
+                className="btn btn-primary btn-lg btn-tactile"
+                style={{ minHeight: '46px', padding: '0.8rem 1.75rem' }}
               >
-                <span>{primaryCtaText}</span> <span style={{ fontSize: '1rem', lineHeight: 1 }}>&rarr;</span>
+                <span>{primaryCtaText}</span>
+                <ArrowRight size={16} style={{ transition: 'transform 150ms ease' }} />
               </button>
 
               <button
                 onClick={() => onNavigate(secondaryCtaLink)}
-                className="btn btn-secondary btn-lg"
+                className="btn btn-secondary btn-lg btn-tactile"
+                style={{ minHeight: '46px', padding: '0.8rem 1.75rem' }}
               >
                 {secondaryCtaText}
               </button>
@@ -202,23 +206,24 @@ export const HomePage: React.FC<Props> = ({
 
           {/* Stats Grid: responsive 4-column layout */}
           <div
-            className="stats-responsive-grid"
+            className="stats-responsive-grid animate-fade-up stagger-4"
             style={{
               maxWidth: '74rem',
               marginLeft: 'auto',
               marginRight: 'auto',
-              marginTop: '3.25rem'
+              marginTop: '3.5rem'
             }}
           >
             {statisticsList.map((stat, idx) => (
               <div
                 key={stat.id}
-                className="stat-card"
+                className="stat-card interactive-card"
+                style={{ padding: '1.5rem', borderRadius: '14px' }}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.85rem' }}>
                   <div
                     style={{
-                      fontSize: 'clamp(2rem, 3.4vw, 2.35rem)',
+                      fontSize: 'clamp(2rem, 3.2vw, 2.4rem)',
                       fontWeight: 800,
                       color: '#FA4616',
                       letterSpacing: '-0.03em',
@@ -229,14 +234,15 @@ export const HomePage: React.FC<Props> = ({
                     {stat.value}
                   </div>
                   <div style={{
-                    width: '32px',
-                    height: '32px',
+                    width: '34px',
+                    height: '34px',
                     borderRadius: '8px',
                     background: 'rgba(255, 255, 255, 0.04)',
                     border: '1px solid var(--border-subtle)',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center'
+                    justifyContent: 'center',
+                    flexShrink: 0
                   }}>
                     {getStatIcon(idx)}
                   </div>
@@ -244,16 +250,16 @@ export const HomePage: React.FC<Props> = ({
 
                 <div>
                   <div style={{
-                    fontSize: '0.9rem',
+                    fontSize: '0.925rem',
                     fontWeight: 600,
                     color: '#FFFFFF',
                     letterSpacing: '-0.01em',
-                    marginBottom: '0.25rem'
+                    marginBottom: '0.3rem'
                   }}>
                     {stat.title}
                   </div>
                   <div style={{
-                    fontSize: '0.775rem',
+                    fontSize: '0.8rem',
                     color: '#9CA3AF',
                     lineHeight: 1.5,
                     display: '-webkit-box',
@@ -274,7 +280,7 @@ export const HomePage: React.FC<Props> = ({
       {featuredActivity && (
         <section className="section-divider">
           <div className="container">
-            <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '1rem' }}>
+            <div style={{ marginBottom: '2.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '1rem' }}>
               <div>
                 <div className="section-tag">FEATURED COMMUNITY SESSION</div>
                 <h2 className="section-title">Latest & Upcoming Activities</h2>
@@ -285,7 +291,7 @@ export const HomePage: React.FC<Props> = ({
 
               <button
                 onClick={() => onNavigate('activities')}
-                className="btn btn-outline btn-sm"
+                className="btn btn-outline btn-sm btn-tactile"
               >
                 View Full Timeline <ArrowRight size={14} />
               </button>
@@ -296,9 +302,9 @@ export const HomePage: React.FC<Props> = ({
               {/* Soft Ambient Orange Backlight */}
               <div style={{
                 position: 'absolute',
-                inset: '-12px',
-                background: 'radial-gradient(ellipse at 15% 45%, rgba(250, 70, 22, 0.12) 0%, rgba(250, 70, 22, 0.03) 50%, transparent 75%)',
-                filter: 'blur(32px)',
+                inset: '-10px',
+                background: 'radial-gradient(ellipse at 15% 45%, rgba(250, 70, 22, 0.09) 0%, rgba(250, 70, 22, 0.02) 50%, transparent 75%)',
+                filter: 'blur(30px)',
                 borderRadius: '1.5rem',
                 zIndex: 0,
                 pointerEvents: 'none'
@@ -306,17 +312,17 @@ export const HomePage: React.FC<Props> = ({
 
               {/* Main Card Container with Subtle Dark Glassmorphism */}
               <div
-                className="featured-event-grid"
+                className="featured-event-grid interactive-card"
                 style={{
                   position: 'relative',
                   zIndex: 1,
-                  background: 'rgba(23, 23, 23, 0.40)', // bg-neutral-900/40
-                  border: '1px solid rgba(255, 255, 255, 0.08)', // border-neutral-800/80
-                  borderRadius: '1rem', // rounded-2xl
-                  padding: 'clamp(1.5rem, 3.5vw, 2.25rem)', // p-6 md:p-8
-                  backdropFilter: 'blur(12px)',
-                  WebkitBackdropFilter: 'blur(12px)',
-                  boxShadow: '0 25px 60px rgba(0, 0, 0, 0.6)',
+                  background: 'rgba(20, 20, 24, 0.65)',
+                  border: '1px solid var(--border-subtle)',
+                  borderRadius: '16px',
+                  padding: 'clamp(1.5rem, 3.5vw, 2.35rem)',
+                  backdropFilter: 'blur(16px)',
+                  WebkitBackdropFilter: 'blur(16px)',
+                  boxShadow: '0 20px 45px rgba(0, 0, 0, 0.55)',
                   display: 'grid',
                   gridTemplateColumns: featuredActivity.bannerImage ? 'minmax(280px, 420px) minmax(0, 1fr)' : '1fr',
                   gap: 'clamp(1.5rem, 3vw, 2.5rem)',
@@ -326,15 +332,15 @@ export const HomePage: React.FC<Props> = ({
                 {/* Event Image / Poster with Rounded Border & Aspect Ratio Wrapper */}
                 {featuredActivity.bannerImage && (
                   <div style={{
-                    borderRadius: '0.75rem', // rounded-xl
+                    borderRadius: '10px',
                     overflow: 'hidden',
-                    border: '1px solid rgba(255, 255, 255, 0.10)', // border-white/10
-                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8)', // shadow-2xl
+                    border: '1px solid rgba(255, 255, 255, 0.10)',
+                    boxShadow: '0 20px 40px -10px rgba(0, 0, 0, 0.7)',
                     background: '#141414',
                     position: 'relative',
                     width: '100%',
                     aspectRatio: '16 / 10',
-                    maxHeight: '400px',
+                    maxHeight: '380px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center'
@@ -347,7 +353,7 @@ export const HomePage: React.FC<Props> = ({
                         height: '100%',
                         objectFit: 'cover',
                         display: 'block',
-                        transition: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+                        transition: 'transform 240ms cubic-bezier(0.16, 1, 0.3, 1)'
                       }}
                       onMouseEnter={(e) => {
                         e.currentTarget.style.transform = 'scale(1.02)';
@@ -369,37 +375,37 @@ export const HomePage: React.FC<Props> = ({
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
                       {/* Category Pill */}
                       <span style={{
-                        fontSize: '0.75rem',
+                        fontSize: '0.725rem',
                         fontWeight: 600,
                         padding: '0.25rem 0.65rem',
                         borderRadius: '9999px',
                         textTransform: 'uppercase',
                         letterSpacing: '0.05em',
                         background: 'rgba(250, 70, 22, 0.10)',
-                        color: '#FB923C', // text-orange-400
-                        border: '1px solid rgba(250, 70, 22, 0.20)'
+                        color: '#FB923C',
+                        border: '1px solid rgba(250, 70, 22, 0.22)'
                       }}>
                         {featuredActivity.category || 'COMMUNITY MEETUP'}
                       </span>
 
                       {/* Event Type Pill */}
                       <span style={{
-                        fontSize: '0.75rem',
+                        fontSize: '0.725rem',
                         fontWeight: 600,
                         padding: '0.25rem 0.65rem',
                         borderRadius: '9999px',
                         textTransform: 'uppercase',
                         letterSpacing: '0.05em',
-                        background: '#262626', // bg-neutral-800
-                        color: '#D4D4D4', // text-neutral-300
-                        border: '1px solid #404040' // border-neutral-700
+                        background: 'rgba(255, 255, 255, 0.06)',
+                        color: '#D4D4D4',
+                        border: '1px solid var(--border-subtle)'
                       }}>
                         {featuredActivity.eventType || 'HYBRID'}
                       </span>
 
                       {/* Status Pill with Pulsing Green Micro-Dot for Upcoming */}
                       <span style={{
-                        fontSize: '0.75rem',
+                        fontSize: '0.725rem',
                         fontWeight: 600,
                         padding: '0.25rem 0.65rem',
                         borderRadius: '9999px',
@@ -410,7 +416,7 @@ export const HomePage: React.FC<Props> = ({
                         gap: '0.375rem',
                         background: featuredActivity.status === 'Upcoming' ? 'rgba(16, 185, 129, 0.10)' : 'rgba(255, 255, 255, 0.05)',
                         color: featuredActivity.status === 'Upcoming' ? '#34D399' : '#9CA3AF',
-                        border: featuredActivity.status === 'Upcoming' ? '1px solid rgba(16, 185, 129, 0.20)' : '1px solid rgba(255, 255, 255, 0.10)'
+                        border: featuredActivity.status === 'Upcoming' ? '1px solid rgba(16, 185, 129, 0.22)' : '1px solid rgba(255, 255, 255, 0.10)'
                       }}>
                         {featuredActivity.status === 'Upcoming' && (
                           <span style={{ position: 'relative', display: 'inline-flex', height: '7px', width: '7px' }}>
@@ -442,7 +448,7 @@ export const HomePage: React.FC<Props> = ({
                       fontSize: 'clamp(1.4rem, 2.5vw, 1.85rem)',
                       fontWeight: 800,
                       color: '#FFFFFF',
-                      lineHeight: 1.2,
+                      lineHeight: 1.25,
                       letterSpacing: '-0.02em',
                       marginBottom: '0.75rem'
                     }}>
@@ -451,22 +457,22 @@ export const HomePage: React.FC<Props> = ({
 
                     <p style={{
                       fontSize: '0.95rem',
-                      color: '#D1D5DB', // text-neutral-300
+                      color: '#D1D5DB',
                       lineHeight: 1.6,
                       marginBottom: '1.5rem'
                     }}>
                       {featuredActivity.summary}
                     </p>
 
-                    {/* Event Meta Grid (Date, Time, Venue) - Mini Dashboard */}
+                    {/* Event Meta Grid (Date, Time, Venue) */}
                     <div style={{
                       display: 'grid',
                       gridTemplateColumns: 'repeat(auto-fit, minmax(135px, 1fr))',
                       gap: '0.75rem',
                       padding: '1rem 1.15rem',
-                      borderRadius: '0.75rem', // rounded-xl
-                      background: 'rgba(10, 10, 10, 0.60)', // bg-neutral-950/60
-                      border: '1px solid rgba(255, 255, 255, 0.08)', // border-neutral-800/60
+                      borderRadius: '10px',
+                      background: 'rgba(10, 10, 12, 0.65)',
+                      border: '1px solid var(--border-subtle)',
                       marginBottom: '1.75rem'
                     }}>
                       {/* DATE */}
@@ -476,7 +482,7 @@ export const HomePage: React.FC<Props> = ({
                           <div style={{
                             fontSize: '11px',
                             fontWeight: 600,
-                            color: '#9CA3AF', // text-neutral-400
+                            color: '#9CA3AF',
                             textTransform: 'uppercase',
                             letterSpacing: '0.05em',
                             marginBottom: '0.15rem'
@@ -531,37 +537,18 @@ export const HomePage: React.FC<Props> = ({
                     </div>
                   </div>
 
-                  {/* Actions (Elevated View Details + Add to Calendar Ghost Button) */}
+                  {/* Actions */}
                   <div style={{ display: 'flex', gap: '0.85rem', flexWrap: 'wrap', alignItems: 'center' }}>
                     <button
                       onClick={() => onNavigate('activities', featuredActivity.slug)}
+                      className="btn btn-primary btn-tactile"
                       style={{
-                        background: '#FA4616',
-                        color: '#FFFFFF',
-                        fontWeight: 500,
-                        fontSize: '0.925rem',
-                        padding: '0.65rem 1.5rem',
-                        borderRadius: '8px',
-                        border: '1px solid transparent',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '0.5rem',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease',
-                        boxShadow: '0 4px 14px rgba(250, 70, 22, 0.25)'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = '#FF5722';
-                        e.currentTarget.style.boxShadow = '0 0 20px rgba(250, 70, 22, 0.4)';
-                        e.currentTarget.style.transform = 'translateY(-1px)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = '#FA4616';
-                        e.currentTarget.style.boxShadow = '0 4px 14px rgba(250, 70, 22, 0.25)';
-                        e.currentTarget.style.transform = 'translateY(0)';
+                        padding: '0.65rem 1.4rem',
+                        fontSize: '0.9rem',
+                        borderRadius: '8px'
                       }}
                     >
-                      View Session Details <ArrowRight size={16} />
+                      View Session Details <ArrowRight size={15} />
                     </button>
 
                     {featuredActivity.registrationUrl && (
@@ -569,28 +556,15 @@ export const HomePage: React.FC<Props> = ({
                         href={featuredActivity.registrationUrl}
                         target="_blank"
                         rel="noopener noreferrer"
+                        className="btn btn-secondary btn-tactile"
                         style={{
-                          background: 'rgba(250, 70, 22, 0.15)',
+                          background: 'rgba(250, 70, 22, 0.12)',
                           color: '#FB923C',
-                          border: '1px solid rgba(250, 70, 22, 0.4)',
+                          borderColor: 'rgba(250, 70, 22, 0.35)',
                           borderRadius: '8px',
                           padding: '0.65rem 1.15rem',
                           fontSize: '0.875rem',
-                          fontWeight: 600,
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '0.45rem',
-                          cursor: 'pointer',
-                          textDecoration: 'none',
-                          transition: 'all 0.2s ease'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.background = '#FA4616';
-                          e.currentTarget.style.color = '#FFFFFF';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.background = 'rgba(250, 70, 22, 0.15)';
-                          e.currentTarget.style.color = '#FB923C';
+                          fontWeight: 600
                         }}
                       >
                         <ExternalLink size={15} />
@@ -605,30 +579,12 @@ export const HomePage: React.FC<Props> = ({
                         const location = encodeURIComponent(featuredActivity.venue || 'ACE Engineering College, Hyderabad');
                         window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&details=${details}&location=${location}`, '_blank', 'noopener,noreferrer');
                       }}
+                      className="btn btn-secondary btn-tactile"
                       style={{
-                        background: 'rgba(23, 23, 23, 0.60)',
-                        border: '1px solid #404040',
                         borderRadius: '8px',
                         padding: '0.65rem 1rem',
                         fontSize: '0.875rem',
-                        color: '#D1D5DB',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '0.45rem',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = '#262626';
-                        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.25)';
-                        e.currentTarget.style.color = '#FFFFFF';
-                        e.currentTarget.style.transform = 'translateY(-1px)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = 'rgba(23, 23, 23, 0.60)';
-                        e.currentTarget.style.borderColor = '#404040';
-                        e.currentTarget.style.color = '#D1D5DB';
-                        e.currentTarget.style.transform = 'translateY(0)';
+                        color: '#D1D5DB'
                       }}
                     >
                       <CalendarPlus size={15} style={{ color: '#FA4616' }} />
@@ -640,7 +596,7 @@ export const HomePage: React.FC<Props> = ({
                         href={featuredActivity.slidesUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="btn btn-secondary btn-sm"
+                        className="btn btn-secondary btn-sm btn-tactile"
                         style={{ padding: '0.6rem 0.9rem', borderRadius: '8px', fontSize: '0.85rem' }}
                       >
                         Session Materials <ExternalLink size={14} />
@@ -670,18 +626,19 @@ export const HomePage: React.FC<Props> = ({
             gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
             gap: '1.5rem'
           }}>
-            <div className="glass-card" style={{ padding: '1.75rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.75rem' }}>
-                <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(250, 70, 22, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--uipath-orange)' }}>
-                  <BookOpen size={18} />
+            <div className="glass-card interactive-card" style={{ padding: '1.75rem', borderRadius: '14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.85rem' }}>
+                <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: 'rgba(250, 70, 22, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--uipath-orange)' }}>
+                  <BookOpen size={19} />
                 </div>
                 <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-primary)' }}>1. Learn</h3>
               </div>
-              <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '1rem' }}>
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '1.25rem' }}>
                 Guided curricular tracks from zero-code StudioX basics to professional enterprise architecture with REFramework.
               </p>
               <button
                 onClick={() => onNavigate('learn')}
+                className="btn-tactile"
                 style={{
                   background: 'none',
                   border: 'none',
@@ -692,25 +649,26 @@ export const HomePage: React.FC<Props> = ({
                   padding: 0,
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: '0.3rem'
+                  gap: '0.35rem'
                 }}
               >
-                Explore Courses <ChevronRight size={13} />
+                Explore Courses <ChevronRight size={14} />
               </button>
             </div>
 
-            <div className="glass-card" style={{ padding: '1.75rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.75rem' }}>
-                <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(255, 255, 255, 0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-primary)' }}>
-                  <Code size={18} />
+            <div className="glass-card interactive-card" style={{ padding: '1.75rem', borderRadius: '14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.85rem' }}>
+                <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: 'rgba(255, 255, 255, 0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-primary)' }}>
+                  <Code size={19} />
                 </div>
                 <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-primary)' }}>2. Build</h3>
               </div>
-              <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '1rem' }}>
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '1.25rem' }}>
                 Students develop working bots that automate campus tasks, university result extraction, and business invoice processing.
               </p>
               <button
                 onClick={() => onNavigate('projects')}
+                className="btn-tactile"
                 style={{
                   background: 'none',
                   border: 'none',
@@ -721,25 +679,26 @@ export const HomePage: React.FC<Props> = ({
                   padding: 0,
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: '0.3rem'
+                  gap: '0.35rem'
                 }}
               >
-                View Student Projects <ChevronRight size={13} />
+                View Student Projects <ChevronRight size={14} />
               </button>
             </div>
 
-            <div className="glass-card" style={{ padding: '1.75rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.75rem' }}>
-                <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(245, 158, 11, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FBBF24' }}>
-                  <Trophy size={18} />
+            <div className="glass-card interactive-card" style={{ padding: '1.75rem', borderRadius: '14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.85rem' }}>
+                <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: 'rgba(245, 158, 11, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FBBF24' }}>
+                  <Trophy size={19} />
                 </div>
                 <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-primary)' }}>3. Compete</h3>
               </div>
-              <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '1rem' }}>
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '1.25rem' }}>
                 Annual hackathons, national automation sprints, and monthly bug bashes with peer evaluation and recognized awards.
               </p>
               <button
                 onClick={() => onNavigate('challenges')}
+                className="btn-tactile"
                 style={{
                   background: 'none',
                   border: 'none',
@@ -750,25 +709,26 @@ export const HomePage: React.FC<Props> = ({
                   padding: 0,
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: '0.3rem'
+                  gap: '0.35rem'
                 }}
               >
-                See Competitions <ChevronRight size={13} />
+                See Competitions <ChevronRight size={14} />
               </button>
             </div>
 
-            <div className="glass-card" style={{ padding: '1.75rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.75rem' }}>
-                <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(16, 185, 129, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#34D399' }}>
-                  <Users size={18} />
+            <div className="glass-card interactive-card" style={{ padding: '1.75rem', borderRadius: '14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.85rem' }}>
+                <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#34D399' }}>
+                  <Users size={19} />
                 </div>
                 <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-primary)' }}>4. Share</h3>
               </div>
-              <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '1rem' }}>
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '1.25rem' }}>
                 Open-source starter templates, slide archives, peer mentoring, and alumni placement guidance for upcoming batches.
               </p>
               <button
                 onClick={() => onNavigate('resources')}
+                className="btn-tactile"
                 style={{
                   background: 'none',
                   border: 'none',
@@ -779,10 +739,10 @@ export const HomePage: React.FC<Props> = ({
                   padding: 0,
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: '0.3rem'
+                  gap: '0.35rem'
                 }}
               >
-                Download Templates <ChevronRight size={13} />
+                Download Templates <ChevronRight size={14} />
               </button>
             </div>
           </div>
@@ -803,7 +763,7 @@ export const HomePage: React.FC<Props> = ({
 
             <button
               onClick={() => onNavigate('projects')}
-              className="btn btn-outline btn-sm"
+              className="btn btn-outline btn-sm btn-tactile"
             >
               Browse All Projects ({projects.length}) <ArrowRight size={14} />
             </button>
@@ -817,16 +777,17 @@ export const HomePage: React.FC<Props> = ({
             {featuredProjects.map((project) => (
               <div
                 key={project.id}
-                className="glass-card"
+                className="glass-card interactive-card"
                 style={{
                   padding: '1.75rem',
+                  borderRadius: '14px',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between'
                 }}
               >
                 <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', marginBottom: '0.85rem', flexWrap: 'wrap' }}>
                     {project.uipathToolsUsed.slice(0, 2).map((tool, idx) => (
                       <span key={idx} className="badge badge-slate" style={{ fontSize: '0.7rem' }}>
                         {tool}
@@ -837,32 +798,44 @@ export const HomePage: React.FC<Props> = ({
                     </span>
                   </div>
 
-                  <h4 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.4rem', lineHeight: 1.35 }}>
+                  <h4 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.45rem', lineHeight: 1.35 }}>
                     {project.title}
                   </h4>
 
-                  <div style={{ fontSize: '0.8rem', color: 'var(--uipath-orange)', fontWeight: 600, marginBottom: '0.75rem' }}>
+                  <div style={{
+                    fontSize: '0.8rem',
+                    color: '#FB923C',
+                    fontWeight: 600,
+                    background: 'rgba(250, 70, 22, 0.08)',
+                    border: '1px solid rgba(250, 70, 22, 0.18)',
+                    padding: '0.3rem 0.65rem',
+                    borderRadius: '6px',
+                    display: 'inline-block',
+                    marginBottom: '0.85rem',
+                    fontVariantNumeric: 'tabular-nums'
+                  }}>
                     Impact: {project.roiMetrics}
                   </div>
 
-                  <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.55, marginBottom: '1.25rem' }}>
+                  <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.55, marginBottom: '1.25rem' }}>
                     {project.problemStatement || project.summary}
                   </p>
                 </div>
 
-                <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '0.85rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '0.95rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
-                    <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                    <div style={{ fontSize: '0.825rem', fontWeight: 600, color: 'var(--text-primary)' }}>
                       {project.authorName}
                     </div>
-                    <div style={{ fontSize: '0.725rem', color: 'var(--text-muted)' }}>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                       {project.authorBranch || 'Engineering Student'}
                     </div>
                   </div>
 
                   <button
                     onClick={() => onNavigate('projects', project.slug)}
-                    className="btn btn-secondary btn-sm"
+                    className="btn btn-secondary btn-sm btn-tactile"
+                    style={{ borderRadius: '6px', padding: '0.45rem 0.85rem' }}
                   >
                     View Project <ArrowRight size={13} />
                   </button>
@@ -898,7 +871,7 @@ export const HomePage: React.FC<Props> = ({
 
               <button
                 onClick={() => onNavigate('blogs')}
-                className="btn btn-outline btn-sm"
+                className="btn btn-outline btn-sm btn-tactile"
               >
                 Read All Articles ({articles.length}) <ArrowRight size={14} />
               </button>
@@ -906,17 +879,19 @@ export const HomePage: React.FC<Props> = ({
 
             <div
               onClick={() => onNavigate('blog_detail', homepageArticle.slug || homepageArticle.id)}
+              className="interactive-card"
               style={{
-                background: 'linear-gradient(180deg, rgba(23, 23, 23, 0.7) 0%, rgba(15, 15, 15, 0.9) 100%)',
-                border: '1px solid #262626',
-                borderRadius: '1.25rem',
+                background: 'rgba(20, 20, 24, 0.65)',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: '16px',
                 overflow: 'hidden',
                 cursor: 'pointer',
                 display: 'grid',
                 gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-                boxShadow: '0 12px 32px rgba(0, 0, 0, 0.35)'
+                boxShadow: '0 16px 36px rgba(0, 0, 0, 0.45)',
+                backdropFilter: 'blur(14px)',
+                WebkitBackdropFilter: 'blur(14px)'
               }}
-              className="card-hover-border"
             >
               <div style={{ position: 'relative', minHeight: '240px', overflow: 'hidden' }}>
                 <img
@@ -997,17 +972,17 @@ export const HomePage: React.FC<Props> = ({
 
               <button
                 onClick={() => onNavigate('about')}
-                className="btn btn-secondary"
+                className="btn btn-secondary btn-tactile"
               >
                 Read Chapter History & Leadership <ArrowRight size={16} />
               </button>
             </div>
 
             {/* Visual Collage: Community Poster / Real Photos */}
-            <div style={{
+            <div className="interactive-card" style={{
               background: 'var(--bg-card)',
               border: '1px solid var(--border-subtle)',
-              borderRadius: 'var(--radius-lg)',
+              borderRadius: '16px',
               overflow: 'hidden',
               padding: '1.25rem'
             }}>
@@ -1017,7 +992,7 @@ export const HomePage: React.FC<Props> = ({
                 style={{
                   width: '100%',
                   height: 'auto',
-                  borderRadius: 'var(--radius-md)',
+                  borderRadius: '10px',
                   display: 'block',
                   objectFit: 'cover'
                 }}
@@ -1035,16 +1010,16 @@ export const HomePage: React.FC<Props> = ({
 
       {/* 7. JOIN THE COMMUNITY CTA */}
       <section style={{
-        paddingTop: '5rem',
-        paddingBottom: '5rem',
+        paddingTop: '5.5rem',
+        paddingBottom: '5.5rem',
         textAlign: 'center'
       }}>
         <div className="container">
           <div style={{ maxWidth: '650px', margin: '0 auto' }}>
-            <h2 style={{ fontSize: 'clamp(1.9rem, 3.5vw, 2.5rem)', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '1rem' }}>
+            <h2 style={{ fontSize: 'clamp(1.9rem, 3.5vw, 2.5rem)', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '1rem', letterSpacing: '-0.025em' }}>
               Ready to Explore Automation?
             </h2>
-            <p style={{ fontSize: '1.05rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '2rem' }}>
+            <p style={{ fontSize: '1.05rem', color: 'var(--text-secondary)', lineHeight: 1.65, marginBottom: '2.25rem' }}>
               Whether you are a first-year student writing your first Excel bot or a senior preparing for enterprise certification, our community has a place for you.
             </p>
             <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', flexWrap: 'wrap' }}>
@@ -1052,13 +1027,13 @@ export const HomePage: React.FC<Props> = ({
                 href="https://www.linkedin.com/company/ace-uipath-community/?viewAsMember=true"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="btn btn-primary btn-lg"
+                className="btn btn-primary btn-lg btn-tactile"
               >
                 Join the Community <ArrowRight size={18} />
               </a>
               <button
                 onClick={() => onNavigate('learn')}
-                className="btn btn-outline btn-lg"
+                className="btn btn-outline btn-lg btn-tactile"
               >
                 Start Learning Academy
               </button>
@@ -1094,3 +1069,4 @@ export const HomePage: React.FC<Props> = ({
     </div>
   );
 };
+

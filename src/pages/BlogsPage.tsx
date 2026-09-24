@@ -11,7 +11,8 @@ import {
   Newspaper,
   User as UserIcon,
   Tag,
-  Star
+  Star,
+  Edit3
 } from 'lucide-react';
 import { Article, ArticleCategory, User, ARTICLE_CATEGORIES } from '../types';
 
@@ -181,6 +182,8 @@ export const BlogsPage: React.FC<Props> = ({ articles, currentUser, onNavigate }
                   width: '100%',
                   height: '100%',
                   objectFit: 'cover',
+                  objectPosition: 'center',
+                  background: '#0D0F14',
                   transition: 'transform 0.4s ease'
                 }}
               />
@@ -325,18 +328,47 @@ export const BlogsPage: React.FC<Props> = ({ articles, currentUser, onNavigate }
                   </div>
                 </div>
 
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.45rem',
-                    color: '#FA4616',
-                    fontSize: '0.88rem',
-                    fontWeight: 600
-                  }}
-                >
-                  <span>Read Article</span>
-                  <ArrowRight size={15} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                  {canCreate && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onNavigate('article_editor', featuredArticle.slug || featuredArticle.id);
+                      }}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.35rem',
+                        background: 'rgba(255, 255, 255, 0.08)',
+                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                        color: '#FFFFFF',
+                        padding: '0.35rem 0.75rem',
+                        borderRadius: '0.375rem',
+                        fontSize: '0.8rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease'
+                      }}
+                      title="Edit this article"
+                    >
+                      <Edit3 size={13} />
+                      <span>Edit Article</span>
+                    </button>
+                  )}
+
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.45rem',
+                      color: '#FA4616',
+                      fontSize: '0.88rem',
+                      fontWeight: 600
+                    }}
+                  >
+                    <span>Read Article</span>
+                    <ArrowRight size={15} />
+                  </div>
                 </div>
               </div>
             </div>
@@ -488,7 +520,13 @@ export const BlogsPage: React.FC<Props> = ({ articles, currentUser, onNavigate }
                   <img
                     src={art.coverImageUrl || art.coverImage}
                     alt={art.title}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      objectPosition: 'center',
+                      background: '#0D0F14'
+                    }}
                   />
                   <div
                     style={{
@@ -606,6 +644,32 @@ export const BlogsPage: React.FC<Props> = ({ articles, currentUser, onNavigate }
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                      {canCreate && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onNavigate('article_editor', art.slug || art.id);
+                          }}
+                          style={{
+                            background: 'rgba(255, 255, 255, 0.08)',
+                            border: '1px solid rgba(255, 255, 255, 0.18)',
+                            color: '#F3F4F6',
+                            borderRadius: '0.375rem',
+                            padding: '0.2rem 0.5rem',
+                            fontSize: '0.72rem',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.25rem',
+                            transition: 'all 0.15s ease'
+                          }}
+                          title="Edit this article"
+                        >
+                          <Edit3 size={11} />
+                          <span>Edit</span>
+                        </button>
+                      )}
                       <span>{new Date(art.publishedAt || art.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
                       <span>•</span>
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.2rem' }}>

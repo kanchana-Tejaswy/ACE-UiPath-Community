@@ -129,21 +129,76 @@ code, pre {
 /* Ambient Breathing Glow */
 .hero-ambient-glow {
   position: absolute;
-  top: -10%;
+  top: -12%;
   left: 50%;
   transform: translateX(-50%);
-  width: 650px;
-  height: 380px;
-  background: radial-gradient(ellipse at center, rgba(250, 70, 22, 0.16) 0%, rgba(250, 70, 22, 0.04) 50%, transparent 75%);
-  filter: blur(50px);
+  width: 720px;
+  height: 420px;
+  background: radial-gradient(ellipse at center, rgba(250, 70, 22, 0.12) 0%, rgba(250, 70, 22, 0.03) 50%, transparent 75%);
+  filter: blur(54px);
   pointer-events: none;
   z-index: 0;
-  animation: breatheGlow 6s ease-in-out infinite alternate;
+  animation: breatheGlow 7s ease-in-out infinite alternate;
 }
 
 @keyframes breatheGlow {
-  0% { opacity: 0.7; transform: translateX(-50%) scale(0.95); }
-  100% { opacity: 1; transform: translateX(-50%) scale(1.08); }
+  0% { opacity: 0.65; transform: translateX(-50%) scale(0.95); }
+  100% { opacity: 1; transform: translateX(-50%) scale(1.05); }
+}
+
+/* Fluid Stagger Reveal Animations (< 250ms feel) */
+@keyframes fadeInUpSubtle {
+  0% {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  animation: fadeInUpSubtle 280ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.stagger-1 {
+  animation-delay: 40ms;
+}
+
+.stagger-2 {
+  animation-delay: 90ms;
+}
+
+.stagger-3 {
+  animation-delay: 140ms;
+}
+
+.stagger-4 {
+  animation-delay: 190ms;
+}
+
+/* Micro-Interaction Classes */
+.interactive-card {
+  transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1), border-color 200ms ease, box-shadow 200ms ease;
+}
+
+.interactive-card:hover {
+  transform: translateY(-2.5px);
+  border-color: rgba(255, 255, 255, 0.18) !important;
+  box-shadow: 0 14px 30px -6px rgba(0, 0, 0, 0.7), 0 0 1px 1px rgba(255, 255, 255, 0.08) !important;
+}
+
+.interactive-card:active {
+  transform: translateY(-1px) scale(0.995);
+}
+
+.btn-tactile {
+  transition: transform 120ms cubic-bezier(0.16, 1, 0.3, 1), background-color 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.btn-tactile:active {
+  transform: scale(0.96) !important;
 }
 
 /* Custom Refined Scrollbar */
