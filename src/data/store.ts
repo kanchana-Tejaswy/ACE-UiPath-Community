@@ -29,6 +29,7 @@ import { activityDraftsRepository } from './repositories/activityDraftsRepositor
 import { analyticsRepository } from './repositories/analyticsRepository';
 import { articlesRepository } from './repositories/articlesRepository';
 import { activeAdapter } from './adapters';
+import { uploadArticleCoverImage } from '../lib/supabase/services';
 import { hasPermission, isValidDraftStatusTransition, normalizeRole } from '../lib/security';
 import { authService } from '../lib/auth/authService';
 
@@ -453,6 +454,10 @@ export function useCommunityStore() {
       console.error('Save article failed:', err);
       return { success: false, error: err?.message || 'Failed to save article.' };
     }
+  };
+
+  const uploadCoverImage = async (file: File): Promise<{ url: string | null; error?: string }> => {
+    return uploadArticleCoverImage(file);
   };
 
   const deleteArticle = async (id: string): Promise<{ success: boolean; error?: string }> => {
@@ -1092,6 +1097,7 @@ export function useCommunityStore() {
     deleteResource,
     saveArticle,
     deleteArticle,
+    uploadCoverImage,
     incrementArticleViews,
     saveChallenge,
     deleteChallenge,

@@ -487,6 +487,7 @@ export function App() {
               articles={store.articles}
               onSaveArticle={store.saveArticle}
               onNavigate={navigateTo}
+              onUploadCover={store.uploadCoverImage}
             />
           ) : (
             <div className="container" style={{ paddingTop: '5rem', paddingBottom: '6rem', textAlign: 'center' }}>

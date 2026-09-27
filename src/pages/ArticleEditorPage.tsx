@@ -25,7 +25,8 @@ import {
   Sparkles,
   Info,
   CheckCircle2,
-  Share2
+  Share2,
+  Loader2
 } from 'lucide-react';
 import { Article, ArticleCategory, ArticleStatus, User, ARTICLE_CATEGORIES, BannerAspectRatio } from '../types';
 import { 
@@ -36,15 +37,16 @@ import {
   getBannerContainerClasses,
   getBannerImageClasses
 } from '../utils/bannerRatio';
+import { compressImageToDataUrl } from '../utils/imageCompressor';
 import { TechnicalMarkdownRenderer } from '../components/TechnicalMarkdownRenderer';
 
 interface Props {
   currentUser: User;
   articleId?: string | null;
   articles: Article[];
-  onSaveArticle: (article: Article) => void;
+  onSaveArticle: (article: Article) => Promise<{ success: boolean; error?: string } | void> | void;
   onNavigate: (view: string, detailId?: string) => void;
-  onUploadCover?: (file: File) => Promise<string | null>;
+  onUploadCover?: (file: File) => Promise<{ url: string | null; error?: string } | string | null>;
 }
 
 const DEFAULT_MARKDOWN_TEMPLATE = `# Overview
@@ -173,12 +175,22 @@ export const ArticleEditorPage: React.FC<Props> = ({
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [scheduleDate, setScheduleDate] = useState('');
 
-  // Preset covers dropdown
+  // Cover image controls & state
   const [showPresetPicker, setShowPresetPicker] = useState(false);
+  const [showUrlInput, setShowUrlInput] = useState(false);
+  const [customUrlInput, setCustomUrlInput] = useState('');
+  const [isUploadingCover, setIsUploadingCover] = useState(false);
+
+  // Markdown inline image insertion modal
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const [inlineImageUrl, setInlineImageUrl] = useState('');
+  const [inlineImageAlt, setInlineImageAlt] = useState('');
+  const [isUploadingInlineImage, setIsUploadingInlineImage] = useState(false);
 
   // Textarea ref for inserting formatting
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const inlineFileInputRef = useRef<HTMLInputElement>(null);
 
   // Auto-generate slug from title if not manually customized
   const slugify = (text: string) => {
@@ -245,34 +257,82 @@ export const ArticleEditorPage: React.FC<Props> = ({
     }, 0);
   };
 
-  // Handle local image upload
+  // Handle local cover image upload
   const handleImageFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // If custom upload handler passed
-    if (onUploadCover) {
-      try {
-        const uploadedUrl = await onUploadCover(file);
-        if (uploadedUrl) {
-          setCoverImageUrl(uploadedUrl);
+    setIsUploadingCover(true);
+    try {
+      if (onUploadCover) {
+        const uploadRes = await onUploadCover(file);
+        const resolvedUrl = typeof uploadRes === 'string' ? uploadRes : uploadRes?.url;
+        if (resolvedUrl) {
+          setCoverImageUrl(resolvedUrl);
           setIsDirty(true);
+          showToast('Cover image attached successfully!');
+          return;
+        } else if (typeof uploadRes === 'object' && uploadRes?.error) {
+          console.warn('onUploadCover returned error:', uploadRes.error);
+        }
+      }
+
+      // Safe compressed persistent fallback (works across page reloads)
+      const compressedDataUrl = await compressImageToDataUrl(file);
+      setCoverImageUrl(compressedDataUrl);
+      setIsDirty(true);
+      showToast('Cover image attached successfully!');
+    } catch (err: any) {
+      console.error('Failed to process cover image:', err);
+      showToast('Failed to upload image. Please try another image or use an image URL.');
+    } finally {
+      setIsUploadingCover(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  // Handle inline markdown image upload
+  const handleInlineImageFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingInlineImage(true);
+    try {
+      if (onUploadCover) {
+        const uploadRes = await onUploadCover(file);
+        const resolvedUrl = typeof uploadRes === 'string' ? uploadRes : uploadRes?.url;
+        if (resolvedUrl) {
+          setInlineImageUrl(resolvedUrl);
+          if (!inlineImageAlt) setInlineImageAlt(file.name.replace(/\.[^/.]+$/, ''));
+          showToast('Image uploaded successfully!');
           return;
         }
-      } catch (err) {
-        console.error('Error in onUploadCover:', err);
       }
-    }
 
-    // Fallback to FileReader base64
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === 'string') {
-        setCoverImageUrl(reader.result);
-        setIsDirty(true);
-      }
-    };
-    reader.readAsDataURL(file);
+      const compressedDataUrl = await compressImageToDataUrl(file);
+      setInlineImageUrl(compressedDataUrl);
+      if (!inlineImageAlt) setInlineImageAlt(file.name.replace(/\.[^/.]+$/, ''));
+      showToast('Image prepared successfully!');
+    } catch (err: any) {
+      console.error('Inline image upload failed:', err);
+      showToast('Failed to process image file.');
+    } finally {
+      setIsUploadingInlineImage(false);
+      if (inlineFileInputRef.current) inlineFileInputRef.current.value = '';
+    }
+  };
+
+  // Insert inline image markdown snippet
+  const handleInsertInlineImage = () => {
+    if (!inlineImageUrl.trim()) {
+      showToast('Please provide an image URL or upload a file first.');
+      return;
+    }
+    const alt = inlineImageAlt.trim() || 'Diagram or Screenshot';
+    insertMarkdown(`\n![${alt}](${inlineImageUrl.trim()})\n`);
+    setIsImageModalOpen(false);
+    setInlineImageUrl('');
+    setInlineImageAlt('');
   };
 
   const handleAddTag = () => {
@@ -306,7 +366,7 @@ export const ArticleEditorPage: React.FC<Props> = ({
   };
 
   // Save handler
-  const handleSave = (targetStatus: ArticleStatus, scheduledTimestamp?: string) => {
+  const handleSave = async (targetStatus: ArticleStatus, scheduledTimestamp?: string) => {
     const error = validate();
     if (error) {
       showToast(error);
@@ -347,22 +407,28 @@ export const ArticleEditorPage: React.FC<Props> = ({
     };
 
     try {
-      onSaveArticle(articleToSave);
+      const res = await onSaveArticle(articleToSave);
+      if (res && typeof res === 'object' && res.success === false) {
+        showToast(res.error || 'Failed to save article.');
+        setIsSaving(false);
+        return;
+      }
+
       setIsDirty(false);
       setIsScheduleModalOpen(false);
 
       if (targetStatus === 'PUBLISHED') {
         showToast('Article published successfully!');
-        setTimeout(() => onNavigate('blog_detail', articleToSave.slug), 800);
+        setTimeout(() => onNavigate('blog_detail', articleToSave.slug), 600);
       } else if (targetStatus === 'SCHEDULED') {
         showToast(`Article scheduled for ${new Date(scheduledTimestamp!).toLocaleString()}!`);
-        setTimeout(() => onNavigate('admin'), 800);
+        setTimeout(() => onNavigate('admin'), 600);
       } else {
         showToast('Draft saved successfully!');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to save article:', err);
-      showToast('Failed to save article. Please try again.');
+      showToast(err?.message || 'Failed to save article. Please try again.');
     } finally {
       setIsSaving(false);
     }
@@ -786,6 +852,174 @@ export const ArticleEditorPage: React.FC<Props> = ({
         </div>
       )}
 
+      {/* MARKDOWN INLINE IMAGE INSERTION MODAL */}
+      {isImageModalOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 100,
+            background: 'rgba(0,0,0,0.8)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1.5rem'
+          }}
+          onClick={() => setIsImageModalOpen(false)}
+        >
+          <div
+            style={{
+              background: '#16181D',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: '1rem',
+              width: '100%',
+              maxWidth: '480px',
+              padding: '1.75rem',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.6)'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                <ImageIcon size={20} style={{ color: '#60A5FA' }} />
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: '#FFF', margin: 0 }}>Insert Article Image</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsImageModalOpen(false)}
+                style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '1.25rem' }}>
+              Add a diagram, workflow screenshot, or architecture visual to your technical article.
+            </p>
+
+            {/* Upload or URL source */}
+            <div style={{ marginBottom: '1.25rem' }}>
+              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
+                Upload Local File
+              </label>
+              <input
+                type="file"
+                ref={inlineFileInputRef}
+                accept="image/*"
+                style={{ display: 'none' }}
+                onChange={handleInlineImageFileSelect}
+              />
+              <button
+                type="button"
+                disabled={isUploadingInlineImage}
+                onClick={() => inlineFileInputRef.current?.click()}
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  background: 'rgba(255, 255, 255, 0.04)',
+                  border: '1px dashed var(--border-subtle)',
+                  borderRadius: '0.5rem',
+                  color: '#FFF',
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem'
+                }}
+              >
+                {isUploadingInlineImage ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" style={{ color: '#60A5FA' }} />
+                    <span>Processing image...</span>
+                  </>
+                ) : (
+                  <>
+                    <Upload size={16} style={{ color: '#60A5FA' }} />
+                    <span>Choose Image from Computer</span>
+                  </>
+                )}
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', margin: '1rem 0' }}>
+              <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)' }} />
+              <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Or via Direct Link</span>
+              <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)' }} />
+            </div>
+
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
+                Image URL (HTTPS / CDN)
+              </label>
+              <input
+                type="url"
+                placeholder="https://images.unsplash.com/... or https://..."
+                value={inlineImageUrl}
+                onChange={(e) => setInlineImageUrl(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '0.65rem 0.85rem',
+                  background: 'var(--bg-primary)',
+                  border: '1px solid var(--border-subtle)',
+                  borderRadius: '0.5rem',
+                  color: '#FFF',
+                  fontSize: '0.85rem'
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.4rem', textTransform: 'uppercase' }}>
+                Alt Text (Caption / Description)
+              </label>
+              <input
+                type="text"
+                placeholder="e.g. UiPath Studio Workflow Canvas Architecture"
+                value={inlineImageAlt}
+                onChange={(e) => setInlineImageAlt(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '0.65rem 0.85rem',
+                  background: 'var(--bg-primary)',
+                  border: '1px solid var(--border-subtle)',
+                  borderRadius: '0.5rem',
+                  color: '#FFF',
+                  fontSize: '0.85rem'
+                }}
+              />
+            </div>
+
+            {/* Preview if image URL exists */}
+            {inlineImageUrl && (
+              <div style={{ marginBottom: '1.25rem', borderRadius: '0.5rem', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)', maxHeight: '160px', background: '#000' }}>
+                <img src={inlineImageUrl} alt="Preview" style={{ width: '100%', height: '160px', objectFit: 'contain' }} />
+              </div>
+            )}
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+              <button
+                type="button"
+                onClick={() => setIsImageModalOpen(false)}
+                className="btn btn-secondary btn-sm"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={!inlineImageUrl.trim()}
+                onClick={handleInsertInlineImage}
+                className="btn btn-primary btn-sm"
+                style={{ background: '#3B82F6', border: 'none' }}
+              >
+                Insert into Article
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* MAIN CONTAINER */}
       <main
         style={{
@@ -810,11 +1044,11 @@ export const ArticleEditorPage: React.FC<Props> = ({
         >
           {/* Cover Image Uploader & Preview */}
           <div style={{ marginBottom: '1.5rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
               <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
                 Cover Banner
               </label>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                 <button
                   type="button"
                   onClick={() => setShowPresetPicker(!showPresetPicker)}
@@ -835,6 +1069,26 @@ export const ArticleEditorPage: React.FC<Props> = ({
                   <span>Choose Preset</span>
                 </button>
 
+                <button
+                  type="button"
+                  onClick={() => setShowUrlInput(!showUrlInput)}
+                  style={{
+                    background: showUrlInput ? 'rgba(250, 70, 22, 0.15)' : 'rgba(255, 255, 255, 0.05)',
+                    border: `1px solid ${showUrlInput ? '#FA4616' : 'var(--border-subtle)'}`,
+                    color: showUrlInput ? '#FA4616' : 'var(--text-secondary)',
+                    padding: '0.25rem 0.6rem',
+                    borderRadius: '0.375rem',
+                    fontSize: '0.75rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.35rem'
+                  }}
+                >
+                  <Link2 size={12} />
+                  <span>Paste URL</span>
+                </button>
+
                 <input
                   type="file"
                   ref={fileInputRef}
@@ -844,6 +1098,7 @@ export const ArticleEditorPage: React.FC<Props> = ({
                 />
                 <button
                   type="button"
+                  disabled={isUploadingCover}
                   onClick={() => fileInputRef.current?.click()}
                   style={{
                     background: 'rgba(255, 255, 255, 0.05)',
@@ -858,11 +1113,75 @@ export const ArticleEditorPage: React.FC<Props> = ({
                     gap: '0.35rem'
                   }}
                 >
-                  <Upload size={12} />
-                  <span>Upload Image</span>
+                  {isUploadingCover ? (
+                    <>
+                      <Loader2 size={12} className="animate-spin" style={{ color: '#FA4616' }} />
+                      <span>Uploading...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Upload size={12} />
+                      <span>Upload Image</span>
+                    </>
+                  )}
                 </button>
               </div>
             </div>
+
+            {/* Direct URL Input field */}
+            {showUrlInput && (
+              <div
+                style={{
+                  display: 'flex',
+                  gap: '0.5rem',
+                  padding: '0.75rem',
+                  background: 'var(--bg-secondary)',
+                  border: '1px solid var(--border-subtle)',
+                  borderRadius: '0.5rem',
+                  marginBottom: '1rem'
+                }}
+              >
+                <input
+                  type="url"
+                  placeholder="https://images.unsplash.com/... or https://..."
+                  value={customUrlInput}
+                  onChange={(e) => setCustomUrlInput(e.target.value)}
+                  style={{
+                    flex: 1,
+                    padding: '0.45rem 0.75rem',
+                    background: 'var(--bg-primary)',
+                    border: '1px solid var(--border-subtle)',
+                    borderRadius: '0.375rem',
+                    color: '#FFF',
+                    fontSize: '0.85rem'
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (customUrlInput.trim()) {
+                      setCoverImageUrl(customUrlInput.trim());
+                      setIsDirty(true);
+                      setShowUrlInput(false);
+                      setCustomUrlInput('');
+                      showToast('Cover image URL updated!');
+                    }
+                  }}
+                  className="btn btn-primary btn-sm"
+                  style={{ fontSize: '0.78rem', padding: '0.35rem 0.75rem' }}
+                >
+                  Apply URL
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowUrlInput(false)}
+                  className="btn btn-secondary btn-sm"
+                  style={{ fontSize: '0.78rem', padding: '0.35rem 0.75rem' }}
+                >
+                  Close
+                </button>
+              </div>
+            )}
 
             {/* Presets Grid Dropdown */}
             {showPresetPicker && (
@@ -1518,6 +1837,14 @@ export const ArticleEditorPage: React.FC<Props> = ({
               title="Link"
             >
               <Link2 size={14} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsImageModalOpen(true)}
+              style={{ ...toolbarBtnStyle, color: '#60A5FA' }}
+              title="Insert Image / Screenshot"
+            >
+              <ImageIcon size={14} /> Image
             </button>
             <button
               type="button"

@@ -42,6 +42,7 @@ import {
   DatabaseActivityDraftRow,
   DatabaseArticleRow
 } from './types';
+import { compressImageToDataUrl } from '../../utils/imageCompressor';
 
 // ==================================================================
 // SITE SETTINGS
@@ -732,8 +733,8 @@ export async function incrementArticleViewsInSupabase(id: string): Promise<{ suc
 }
 
 /**
- * Upload article cover image to Supabase Storage (blog-media or activities-media)
- * Returns the public URL if uploaded, or generates a local object URL for offline/preview mode.
+ * Upload article cover image to Supabase Storage (blog-media, activities-media, project-artifacts)
+ * Returns the public URL if uploaded, or generates a compressed, permanent data URL for offline/fallback mode.
  */
 export async function uploadArticleCoverImage(file: File): Promise<{ url: string | null; error?: string }> {
   // Validate file type
@@ -752,40 +753,56 @@ export async function uploadArticleCoverImage(file: File): Promise<{ url: string
       const sanitizedName = file.name.toLowerCase().replace(/[^a-z0-9.]/g, '-');
       const filePath = `covers/${Date.now()}-${sanitizedName}`;
 
-      // Attempt upload to 'blog-media', fallback to 'activities-media'
-      let uploadRes = await supabase.storage.from('blog-media').upload(filePath, file, {
-        cacheControl: '3600',
-        upsert: true
-      });
+      const candidateBuckets = ['blog-media', 'activities-media', 'project-artifacts', 'leadership-media', 'user-avatars'];
+      let bucketUsed: string | null = null;
+      let lastError: any = null;
 
-      let bucketUsed = 'blog-media';
-      if (uploadRes.error) {
-        uploadRes = await supabase.storage.from('activities-media').upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: true
-        });
-        bucketUsed = 'activities-media';
+      for (const bucket of candidateBuckets) {
+        try {
+          const uploadRes = await supabase.storage.from(bucket).upload(filePath, file, {
+            cacheControl: '3600',
+            upsert: true
+          });
+
+          if (!uploadRes.error) {
+            bucketUsed = bucket;
+            break;
+          } else {
+            lastError = uploadRes.error;
+          }
+        } catch (bErr) {
+          lastError = bErr;
+        }
       }
 
-      if (uploadRes.error) {
-        console.warn('Supabase storage upload error:', uploadRes.error);
-        // Fallback to local Object URL for seamless editing
-        const localUrl = URL.createObjectURL(file);
-        return { url: localUrl };
+      if (bucketUsed) {
+        const { data: publicData } = supabase.storage.from(bucketUsed).getPublicUrl(filePath);
+        if (publicData?.publicUrl) {
+          return { url: publicData.publicUrl };
+        }
       }
 
-      const { data: publicData } = supabase.storage.from(bucketUsed).getPublicUrl(filePath);
-      return { url: publicData.publicUrl };
+      console.warn('Supabase storage upload failed across buckets, falling back to persistent compression:', lastError);
+      const compressedDataUrl = await compressImageToDataUrl(file);
+      return { url: compressedDataUrl };
     } catch (err: any) {
-      console.warn('Cover image upload failed, falling back to local preview:', err);
-      const localUrl = URL.createObjectURL(file);
-      return { url: localUrl };
+      console.warn('Cover image upload failed, falling back to compressed persistent image:', err);
+      try {
+        const compressedDataUrl = await compressImageToDataUrl(file);
+        return { url: compressedDataUrl };
+      } catch {
+        return { url: null, error: err?.message || 'Failed to process cover image.' };
+      }
     }
   }
 
-  // Local/Offline development mode fallback: Object URL
-  const localUrl = URL.createObjectURL(file);
-  return { url: localUrl };
+  // Local/Offline development mode fallback: Compressed persistent Data URL (does not expire on reload)
+  try {
+    const compressedDataUrl = await compressImageToDataUrl(file);
+    return { url: compressedDataUrl };
+  } catch (err: any) {
+    return { url: null, error: err?.message || 'Failed to encode local image.' };
+  }
 }
 
 export async function uploadMemberAvatarImage(file: File, memberId?: string): Promise<{ url: string | null; error?: string }> {
