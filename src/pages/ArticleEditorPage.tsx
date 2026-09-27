@@ -1306,42 +1306,19 @@ export const ArticleEditorPage: React.FC<Props> = ({
 
             {/* Cover Banner Dynamic Preview */}
             <div
-              className={`relative overflow-hidden rounded-xl border border-white/10 bg-[#0F1117] transition-all duration-300 ${
-                aspectRatio === 'default'
-                  ? 'aspect-[4/1] min-h-[140px]'
-                  : aspectRatio === '21/9'
-                  ? 'aspect-[21/9]'
-                  : aspectRatio === '16/9'
-                  ? 'aspect-video'
-                  : 'h-auto max-h-[420px]'
-              }`}
               style={{
                 position: 'relative',
                 borderRadius: '0.75rem',
                 overflow: 'hidden',
                 border: '1px solid var(--border-subtle)',
                 background: '#0F1117',
-                ...(aspectRatio === 'default'
-                  ? { aspectRatio: '4 / 1', minHeight: '140px', width: '100%' }
-                  : aspectRatio === '21/9'
-                  ? { aspectRatio: '21 / 9', width: '100%' }
-                  : aspectRatio === '16/9'
-                  ? { aspectRatio: '16 / 9', width: '100%' }
-                  : { height: 'auto', maxHeight: '420px', width: '100%' })
+                ...getBannerContainerStyle(aspectRatio)
               }}
             >
               <img
                 src={coverImageUrl}
                 alt="Article Cover"
-                className={aspectRatio === 'auto' ? 'w-full h-auto max-h-[420px] object-contain' : 'w-full h-full object-cover'}
-                style={{
-                  width: '100%',
-                  height: aspectRatio === 'auto' ? 'auto' : '100%',
-                  maxHeight: aspectRatio === 'auto' ? '420px' : undefined,
-                  objectFit: aspectRatio === 'auto' ? 'contain' : 'cover',
-                  display: 'block',
-                  margin: aspectRatio === 'auto' ? '0 auto' : undefined
-                }}
+                style={getBannerImageStyle(aspectRatio)}
                 onError={() => setCoverImageUrl(PRESET_COVERS[0].url)}
               />
               <div

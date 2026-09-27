@@ -445,7 +445,7 @@ export const ARTICLE_CATEGORIES: ArticleCategory[] = [
 
 export type ArticleStatus = 'DRAFT' | 'PUBLISHED' | 'SCHEDULED';
 
-export type BannerAspectRatio = 'default' | '21/9' | '16/9' | 'auto';
+export type BannerAspectRatio = 'default' | '21/9' | '16/9' | '4/3' | '1/1' | 'auto';
 
 export interface CoverBannerConfig {
   url?: string;

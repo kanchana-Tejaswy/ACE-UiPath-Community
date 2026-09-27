@@ -664,12 +664,30 @@ export async function saveArticleToSupabase(article: Article): Promise<{ success
       }
     }
 
-    const { error } = await supabase
+    let { error } = await supabase
       .from('articles')
       .upsert({
         ...row,
         updated_at: new Date().toISOString()
       });
+
+    // If database schema cache in Supabase lacks aspect_ratio column, automatically retry without it
+    if (error && (
+      error.message?.toLowerCase().includes('aspect_ratio') || 
+      error.details?.toLowerCase().includes('aspect_ratio') || 
+      error.hint?.toLowerCase().includes('aspect_ratio') ||
+      error.code === 'PGRST204'
+    )) {
+      console.warn('Supabase articles table missing aspect_ratio column; retrying upsert without aspect_ratio field...');
+      const { aspect_ratio, ...rowWithoutAspectRatio } = row;
+      const retryResult = await supabase
+        .from('articles')
+        .upsert({
+          ...rowWithoutAspectRatio,
+          updated_at: new Date().toISOString()
+        });
+      error = retryResult.error;
+    }
 
     if (error) {
       console.error('Supabase article upsert error:', error);
