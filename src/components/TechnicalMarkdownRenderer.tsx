@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Copy, Check, Info, AlertTriangle, Lightbulb } from 'lucide-react';
+import { Copy, Check, Info, AlertTriangle, Lightbulb, AlertOctagon } from 'lucide-react';
 
 interface Props {
   content: string;
@@ -15,34 +15,47 @@ export const TechnicalMarkdownRenderer: React.FC<Props> = ({ content, className 
     setTimeout(() => setCopiedIndex(null), 2000);
   };
 
+  if (!content || !content.trim()) {
+    return null;
+  }
+
   // Pre-process markdown into structured sections
   const codeBlocks: { lang: string; code: string }[] = [];
 
-  // Replace code blocks with placeholders
-  let textWithPlaceholders = content.replace(/```([a-zA-Z0-9_#-]*)\n([\s\S]*?)```/g, (_, lang, code) => {
+  // Normalize line endings
+  let normalized = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+  // Replace code blocks with placeholders first to preserve whitespace
+  normalized = normalized.replace(/```([a-zA-Z0-9_#-]*)\n([\s\S]*?)```/g, (_, lang, code) => {
     const idx = codeBlocks.length;
-    codeBlocks.push({ lang: (lang || 'code').toLowerCase(), code: code.replace(/\r\n/g, '\n') });
+    codeBlocks.push({ lang: (lang || 'code').toLowerCase(), code });
     return `\n\n__CODE_BLOCK_${idx}__\n\n`;
   });
 
-  // Split content by double newlines into blocks
-  const rawBlocks = textWithPlaceholders.split(/\n\s*\n/);
+  // Ensure headings are isolated on their own blocks even if single newline was used
+  normalized = normalized.replace(/(^|\n)(#{1,6}\s+[^\n]+)(\n|$)/g, '\n\n$2\n\n');
+
+  // Ensure callouts / blockquotes have block separation
+  normalized = normalized.replace(/(^|\n)(>\s?[^\n]+(\n>[^\n]*)*)(\n|$)/g, '\n\n$2\n\n');
+
+  // Ensure horizontal rules are separated
+  normalized = normalized.replace(/(^|\n)(---|---|\*\*\*|___)(\n|$)/g, '\n\n$2\n\n');
+
+  // Split content into discrete blocks
+  const rawBlocks = normalized.split(/\n\s*\n/).map(b => b.trim()).filter(Boolean);
 
   return (
-    <div className={`technical-markdown-body ${className}`} style={{ color: 'var(--text-primary)', lineHeight: 1.75 }}>
-      {rawBlocks.map((rawBlock, blockIdx) => {
-        const trimmed = rawBlock.trim();
-        if (!trimmed) return null;
-
-        // Check if block is a code block placeholder
-        const codeMatch = trimmed.match(/^__CODE_BLOCK_(\d+)__$/);
+    <div className={`technical-markdown-body ${className}`} style={{ color: 'var(--text-primary, #F3F4F6)', lineHeight: 1.75, fontSize: '0.975rem' }}>
+      {rawBlocks.map((block, blockIdx) => {
+        // 1. Code Block Placeholder
+        const codeMatch = block.match(/^__CODE_BLOCK_(\d+)__$/);
         if (codeMatch) {
           const idx = parseInt(codeMatch[1], 10);
-          const block = codeBlocks[idx];
-          if (!block) return null;
+          const blockData = codeBlocks[idx];
+          if (!blockData) return null;
 
           const isCopied = copiedIndex === idx;
-          const displayLang = block.lang.toUpperCase() || 'CODE';
+          const displayLang = blockData.lang.toUpperCase() || 'CODE';
 
           return (
             <div
@@ -52,7 +65,7 @@ export const TechnicalMarkdownRenderer: React.FC<Props> = ({ content, className 
                 border: '1px solid rgba(255, 255, 255, 0.08)',
                 borderRadius: '0.75rem',
                 overflow: 'hidden',
-                margin: '1.75rem 0',
+                margin: '1.5rem 0',
                 boxShadow: '0 8px 24px rgba(0,0,0,0.35)'
               }}
             >
@@ -78,7 +91,7 @@ export const TechnicalMarkdownRenderer: React.FC<Props> = ({ content, className 
                       fontFamily: 'var(--font-mono, monospace)',
                       fontSize: '0.72rem',
                       fontWeight: 600,
-                      color: '#FA4616',
+                      color: 'var(--uipath-orange, #FA4616)',
                       letterSpacing: '0.05em',
                       marginLeft: '0.35rem'
                     }}
@@ -89,13 +102,13 @@ export const TechnicalMarkdownRenderer: React.FC<Props> = ({ content, className 
 
                 <button
                   type="button"
-                  onClick={() => handleCopyCode(block.code, idx)}
+                  onClick={() => handleCopyCode(blockData.code, idx)}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: '0.35rem',
                     background: isCopied ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255, 255, 255, 0.06)',
-                    color: isCopied ? '#34D399' : 'var(--text-secondary)',
+                    color: isCopied ? '#34D399' : 'var(--text-secondary, #9CA3AF)',
                     border: '1px solid ' + (isCopied ? 'rgba(52, 211, 153, 0.3)' : 'rgba(255, 255, 255, 0.1)'),
                     borderRadius: '0.375rem',
                     padding: '0.25rem 0.55rem',
@@ -114,7 +127,7 @@ export const TechnicalMarkdownRenderer: React.FC<Props> = ({ content, className 
               <pre
                 style={{
                   margin: 0,
-                  padding: '1.25rem 1.25rem',
+                  padding: '1.25rem',
                   fontFamily: 'var(--font-mono, "JetBrains Mono", Consolas, Menlo, monospace)',
                   fontSize: '0.88rem',
                   lineHeight: 1.65,
@@ -123,37 +136,52 @@ export const TechnicalMarkdownRenderer: React.FC<Props> = ({ content, className 
                   background: 'transparent'
                 }}
               >
-                <code>{block.code}</code>
+                <code>{blockData.code}</code>
               </pre>
             </div>
           );
         }
 
-        // Callout blocks: > [!NOTE], > [!TIP], > [!WARNING], > [!IMPORTANT]
-        if (trimmed.startsWith('> [!NOTE]') || trimmed.startsWith('> [!TIP]') || trimmed.startsWith('> [!WARNING]') || trimmed.startsWith('> [!IMPORTANT]')) {
+        // 2. Callouts: > [!NOTE], > [!TIP], > [!WARNING], > [!IMPORTANT], > [!CAUTION]
+        if (
+          block.startsWith('> [!NOTE]') || 
+          block.startsWith('> [!TIP]') || 
+          block.startsWith('> [!WARNING]') || 
+          block.startsWith('> [!IMPORTANT]') ||
+          block.startsWith('> [!CAUTION]')
+        ) {
           let type = 'NOTE';
           let icon = <Info size={18} style={{ color: '#60A5FA', flexShrink: 0 }} />;
-          let borderCol = 'rgba(96, 165, 250, 0.4)';
+          let borderCol = '#60A5FA';
           let bgCol = 'rgba(96, 165, 250, 0.08)';
 
-          if (trimmed.startsWith('> [!TIP]')) {
+          if (block.startsWith('> [!TIP]')) {
             type = 'TIP';
             icon = <Lightbulb size={18} style={{ color: '#34D399', flexShrink: 0 }} />;
-            borderCol = 'rgba(52, 211, 153, 0.4)';
+            borderCol = '#34D399';
             bgCol = 'rgba(52, 211, 153, 0.08)';
-          } else if (trimmed.startsWith('> [!WARNING]')) {
+          } else if (block.startsWith('> [!WARNING]')) {
             type = 'WARNING';
             icon = <AlertTriangle size={18} style={{ color: '#FBBF24', flexShrink: 0 }} />;
-            borderCol = 'rgba(251, 191, 36, 0.4)';
+            borderCol = '#FBBF24';
             bgCol = 'rgba(251, 191, 36, 0.08)';
-          } else if (trimmed.startsWith('> [!IMPORTANT]')) {
+          } else if (block.startsWith('> [!IMPORTANT]')) {
             type = 'IMPORTANT';
-            icon = <Info size={18} style={{ color: '#FA4616', flexShrink: 0 }} />;
-            borderCol = 'rgba(250, 70, 22, 0.4)';
+            icon = <Info size={18} style={{ color: 'var(--uipath-orange, #FA4616)', flexShrink: 0 }} />;
+            borderCol = '#FA4616';
             bgCol = 'rgba(250, 70, 22, 0.08)';
+          } else if (block.startsWith('> [!CAUTION]')) {
+            type = 'CAUTION';
+            icon = <AlertOctagon size={18} style={{ color: '#EF4444', flexShrink: 0 }} />;
+            borderCol = '#EF4444';
+            bgCol = 'rgba(239, 68, 68, 0.08)';
           }
 
-          const calloutLines = trimmed.split('\n').slice(1).map(l => l.replace(/^>\s?/, '')).join(' ');
+          const calloutLines = block
+            .split('\n')
+            .slice(1)
+            .map(l => l.replace(/^>\s?/, ''))
+            .join(' ');
 
           return (
             <div
@@ -165,7 +193,7 @@ export const TechnicalMarkdownRenderer: React.FC<Props> = ({ content, className 
                 borderLeft: `4px solid ${borderCol}`,
                 borderRadius: '0 0.5rem 0.5rem 0',
                 padding: '1rem 1.25rem',
-                margin: '1.5rem 0'
+                margin: '1.25rem 0'
               }}
             >
               <div style={{ marginTop: '2px' }}>{icon}</div>
@@ -173,24 +201,24 @@ export const TechnicalMarkdownRenderer: React.FC<Props> = ({ content, className 
                 <div style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: borderCol, marginBottom: '0.25rem' }}>
                   {type}
                 </div>
-                <div style={{ fontSize: '0.92rem', color: 'var(--text-secondary)', lineHeight: 1.6 }} dangerouslySetInnerHTML={{ __html: inlineMarkdown(calloutLines) }} />
+                <div style={{ fontSize: '0.92rem', color: 'var(--text-secondary, #D1D5DB)', lineHeight: 1.6 }} dangerouslySetInnerHTML={{ __html: inlineMarkdown(calloutLines) }} />
               </div>
             </div>
           );
         }
 
-        // Generic blockquote: >
-        if (trimmed.startsWith('>')) {
-          const quoteLines = trimmed.split('\n').map(l => l.replace(/^>\s?/, '')).join(' ');
+        // 3. Generic Blockquote: >
+        if (block.startsWith('>')) {
+          const quoteLines = block.split('\n').map(l => l.replace(/^>\s?/, '')).join(' ');
           return (
             <blockquote
               key={`quote-${blockIdx}`}
               style={{
-                borderLeft: '3px solid #FA4616',
+                borderLeft: '3px solid var(--uipath-orange, #FA4616)',
                 padding: '0.75rem 1.25rem',
-                margin: '1.5rem 0',
+                margin: '1.25rem 0',
                 fontStyle: 'italic',
-                color: 'var(--text-secondary)',
+                color: 'var(--text-secondary, #D1D5DB)',
                 background: 'rgba(255, 255, 255, 0.02)',
                 borderRadius: '0 0.5rem 0.5rem 0'
               }}
@@ -199,64 +227,114 @@ export const TechnicalMarkdownRenderer: React.FC<Props> = ({ content, className 
           );
         }
 
-        // Table detection (| Header 1 | Header 2 |)
-        if (trimmed.includes('|') && trimmed.includes('\n|') && trimmed.includes('---')) {
-          return renderTableBlock(trimmed, blockIdx);
+        // 4. Table Detection
+        if (block.includes('|') && block.includes('\n|') && block.includes('---')) {
+          return renderTableBlock(block, blockIdx);
         }
 
-        // Headings: #, ##, ###, ####
-        if (trimmed.startsWith('#')) {
-          if (trimmed.startsWith('#### ')) {
+        // 5. Headings: #, ##, ###, ####, #####, ######
+        if (block.startsWith('#')) {
+          const levelMatch = block.match(/^(#{1,6})\s+(.*)$/);
+          if (levelMatch) {
+            const level = levelMatch[1].length;
+            const headingText = levelMatch[2];
+
+            if (level === 1) {
+              return (
+                <h2
+                  key={`h1-${blockIdx}`}
+                  style={{
+                    fontSize: '1.65rem',
+                    fontWeight: 800,
+                    color: 'var(--text-primary, #FFFFFF)',
+                    marginTop: blockIdx === 0 ? '0' : '1.75rem',
+                    marginBottom: '0.85rem',
+                    lineHeight: 1.3
+                  }}
+                  dangerouslySetInnerHTML={{ __html: inlineMarkdown(headingText) }}
+                />
+              );
+            }
+            if (level === 2) {
+              return (
+                <h3
+                  key={`h2-${blockIdx}`}
+                  style={{
+                    fontSize: '1.35rem',
+                    fontWeight: 700,
+                    color: 'var(--text-primary, #FFFFFF)',
+                    marginTop: '1.6rem',
+                    marginBottom: '0.75rem',
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+                    paddingBottom: '0.4rem',
+                    lineHeight: 1.35
+                  }}
+                  dangerouslySetInnerHTML={{ __html: inlineMarkdown(headingText) }}
+                />
+              );
+            }
+            if (level === 3) {
+              return (
+                <h4
+                  key={`h3-${blockIdx}`}
+                  style={{
+                    fontSize: '1.15rem',
+                    fontWeight: 700,
+                    color: 'var(--uipath-orange, #FA4616)',
+                    marginTop: '1.4rem',
+                    marginBottom: '0.5rem',
+                    lineHeight: 1.4
+                  }}
+                  dangerouslySetInnerHTML={{ __html: inlineMarkdown(headingText) }}
+                />
+              );
+            }
+            if (level === 4) {
+              return (
+                <h5
+                  key={`h4-${blockIdx}`}
+                  style={{
+                    fontSize: '1.05rem',
+                    fontWeight: 600,
+                    color: '#F3F4F6',
+                    marginTop: '1.25rem',
+                    marginBottom: '0.45rem',
+                    lineHeight: 1.4
+                  }}
+                  dangerouslySetInnerHTML={{ __html: inlineMarkdown(headingText) }}
+                />
+              );
+            }
             return (
-              <h5
-                key={`h4-${blockIdx}`}
-                style={{ fontSize: '1.05rem', fontWeight: 600, color: '#F3F4F6', marginTop: '1.75rem', marginBottom: '0.65rem' }}
-                dangerouslySetInnerHTML={{ __html: inlineMarkdown(trimmed.replace(/^####\s+/, '')) }}
-              />
-            );
-          }
-          if (trimmed.startsWith('### ')) {
-            return (
-              <h4
-                key={`h3-${blockIdx}`}
-                style={{ fontSize: '1.25rem', fontWeight: 600, color: '#FA4616', marginTop: '2rem', marginBottom: '0.75rem' }}
-                dangerouslySetInnerHTML={{ __html: inlineMarkdown(trimmed.replace(/^###\s+/, '')) }}
-              />
-            );
-          }
-          if (trimmed.startsWith('## ')) {
-            return (
-              <h3
-                key={`h2-${blockIdx}`}
-                style={{ fontSize: '1.5rem', fontWeight: 700, color: '#FFFFFF', marginTop: '2.5rem', marginBottom: '1rem', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '0.5rem' }}
-                dangerouslySetInnerHTML={{ __html: inlineMarkdown(trimmed.replace(/^##\s+/, '')) }}
-              />
-            );
-          }
-          if (trimmed.startsWith('# ')) {
-            return (
-              <h2
-                key={`h1-${blockIdx}`}
-                style={{ fontSize: '1.85rem', fontWeight: 800, color: '#FFFFFF', marginTop: '2.5rem', marginBottom: '1.25rem' }}
-                dangerouslySetInnerHTML={{ __html: inlineMarkdown(trimmed.replace(/^#\s+/, '')) }}
+              <h6
+                key={`h5-${blockIdx}`}
+                style={{
+                  fontSize: '0.95rem',
+                  fontWeight: 600,
+                  color: 'var(--text-secondary, #D1D5DB)',
+                  marginTop: '1rem',
+                  marginBottom: '0.4rem',
+                  lineHeight: 1.4
+                }}
+                dangerouslySetInnerHTML={{ __html: inlineMarkdown(headingText) }}
               />
             );
           }
         }
 
-        // Horizontal Rule
-        if (trimmed === '---' || trimmed === '***') {
+        // 6. Horizontal Rule
+        if (block === '---' || block === '***' || block === '___') {
           return (
             <hr
               key={`hr-${blockIdx}`}
-              style={{ border: 0, borderTop: '1px solid rgba(255, 255, 255, 0.1)', margin: '2.5rem 0' }}
+              style={{ border: 0, borderTop: '1px solid rgba(255, 255, 255, 0.1)', margin: '2rem 0' }}
             />
           );
         }
 
-        // Lists (unordered and ordered)
-        const lines = trimmed.split('\n');
-        const isBulletList = lines.every(l => /^(\s*[-*+]\s+|\s*\d+\.\s+)/.test(l));
+        // 7. Lists (unordered and ordered)
+        const lines = block.split('\n').filter(l => l.trim().length > 0);
+        const isBulletList = lines.length > 0 && lines.every(l => /^(\s*[-*+]\s+|\s*\d+\.\s+)/.test(l));
         if (isBulletList) {
           const isOrdered = /^\s*\d+\./.test(lines[0]);
           const items = lines.map(l => l.replace(/^(\s*[-*+]\s+|\s*\d+\.\s+)/, ''));
@@ -265,10 +343,10 @@ export const TechnicalMarkdownRenderer: React.FC<Props> = ({ content, className 
             return (
               <ol
                 key={`list-${blockIdx}`}
-                style={{ paddingLeft: '1.5rem', margin: '1rem 0', color: 'var(--text-secondary)' }}
+                style={{ paddingLeft: '1.5rem', margin: '1rem 0', color: 'var(--text-secondary, #D1D5DB)' }}
               >
                 {items.map((item, i) => (
-                  <li key={i} style={{ marginBottom: '0.5rem', lineHeight: 1.6 }} dangerouslySetInnerHTML={{ __html: inlineMarkdown(item) }} />
+                  <li key={i} style={{ marginBottom: '0.45rem', lineHeight: 1.65 }} dangerouslySetInnerHTML={{ __html: inlineMarkdown(item) }} />
                 ))}
               </ol>
             );
@@ -276,28 +354,29 @@ export const TechnicalMarkdownRenderer: React.FC<Props> = ({ content, className 
             return (
               <ul
                 key={`list-${blockIdx}`}
-                style={{ paddingLeft: '1.5rem', margin: '1rem 0', color: 'var(--text-secondary)', listStyleType: 'disc' }}
+                style={{ paddingLeft: '1.5rem', margin: '1rem 0', color: 'var(--text-secondary, #D1D5DB)', listStyleType: 'disc' }}
               >
                 {items.map((item, i) => (
-                  <li key={i} style={{ marginBottom: '0.5rem', lineHeight: 1.6 }} dangerouslySetInnerHTML={{ __html: inlineMarkdown(item) }} />
+                  <li key={i} style={{ marginBottom: '0.45rem', lineHeight: 1.65 }} dangerouslySetInnerHTML={{ __html: inlineMarkdown(item) }} />
                 ))}
               </ul>
             );
           }
         }
 
-        // Regular paragraph
+        // 8. Regular Paragraph
+        const formattedLines = block.split('\n').map(l => inlineMarkdown(l.trim())).join('<br />');
         return (
           <p
             key={`p-${blockIdx}`}
             style={{
               fontSize: '1rem',
-              color: 'var(--text-secondary)',
-              lineHeight: 1.8,
-              marginBottom: '1.25rem',
+              color: 'var(--text-secondary, #D1D5DB)',
+              lineHeight: 1.75,
+              marginBottom: '1rem',
               wordBreak: 'break-word'
             }}
-            dangerouslySetInnerHTML={{ __html: inlineMarkdown(trimmed) }}
+            dangerouslySetInnerHTML={{ __html: formattedLines }}
           />
         );
       })}
@@ -305,7 +384,7 @@ export const TechnicalMarkdownRenderer: React.FC<Props> = ({ content, className 
   );
 };
 
-// Helper: parse inline markdown (bold, italic, inline code, links, images)
+// Helper: parse inline markdown (bold, italic, inline code, links, images, strikethrough)
 function inlineMarkdown(text: string): string {
   if (!text) return '';
 
@@ -315,25 +394,25 @@ function inlineMarkdown(text: string): string {
     .replace(/>/g, '&gt;');
 
   // Images: ![alt](url)
-  html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" style="max-width:100%;border-radius:0.5rem;margin:1rem 0;" />');
+  html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" style="max-width:100%;border-radius:0.5rem;margin:1rem 0;display:block;" />');
 
   // Links: [text](url)
-  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" style="color:#FA4616;text-decoration:underline;text-underline-offset:3px;">$1</a>');
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" style="color:var(--uipath-orange, #FA4616);text-decoration:underline;text-underline-offset:3px;font-weight:500;">$1</a>');
 
-  // Bold & Italic: ***text***
-  html = html.replace(/\*\*\*([^*]+)\*\*\*/g, '<strong style="color:#FFF;"><em>$1</em></strong>');
+  // Bold & Italic: ***text*** or ___text___
+  html = html.replace(/(\*\*\*|___)([^*_]+)\1/g, '<strong style="color:#FFF;"><em>$2</em></strong>');
 
-  // Bold: **text**
-  html = html.replace(/\*\*([^*]+)\*\*/g, '<strong style="color:#FFF;font-weight:600;">$1</strong>');
+  // Bold: **text** or __text__
+  html = html.replace(/(\*\*|__)([^*_]+)\1/g, '<strong style="color:#FFF;font-weight:700;">$2</strong>');
 
   // Italic: *text* or _text_
-  html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+  html = html.replace(/(\*|_)([^*_]+)\1/g, '<em>$2</em>');
 
   // Strikethrough: ~~text~~
-  html = html.replace(/~~([^~]+)~~/g, '<del style="opacity:0.6;">$1</del>');
+  html = html.replace(/~~([^~]+)~~/g, '<del style="opacity:0.65;">$1</del>');
 
   // Inline code: `code`
-  html = html.replace(/`([^`]+)`/g, '<code style="background:rgba(255, 255, 255, 0.08);color:#FDBA74;padding:2px 6px;border-radius:4px;font-size:0.88em;font-family:var(--font-mono, monospace);border:1px solid rgba(255, 255, 255, 0.1);">$1</code>');
+  html = html.replace(/`([^`]+)`/g, '<code style="background:rgba(255, 255, 255, 0.08);color:#FED7AA;padding:2px 6px;border-radius:4px;font-size:0.88em;font-family:var(--font-mono, monospace);border:1px solid rgba(255, 255, 255, 0.1);">$1</code>');
 
   return html;
 }
@@ -359,7 +438,7 @@ function renderTableBlock(blockText: string, blockIdx: number) {
       key={`table-${blockIdx}`}
       style={{
         overflowX: 'auto',
-        margin: '1.75rem 0',
+        margin: '1.5rem 0',
         borderRadius: '0.625rem',
         border: '1px solid rgba(255, 255, 255, 0.1)',
         background: 'rgba(255, 255, 255, 0.02)'
@@ -371,7 +450,7 @@ function renderTableBlock(blockText: string, blockIdx: number) {
             {headerCells.map((cell, cIdx) => (
               <th
                 key={cIdx}
-                style={{ padding: '0.75rem 1rem', fontWeight: 600, color: '#FFFFFF' }}
+                style={{ padding: '0.75rem 1rem', fontWeight: 700, color: '#FFFFFF' }}
                 dangerouslySetInnerHTML={{ __html: inlineMarkdown(cell) }}
               />
             ))}
@@ -389,7 +468,7 @@ function renderTableBlock(blockText: string, blockIdx: number) {
               {row.map((cell, cIdx) => (
                 <td
                   key={cIdx}
-                  style={{ padding: '0.75rem 1rem', color: 'var(--text-secondary)' }}
+                  style={{ padding: '0.75rem 1rem', color: 'var(--text-secondary, #D1D5DB)' }}
                   dangerouslySetInnerHTML={{ __html: inlineMarkdown(cell) }}
                 />
               ))}

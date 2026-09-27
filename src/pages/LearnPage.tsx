@@ -14,6 +14,7 @@ import { ModuleNavigation } from '../components/academy/ModuleNavigation';
 import { CourseModuleList } from '../components/academy/CourseModuleList';
 import { CourseCard } from '../components/academy/CourseCard';
 import { AcademyBreadcrumbs } from '../components/academy/AcademyBreadcrumbs';
+import { TechnicalMarkdownRenderer } from '../components/TechnicalMarkdownRenderer';
 
 interface Props {
   learningPaths: LearningPath[];
@@ -219,23 +220,14 @@ export const LearnPage: React.FC<Props> = ({
               boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)'
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', borderBottom: '1px solid rgba(255, 255, 255, 0.06)', paddingBottom: '0.65rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem', borderBottom: '1px solid rgba(255, 255, 255, 0.06)', paddingBottom: '0.75rem' }}>
               <Sparkles size={18} style={{ color: 'var(--uipath-orange, #FA4616)' }} />
               <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, color: 'var(--text-primary, #FFFFFF)' }}>
                 About this module
               </h2>
             </div>
 
-            <div
-              style={{
-                fontSize: '1rem',
-                color: 'var(--text-secondary, #D1D5DB)',
-                lineHeight: 1.7,
-                whiteSpace: 'pre-line'
-              }}
-            >
-              {moduleDescription}
-            </div>
+            <TechnicalMarkdownRenderer content={moduleDescription} />
           </div>
         )}
 

@@ -33,7 +33,7 @@ export const CourseModuleList: React.FC<Props> = ({
   }
 
   return (
-    <div className={`course-module-list ${className}`} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+    <div className={`course-module-list ${className}`} style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
       {sortedModules.map((mod, index) => {
         const moduleNumber = String(index + 1).padStart(2, '0');
         const hasVideo = Boolean(mod.youtubeUrl || mod.videoUrl);
@@ -44,40 +44,53 @@ export const CourseModuleList: React.FC<Props> = ({
             key={mod.id}
             onClick={() => onSelectModule(mod)}
             style={{
-              padding: '1.25rem 1.5rem',
+              padding: '0.85rem 1.25rem',
               background: 'var(--bg-secondary, #131722)',
               border: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.08))',
               borderRadius: 'var(--radius-lg, 12px)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              gap: '1.25rem',
+              gap: '1rem',
               cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              position: 'relative'
+              transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+              position: 'relative',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)'
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.borderColor = 'rgba(250, 70, 22, 0.4)';
-              e.currentTarget.style.background = 'linear-gradient(90deg, rgba(250, 70, 22, 0.04) 0%, #131722 100%)';
+              e.currentTarget.style.background = 'linear-gradient(90deg, rgba(250, 70, 22, 0.06) 0%, rgba(19, 23, 34, 0.98) 100%)';
               e.currentTarget.style.transform = 'translateX(4px)';
+              e.currentTarget.style.boxShadow = '0 6px 20px -2px rgba(0, 0, 0, 0.4), 0 0 16px -2px rgba(250, 70, 22, 0.15)';
+              const chevron = e.currentTarget.querySelector('.module-arrow-icon') as HTMLElement | null;
+              if (chevron) {
+                chevron.style.color = '#FA4616';
+                chevron.style.transform = 'translateX(2px)';
+              }
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.borderColor = 'var(--border-subtle, rgba(255, 255, 255, 0.08))';
               e.currentTarget.style.background = 'var(--bg-secondary, #131722)';
               e.currentTarget.style.transform = 'translateX(0)';
+              e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.2)';
+              const chevron = e.currentTarget.querySelector('.module-arrow-icon') as HTMLElement | null;
+              if (chevron) {
+                chevron.style.color = 'var(--text-muted, #9CA3AF)';
+                chevron.style.transform = 'translateX(0)';
+              }
             }}
           >
-            {/* Left: Number index and titles */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', flex: 1, minWidth: '260px' }}>
+            {/* Left: Module index badge and primary title */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1, minWidth: 0 }}>
               {/* Module Number Index */}
               <div
                 style={{
-                  fontSize: '1.1rem',
+                  fontSize: '0.95rem',
                   fontWeight: 800,
                   fontFamily: 'var(--font-mono, monospace)',
                   color: 'var(--uipath-orange, #FA4616)',
-                  width: '36px',
-                  height: '36px',
+                  width: '34px',
+                  height: '34px',
                   borderRadius: '8px',
                   background: 'rgba(250, 70, 22, 0.12)',
                   border: '1px solid rgba(250, 70, 22, 0.25)',
@@ -90,35 +103,26 @@ export const CourseModuleList: React.FC<Props> = ({
                 {moduleNumber}
               </div>
 
-              {/* Title & metadata */}
-              <div style={{ flex: 1 }}>
-                <h3
-                  style={{
-                    fontSize: '1.05rem',
-                    fontWeight: 700,
-                    color: 'var(--text-primary, #FFFFFF)',
-                    margin: '0 0 0.25rem 0'
-                  }}
-                >
-                  {mod.title || mod.name}
-                </h3>
-
-                <p
-                  style={{
-                    fontSize: '0.85rem',
-                    color: 'var(--text-secondary, #9CA3AF)',
-                    lineHeight: 1.4,
-                    margin: 0,
-                    maxWidth: '700px'
-                  }}
-                >
-                  {mod.description || mod.summary}
-                </p>
-              </div>
+              {/* Title Heading */}
+              <h3
+                style={{
+                  fontSize: '1rem',
+                  fontWeight: 700,
+                  color: 'var(--text-primary, #FFFFFF)',
+                  margin: 0,
+                  lineHeight: 1.35,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'normal',
+                  wordBreak: 'break-word'
+                }}
+              >
+                {mod.title || mod.name}
+              </h3>
             </div>
 
-            {/* Right: Badges and Action arrow */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexShrink: 0 }}>
+            {/* Right: Meta indicators (video, resources, duration) and navigational arrow icon */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexShrink: 0 }}>
               {hasVideo && (
                 <span
                   style={{
@@ -160,11 +164,16 @@ export const CourseModuleList: React.FC<Props> = ({
               {mod.durationMinutes && (
                 <span
                   style={{
-                    fontSize: '0.725rem',
-                    color: 'var(--text-muted, #9CA3AF)',
+                    fontSize: '0.75rem',
+                    fontWeight: 500,
+                    color: 'var(--text-secondary, #9CA3AF)',
+                    background: 'rgba(255, 255, 255, 0.04)',
+                    border: '1px solid rgba(255, 255, 255, 0.06)',
+                    padding: '0.25rem 0.55rem',
+                    borderRadius: '6px',
                     display: 'inline-flex',
                     alignItems: 'center',
-                    gap: '0.25rem'
+                    gap: '0.3rem'
                   }}
                 >
                   <Clock size={12} /> {mod.durationMinutes}m
@@ -172,11 +181,12 @@ export const CourseModuleList: React.FC<Props> = ({
               )}
 
               <div
+                className="module-arrow-icon"
                 style={{
-                  width: '32px',
-                  height: '32px',
+                  width: '30px',
+                  height: '30px',
                   borderRadius: '6px',
-                  background: 'rgba(255, 255, 255, 0.05)',
+                  background: 'rgba(255, 255, 255, 0.04)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',

@@ -1530,17 +1530,22 @@ export const LearningAcademyCMS: React.FC<Props> = ({
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary, #D1D5DB)', marginBottom: '0.35rem' }}>
-                  Module Description (About this module) *
-                </label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary, #D1D5DB)' }}>
+                    Module Description (About this module) *
+                  </label>
+                  <span style={{ fontSize: '0.72rem', color: '#FA4616', fontWeight: 600 }}>
+                    Markdown Supported
+                  </span>
+                </div>
                 <textarea
-                  rows={3}
+                  rows={6}
                   required
                   value={editingModule.module.description || editingModule.module.summary || ''}
                   onChange={(e) => setEditingModule({ ...editingModule, module: { ...editingModule.module, description: e.target.value, summary: e.target.value } })}
-                  placeholder="Student-friendly explanation of what will be learned in this module..."
+                  placeholder="# Key Learnings&#10;&#10;Explain what students will learn in this module using **bold**, *italics*, bullet lists, or code snippets..."
                   className="input-field"
-                  style={{ width: '100%' }}
+                  style={{ width: '100%', fontFamily: 'var(--font-mono, Consolas, monospace)', fontSize: '0.88rem', lineHeight: 1.5 }}
                 />
               </div>
 
