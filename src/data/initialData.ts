@@ -151,12 +151,12 @@ export const INITIAL_USERS: User[] = [
   {
     id: 'user_admin_1',
     email: 'mail2tejaswy@gmail.com',
-    name: 'k.tejaswy',
+    name: 'K.Tejaswy',
     rollNumber: '21ACE05A01',
     branch: 'Computer Science & Engineering',
     graduationYear: 2025,
     role: 'ADMIN',
-    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+    avatarUrl: '/tejaswy.png',
     linkedinUrl: 'https://linkedin.com/in/kanchana-tejaswy',
     githubUrl: 'https://github.com/kanchana-Tejaswy',
   },
@@ -294,7 +294,7 @@ The **Robotic Enterprise Framework (REFramework)** is the gold standard for ente
         name: 'Kanchana Tejaswy',
         roleTitle: 'UiPath Student Community Lead',
         organization: 'ACE Engineering College',
-        avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+        avatarUrl: '/tejaswy.png',
         linkedinUrl: 'https://linkedin.com/in/kanchana-tejaswy',
         bio: 'UiPath Certified Associate Developer & Lead Organizer. Built 15+ automated enterprise bots for academic grading and compliance.'
       },
@@ -426,7 +426,7 @@ Over 250 freshers joined this zero-code automation boot-camp. We proved that any
         name: 'Kanchana Tejaswy',
         roleTitle: 'Community Lead',
         organization: 'ACE UiPath Community',
-        avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+        avatarUrl: '/tejaswy.png',
         bio: 'UiPath Student Community Lead.'
       }
     ],
@@ -1392,7 +1392,7 @@ export const INITIAL_LEADERSHIP: LeadershipMember[] = [
     category: 'Core Team Member',
     rosterCategories: ['Student Developer Champion', 'Core Team Member', 'Trainer / Technical Lead'],
     academicYear: '2024-2026',
-    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80',
+    avatarUrl: '/tejaswy.png',
     linkedinUrl: 'https://linkedin.com/in/kanchana-tejaswy',
     githubUrl: 'https://github.com/kanchana-Tejaswy',
     bio: 'UiPath Certified Developer. Architected the community digital operating system, organized 12+ hackathons and masterclasses.',
@@ -1434,8 +1434,9 @@ export const INITIAL_ARTICLES: Article[] = [
     title: 'What Are Activities in UiPath? The Foundation of Workflow Automation',
     excerpt: 'A deep dive into UiPath activities, how they form the fundamental building blocks of workflow automation, and how to select the right activities for enterprise projects.',
     category: 'Tutorial',
-    authorName: 'Tejaswy',
-    authorRole: 'UiPath Student Developer Champion',
+    authorName: 'K.Tejaswy',
+    authorRole: 'Student Developer Champion (2026-2027)',
+    authorAvatar: '/tejaswy.png',
     status: 'PUBLISHED',
     publishedAt: '2026-09-14T08:00:00.000Z',
     isFeatured: true,
@@ -1449,7 +1450,7 @@ export const INITIAL_ARTICLES: Article[] = [
     },
     createdAt: '2026-09-14T07:30:00.000Z',
     updatedAt: '2026-09-14T08:00:00.000Z',
-    createdBy: 'Tejaswy',
+    createdBy: 'K.Tejaswy',
     content: `# What Are Activities in UiPath?
 
 In robotic process automation (RPA), **Activities** are the essential building blocks that perform individual discrete actions within a software workflow. From clicking a UI button to querying a SQL database, reading an Excel cell, or classifying an invoice with AI, everything in UiPath executes through an activity.

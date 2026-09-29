@@ -220,7 +220,7 @@ export const UserManagementSection: React.FC<Props> = ({
                     <td style={{ padding: '0.85rem 1.25rem' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                         <img
-                          src={u.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80'}
+                          src={u.avatarUrl || (u.role === 'ADMIN' ? '/tejaswy.png' : 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80')}
                           alt={u.name}
                           style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', border: '1px solid var(--border-subtle)' }}
                         />

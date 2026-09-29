@@ -40,13 +40,14 @@ export const authService = {
             }
 
             const role = normalizeRole(profile.role) as UserRole;
+            const isAdminUser = role === 'ADMIN' || (profile.email || '').toLowerCase().includes('tejaswy');
             const userObj: User = {
               id: profile.id,
-              name: profile.name || authUser.email || 'Authenticated User',
+              name: profile.name || (isAdminUser ? 'K.Tejaswy' : authUser.email) || 'Authenticated User',
               email: profile.email || authUser.email || '',
               role,
               status: (profile.status as UserStatus) || 'ACTIVE',
-              avatarUrl: profile.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+              avatarUrl: profile.avatar_url || (isAdminUser ? '/tejaswy.png' : 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80'),
               branch: profile.branch || 'CSE',
               graduationYear: profile.graduation_year || 2026,
               createdAt: profile.created_at,
@@ -70,13 +71,14 @@ export const authService = {
             inferredRole = normalizeRole(authUser.user_metadata.role) as UserRole;
           }
 
+          const isAdminUser = inferredRole === 'ADMIN' || emailLower.includes('tejaswy');
           const fallbackUser: User = {
             id: authUser.id,
-            name: authUser.user_metadata?.name || matchedLocal?.name || authUser.email || 'Authenticated User',
+            name: authUser.user_metadata?.name || matchedLocal?.name || (isAdminUser ? 'K.Tejaswy' : authUser.email) || 'Authenticated User',
             email: authUser.email || '',
             role: inferredRole,
             status: 'ACTIVE',
-            avatarUrl: matchedLocal?.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+            avatarUrl: matchedLocal?.avatarUrl || (isAdminUser ? '/tejaswy.png' : 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80'),
             branch: matchedLocal?.branch || 'CSE',
             graduationYear: matchedLocal?.graduationYear || 2026
           };

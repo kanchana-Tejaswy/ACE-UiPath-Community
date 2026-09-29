@@ -88,15 +88,29 @@ export const localDatabase = {
   getResources: (): CommunityResource[] => getItem(STORAGE_KEYS.RESOURCES, INITIAL_RESOURCES),
   saveResources: (data: CommunityResource[]): void => setItem(STORAGE_KEYS.RESOURCES, data),
 
-  getLeadership: (): LeadershipMember[] => getItem(STORAGE_KEYS.LEADERSHIP, INITIAL_LEADERSHIP),
+  getLeadership: (): LeadershipMember[] => {
+    const raw = getItem<LeadershipMember[]>(STORAGE_KEYS.LEADERSHIP, INITIAL_LEADERSHIP);
+    return (raw || []).map((m) => {
+      if (m.name.toLowerCase().includes('tejaswy') || m.avatarUrl?.includes('photo-1534528741775-53994a69daeb')) {
+        return { ...m, avatarUrl: '/tejaswy.png' };
+      }
+      return m;
+    });
+  },
   saveLeadership: (data: LeadershipMember[]): void => setItem(STORAGE_KEYS.LEADERSHIP, data),
 
   getArticles: (): Article[] => {
     const raw = getItem<Article[]>(STORAGE_KEYS.ARTICLES, INITIAL_ARTICLES);
     return (raw || []).map((art) => {
       const ratio = normalizeBannerAspectRatio(art.coverBanner?.aspectRatio || art.aspectRatio);
+      const isTejaswy = (art.authorName && art.authorName.toLowerCase().includes('tejaswy')) || (art.createdBy && art.createdBy.toLowerCase().includes('tejaswy'));
+      const authorAvatar = (isTejaswy || art.authorAvatar?.includes('photo-1534528741775-53994a69daeb'))
+        ? '/tejaswy.png'
+        : art.authorAvatar;
       return {
         ...art,
+        authorAvatar,
+        authorName: isTejaswy ? 'K.Tejaswy' : art.authorName,
         aspectRatio: ratio,
         coverBanner: {
           url: art.coverBanner?.url || art.coverImageUrl || art.coverImage,
@@ -129,14 +143,19 @@ export const localDatabase = {
 
   getUsers: (): User[] => {
     const loaded = getItem<User[]>(STORAGE_KEYS.USERS, INITIAL_USERS);
-    // Ensure the administrator account matches mail2tejaswy@gmail.com
+    // Ensure the administrator account matches mail2tejaswy@gmail.com and has real avatar
     const adminIndex = loaded.findIndex(u => u.role === 'ADMIN' || u.id === 'user_admin_1');
     if (adminIndex !== -1) {
-      if (loaded[adminIndex].email !== 'mail2tejaswy@gmail.com' || loaded[adminIndex].name !== 'k.tejaswy') {
+      if (
+        loaded[adminIndex].email !== 'mail2tejaswy@gmail.com' ||
+        loaded[adminIndex].name !== 'K.Tejaswy' ||
+        loaded[adminIndex].avatarUrl !== '/tejaswy.png'
+      ) {
         loaded[adminIndex] = {
           ...loaded[adminIndex],
           email: 'mail2tejaswy@gmail.com',
-          name: 'k.tejaswy'
+          name: 'K.Tejaswy',
+          avatarUrl: '/tejaswy.png'
         };
         setItem(STORAGE_KEYS.USERS, loaded);
       }
