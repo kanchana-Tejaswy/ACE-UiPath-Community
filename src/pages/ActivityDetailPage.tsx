@@ -19,6 +19,7 @@ import {
   Linkedin
 } from 'lucide-react';
 import { Activity, User } from '../types';
+import { hasPermission } from '../lib/security';
 
 interface Props {
   slug: string;
@@ -88,7 +89,7 @@ export const ActivityDetailPage: React.FC<Props> = ({
               <span>{copiedLink ? 'Link Copied' : 'Share Archive'}</span>
             </button>
 
-            {currentUser.role === 'ADMIN' && (
+            {Boolean(currentUser && hasPermission(currentUser.role, 'ADMIN')) && (
               <button
                 onClick={() => onNavigate('admin')}
                 className="btn btn-primary btn-sm"

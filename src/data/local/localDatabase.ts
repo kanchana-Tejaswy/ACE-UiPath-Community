@@ -191,6 +191,7 @@ export const localDatabase = {
       } else {
         window.sessionStorage.setItem('ace_uipath_authenticated_session', id);
       }
+      window.dispatchEvent(new Event('ace_uipath_db_update'));
     }
   },
   setCurrentUserId: (id: string): void => {
@@ -201,6 +202,7 @@ export const localDatabase = {
       } else {
         window.sessionStorage.setItem('ace_uipath_authenticated_session', id);
       }
+      window.dispatchEvent(new Event('ace_uipath_db_update'));
     }
   },
 

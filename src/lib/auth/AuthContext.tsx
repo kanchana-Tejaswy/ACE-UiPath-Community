@@ -3,12 +3,13 @@ import { User, UserRole } from '../../types';
 import { authService } from './authService';
 import { localDatabase } from '../../data/local/localDatabase';
 import { supabase, isSupabaseConfigured } from '../supabase/client';
+import { normalizeRole } from '../security';
 
 interface AuthContextType {
   currentUser: User | null;
   isLoading: boolean;
   isCloudAuth: boolean;
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string; user?: User }>;
   logout: () => Promise<void>;
   requestPasswordReset: (email: string) => Promise<{ success: boolean; error?: string }>;
   updatePassword: (newPassword: string) => Promise<{ success: boolean; error?: string }>;
@@ -26,6 +27,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const refreshUser = async () => {
     const user = await authService.getCurrentUser();
     setCurrentUser(user);
+    if (user) {
+      localDatabase.setCurrentUserId(user.id);
+    }
   };
 
   useEffect(() => {
@@ -36,6 +40,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const user = await authService.getCurrentUser();
       if (isMounted) {
         setCurrentUser(user);
+        if (user) {
+          localDatabase.setCurrentUserId(user.id);
+        }
         setIsLoading(false);
       }
     }
@@ -50,8 +57,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
           const user = await authService.getCurrentUser();
           setCurrentUser(user);
+          if (user) {
+            localDatabase.setCurrentUserId(user.id);
+          }
         } else if (event === 'SIGNED_OUT') {
           setCurrentUser(null);
+          localDatabase.setCurrentUserId('user_student_1');
         } else if (event === 'PASSWORD_RECOVERY') {
           if (typeof window !== 'undefined') {
             window.location.hash = '#reset-password';
@@ -70,12 +81,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string; user?: User }> => {
     setIsLoading(true);
     const result = await authService.signInWithPassword(email, password);
     setIsLoading(false);
     if (result.user) {
       setCurrentUser(result.user);
+      localDatabase.setCurrentUserId(result.user.id);
+      window.dispatchEvent(new Event('ace_uipath_db_update'));
       localDatabase.addAuditLog({
         action: 'LOGIN_SUCCESS',
         entityType: 'User',
@@ -83,7 +96,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: `User "${result.user.name}" (${result.user.role}) logged in successfully via ${isCloudAuth ? 'Supabase Cloud Auth' : 'Local Staging'}.`,
         performedBy: result.user.name
       });
-      return { success: true };
+      return { success: true, user: result.user };
     }
     localDatabase.addAuditLog({
       action: 'LOGIN_FAILURE',
@@ -100,6 +113,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const prevId = currentUser?.id || 'guest';
     await authService.signOut();
     setCurrentUser(null);
+    localDatabase.setCurrentUserId('user_student_1');
+    window.dispatchEvent(new Event('ace_uipath_db_update'));
     localDatabase.addAuditLog({
       action: 'LOGOUT',
       entityType: 'User',
@@ -138,13 +153,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const switchDemoRole = (role: UserRole) => {
-    if (isCloudAuth) {
-      alert('Role switching is disabled in Supabase Cloud Auth mode. User roles are database-enforced on the server.');
-      return;
-    }
-
+    const norm = normalizeRole(role);
     const users = localDatabase.getUsers();
-    const roleMatch = users.find((u) => u.role === role || u.role.toLowerCase() === role.toLowerCase());
+    const roleMatch = users.find((u) => normalizeRole(u.role) === norm);
     if (roleMatch) {
       localDatabase.setCurrentUserId(roleMatch.id);
       setCurrentUser(roleMatch);

@@ -19,6 +19,7 @@ import {
   Play
 } from 'lucide-react';
 import { ProjectShowcase, User } from '../types';
+import { normalizeRole } from '../lib/security';
 
 interface Props {
   projects: ProjectShowcase[];
@@ -148,7 +149,7 @@ export const ProjectsPage: React.FC<Props> = ({
       authorRollNumber: currentUser.rollNumber,
       authorBranch: currentUser.branch,
       authorLinkedin: currentUser.linkedinUrl,
-      status: currentUser.role === 'ADMIN' ? 'Approved' : 'Pending',
+      status: normalizeRole(currentUser.role) === 'ADMIN' ? 'Approved' : 'Pending',
       downloadCount: 1,
       upvotes: 1,
       createdAt: new Date().toISOString().split('T')[0]
@@ -156,7 +157,7 @@ export const ProjectsPage: React.FC<Props> = ({
 
     onSaveProject(newProj);
     setIsSubmitModalOpen(false);
-    setSubmitSuccessToast(`Bot "${newTitle}" submitted successfully! ${currentUser.role === 'ADMIN' ? 'Published live.' : 'Submitted for review.'}`);
+    setSubmitSuccessToast(`Bot "${newTitle}" submitted successfully! ${normalizeRole(currentUser.role) === 'ADMIN' ? 'Published live.' : 'Submitted for review.'}`);
     setTimeout(() => setSubmitSuccessToast(null), 4000);
     // Reset form
     setNewTitle('');

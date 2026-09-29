@@ -17,6 +17,7 @@ import {
 import { Article, User } from '../types';
 import { normalizeBannerAspectRatio, getBannerContainerStyle, getBannerImageStyle } from '../utils/bannerRatio';
 import { TechnicalMarkdownRenderer } from '../components/TechnicalMarkdownRenderer';
+import { hasPermission } from '../lib/security';
 
 interface Props {
   slugOrId: string;
@@ -40,7 +41,7 @@ export const BlogDetailPage: React.FC<Props> = ({
     return articles.find((a) => a.slug === slugOrId || a.id === slugOrId) || null;
   }, [articles, slugOrId]);
 
-  const isPrivileged = Boolean(currentUser && (currentUser.role === 'ADMIN' || currentUser.role === 'CORE_TEAM'));
+  const isPrivileged = Boolean(currentUser && hasPermission(currentUser.role, 'CORE_TEAM'));
 
   // Public eligibility: PUBLISHED or SCHEDULED whose time has passed
   const isPubliclyAvailable = useMemo(() => {

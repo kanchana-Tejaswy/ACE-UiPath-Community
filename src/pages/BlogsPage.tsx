@@ -15,6 +15,7 @@ import {
   Edit3
 } from 'lucide-react';
 import { Article, ArticleCategory, User, ARTICLE_CATEGORIES } from '../types';
+import { hasPermission } from '../lib/security';
 
 interface Props {
   articles: Article[];
@@ -84,7 +85,7 @@ export const BlogsPage: React.FC<Props> = ({ articles, currentUser, onNavigate }
     });
   }, [visibleArticles, searchQuery, selectedCategory, sortBy]);
 
-  const canCreate = currentUser && (currentUser.role === 'ADMIN' || currentUser.role === 'CORE_TEAM');
+  const canCreate = Boolean(currentUser && hasPermission(currentUser.role, 'CORE_TEAM'));
 
   return (
     <div className="page-container" style={{ paddingBottom: '6rem' }}>

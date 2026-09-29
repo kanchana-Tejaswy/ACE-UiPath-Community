@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ShieldCheck, Mail, Lock, LogIn, X, AlertCircle, CheckCircle2, KeyRound, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../lib/auth/AuthContext';
 import { UserRole } from '../types';
+import { normalizeRole } from '../lib/security';
 
 interface Props {
   isOpen: boolean;
@@ -86,8 +87,9 @@ export const AuthModal: React.FC<Props> = ({
     const res = await login(cleanEmail, cleanPassword);
     setIsSubmitting(false);
     if (res.success) {
-      if (onAuthSuccess && targetRole) {
-        onAuthSuccess(targetRole);
+      const resolvedRole = normalizeRole(res.user?.role || targetRole || (cleanEmail.toLowerCase() === 'mail2tejaswy@gmail.com' || cleanEmail.toLowerCase() === 'admin@aceec.ac.in' ? 'ADMIN' : 'STUDENT')) as UserRole;
+      if (onAuthSuccess) {
+        onAuthSuccess(resolvedRole);
       }
       onClose();
     } else {
@@ -141,15 +143,12 @@ export const AuthModal: React.FC<Props> = ({
 
   const handleQuickDemoSelect = (role: UserRole, demoEmail: string) => {
     const cleanEmail = demoEmail.trim();
-    if (isCloudAuth) {
-      switchDemoRole(role);
+    const norm = normalizeRole(role);
+    setEmail(cleanEmail);
+    if (cleanEmail.toLowerCase() === 'mail2tejaswy@gmail.com' || norm === 'ADMIN') {
+      setPassword('Password369@123');
     } else {
-      setEmail(cleanEmail);
-      if (cleanEmail.toLowerCase() === 'mail2tejaswy@gmail.com' || role === 'ADMIN' || role === 'Admin') {
-        setPassword('Password369@123');
-      } else {
-        setPassword('demo1234');
-      }
+      setPassword('demo1234');
     }
   };
 

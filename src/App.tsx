@@ -266,7 +266,7 @@ export function App() {
             projects={store.projects}
             challenges={store.challenges}
             settings={store.settings}
-            currentUser={store.currentUser}
+            currentUser={activeUser}
             articles={store.articles}
             onNavigate={navigateTo}
           />
@@ -275,7 +275,7 @@ export function App() {
         {currentView === 'activities' && (
           <ActivitiesPage
             activities={store.activities}
-            currentUser={store.currentUser}
+            currentUser={activeUser}
             onNavigate={navigateTo}
           />
         )}
@@ -284,7 +284,7 @@ export function App() {
           <ActivityDetailPage
             slug={selectedDetailId || store.activities[0]?.slug}
             activities={store.activities}
-            currentUser={store.currentUser}
+            currentUser={activeUser}
             onNavigate={navigateTo}
           />
         )}
@@ -301,7 +301,7 @@ export function App() {
           <ProjectsPage
             projects={store.projects}
             selectedProjectSlug={selectedDetailId}
-            currentUser={store.currentUser}
+            currentUser={activeUser}
             onSaveProject={store.saveProject}
             onUpvoteProject={store.upvoteProject}
             onNavigate={navigateTo}
@@ -312,7 +312,7 @@ export function App() {
           <ChallengesPage
             challenges={store.challenges}
             selectedChallengeSlug={selectedDetailId}
-            currentUser={store.currentUser}
+            currentUser={activeUser}
             onSaveChallenge={store.saveChallenge}
             onNavigate={navigateTo}
           />
@@ -322,7 +322,7 @@ export function App() {
           <ResourcesPage
             resources={store.resources}
             selectedCategorySlug={selectedDetailId}
-            currentUser={store.currentUser}
+            currentUser={activeUser}
             onSaveResource={store.saveResource}
             onIncrementDownloads={store.incrementResourceDownloads}
             onNavigate={navigateTo}

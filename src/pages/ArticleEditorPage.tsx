@@ -39,6 +39,7 @@ import {
 } from '../utils/bannerRatio';
 import { compressImageToDataUrl } from '../utils/imageCompressor';
 import { TechnicalMarkdownRenderer } from '../components/TechnicalMarkdownRenderer';
+import { hasPermission, normalizeRole } from '../lib/security';
 
 interface Props {
   currentUser: User;
@@ -101,7 +102,7 @@ export const ArticleEditorPage: React.FC<Props> = ({
   onUploadCover
 }) => {
   // Authorization check: only ADMIN or CORE_TEAM
-  const isAuthorized = currentUser.role === 'ADMIN' || currentUser.role === 'CORE_TEAM';
+  const isAuthorized = hasPermission(currentUser?.role || '', 'CORE_TEAM');
 
   // Find existing article if editing
   const existingArticle = articleId ? articles.find((a) => a.id === articleId || a.slug === articleId) : null;
@@ -114,7 +115,7 @@ export const ArticleEditorPage: React.FC<Props> = ({
   const [category, setCategory] = useState<ArticleCategory>(existingArticle?.category || 'Tutorial');
   const [authorName, setAuthorName] = useState(existingArticle?.authorName || currentUser.name || 'ACE Core Team');
   const [authorRole, setAuthorRole] = useState(
-    existingArticle?.authorRole || (currentUser.role === 'ADMIN' ? 'Community Lead & Architect' : 'ACE Core Team Member')
+    existingArticle?.authorRole || (normalizeRole(currentUser.role) === 'ADMIN' ? 'Community Lead & Architect' : 'ACE Core Team Member')
   );
   const [authorAvatar, setAuthorAvatar] = useState(existingArticle?.authorAvatar || currentUser.avatarUrl || '');
   const [coverImageUrl, setCoverImageUrl] = useState(existingArticle?.coverImageUrl || PRESET_COVERS[0].url);
@@ -144,7 +145,7 @@ export const ArticleEditorPage: React.FC<Props> = ({
       setIsSlugManuallyEdited(Boolean(existingArticle.slug));
       setCategory(existingArticle.category || 'Tutorial');
       setAuthorName(existingArticle.authorName || currentUser.name || 'ACE Core Team');
-      setAuthorRole(existingArticle.authorRole || (currentUser.role === 'ADMIN' ? 'Community Lead & Architect' : 'ACE Core Team Member'));
+      setAuthorRole(existingArticle.authorRole || (normalizeRole(currentUser.role) === 'ADMIN' ? 'Community Lead & Architect' : 'ACE Core Team Member'));
       setAuthorAvatar(existingArticle.authorAvatar || currentUser.avatarUrl || '');
       setCoverImageUrl(existingArticle.coverImageUrl || existingArticle.coverImage || PRESET_COVERS[0].url);
       setAspectRatio(normalizeBannerAspectRatio(existingArticle.coverBanner?.aspectRatio || existingArticle.aspectRatio));
@@ -159,7 +160,7 @@ export const ArticleEditorPage: React.FC<Props> = ({
       setIsSlugManuallyEdited(false);
       setCategory('Tutorial');
       setAuthorName(currentUser.name || 'ACE Core Team');
-      setAuthorRole(currentUser.role === 'ADMIN' ? 'Community Lead & Architect' : 'ACE Core Team Member');
+      setAuthorRole(normalizeRole(currentUser.role) === 'ADMIN' ? 'Community Lead & Architect' : 'ACE Core Team Member');
       setAuthorAvatar(currentUser.avatarUrl || '');
       setCoverImageUrl(PRESET_COVERS[0].url);
       setAspectRatio('default');

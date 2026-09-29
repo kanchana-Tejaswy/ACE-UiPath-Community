@@ -13,6 +13,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { Activity, User } from '../types';
+import { hasPermission } from '../lib/security';
 
 interface Props {
   activities: Activity[];
@@ -92,7 +93,7 @@ export const ActivitiesPage: React.FC<Props> = ({
               </button>
             </div>
 
-            {(currentUser.role === 'ADMIN' || currentUser.role === 'CORE_TEAM') && (
+            {Boolean(currentUser && hasPermission(currentUser.role, 'CORE_TEAM')) && (
               <button
                 onClick={() => onNavigate('admin')}
                 className="btn btn-primary btn-sm"
