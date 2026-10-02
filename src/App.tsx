@@ -276,6 +276,10 @@ export function App() {
           <ActivitiesPage
             activities={store.activities}
             currentUser={activeUser}
+            featuredActivityId={store.settings.featuredActivityId}
+            onSaveActivity={store.saveActivity}
+            onDeleteActivity={store.deleteActivity}
+            onUpdateSettings={store.updateSettings}
             onNavigate={navigateTo}
           />
         )}
@@ -285,6 +289,10 @@ export function App() {
             slug={selectedDetailId || store.activities[0]?.slug}
             activities={store.activities}
             currentUser={activeUser}
+            featuredActivityId={store.settings.featuredActivityId}
+            onSaveActivity={store.saveActivity}
+            onDeleteActivity={store.deleteActivity}
+            onUpdateSettings={store.updateSettings}
             onNavigate={navigateTo}
           />
         )}

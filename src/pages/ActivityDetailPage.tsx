@@ -16,15 +16,22 @@ import {
   BookOpen,
   Image as ImageIcon,
   Check,
-  Linkedin
+  Linkedin,
+  Edit3,
+  Trash2
 } from 'lucide-react';
 import { Activity, User } from '../types';
 import { hasPermission } from '../lib/security';
+import { EventEditorModal } from '../components/EventEditorModal';
 
 interface Props {
   slug: string;
   activities: Activity[];
   currentUser: User;
+  featuredActivityId?: string;
+  onSaveActivity?: (act: Activity) => Promise<any> | void;
+  onDeleteActivity?: (id: string) => Promise<any> | void;
+  onUpdateSettings?: (settings: any) => Promise<any> | void;
   onNavigate: (view: string, detailId?: string) => void;
 }
 
@@ -32,10 +39,23 @@ export const ActivityDetailPage: React.FC<Props> = ({
   slug,
   activities,
   currentUser,
+  featuredActivityId,
+  onSaveActivity,
+  onDeleteActivity,
+  onUpdateSettings,
   onNavigate
 }) => {
   const [copiedLink, setCopiedLink] = useState(false);
   const [activeGalleryIndex, setActiveGalleryIndex] = useState<number | null>(null);
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setToastMsg(msg);
+    setTimeout(() => setToastMsg(null), 3500);
+  };
+
+  const isEditor = Boolean(currentUser && hasPermission(currentUser.role, 'CORE_TEAM'));
 
   const activity = activities.find((a) => a.slug === slug || a.id === slug);
 
@@ -66,11 +86,48 @@ export const ActivityDetailPage: React.FC<Props> = ({
     }
   };
 
+  const handleDeleteCurrentActivity = async () => {
+    if (window.confirm(`Are you sure you want to permanently delete "${activity.title}"? This cannot be undone.`)) {
+      if (onDeleteActivity) {
+        await onDeleteActivity(activity.id);
+        showToast('Event deleted successfully.');
+        setTimeout(() => {
+          onNavigate('activities');
+        }, 600);
+      }
+    }
+  };
+
   return (
-    <div style={{ paddingBottom: '6rem' }}>
-      {/* Back Button Bar */}
+    <div style={{ paddingBottom: '6rem', position: 'relative' }}>
+      {/* Toast Notification */}
+      {toastMsg && (
+        <div style={{
+          position: 'fixed',
+          bottom: '2rem',
+          right: '2rem',
+          zIndex: 9999,
+          background: 'rgba(26, 32, 44, 0.95)',
+          border: '1px solid var(--uipath-orange)',
+          boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
+          color: '#FFF',
+          padding: '0.85rem 1.4rem',
+          borderRadius: '10px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.65rem',
+          fontWeight: 600,
+          fontSize: '0.9rem',
+          animation: 'fadeInUp 0.25s ease-out'
+        }}>
+          <Check size={16} style={{ color: '#10B981' }} />
+          <span>{toastMsg}</span>
+        </div>
+      )}
+
+      {/* Back Button Bar & Admin Controls */}
       <div style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-subtle)', padding: '1rem 0' }}>
-        <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
           <button
             onClick={() => onNavigate('activities')}
             className="btn btn-secondary btn-sm"
@@ -79,7 +136,7 @@ export const ActivityDetailPage: React.FC<Props> = ({
             <ArrowLeft size={16} /> Back to Activity Timeline
           </button>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
             <button
               onClick={handleCopyLink}
               className="btn btn-secondary btn-sm"
@@ -89,13 +146,26 @@ export const ActivityDetailPage: React.FC<Props> = ({
               <span>{copiedLink ? 'Link Copied' : 'Share Archive'}</span>
             </button>
 
-            {Boolean(currentUser && hasPermission(currentUser.role, 'ADMIN')) && (
-              <button
-                onClick={() => onNavigate('admin')}
-                className="btn btn-primary btn-sm"
-              >
-                Edit in Admin CMS
-              </button>
+            {isEditor && (
+              <>
+                <button
+                  onClick={() => setIsEditorOpen(true)}
+                  className="btn btn-primary btn-sm"
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: 'linear-gradient(135deg, var(--uipath-orange) 0%, #EA580C 100%)', boxShadow: '0 2px 10px rgba(250, 70, 22, 0.3)' }}
+                >
+                  <Edit3 size={14} />
+                  <span>Edit This Event</span>
+                </button>
+
+                <button
+                  onClick={handleDeleteCurrentActivity}
+                  className="btn btn-secondary btn-sm"
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#EF4444', borderColor: 'rgba(239, 68, 68, 0.3)' }}
+                  title="Delete this event"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </>
             )}
           </div>
         </div>
@@ -574,6 +644,33 @@ export const ActivityDetailPage: React.FC<Props> = ({
           </div>
         </div>
       </div>
+
+      {/* In-Place Event Editor Modal */}
+      {isEditor && (
+        <EventEditorModal
+          isOpen={isEditorOpen}
+          activity={activity}
+          isFeaturedOnHome={activity ? activity.id === featuredActivityId : false}
+          onClose={() => setIsEditorOpen(false)}
+          onSave={async (savedAct: Activity, makeFeatured: boolean) => {
+            if (onSaveActivity) {
+              await onSaveActivity(savedAct);
+            }
+            if (onUpdateSettings) {
+              if (makeFeatured) {
+                await onUpdateSettings({ featuredActivityId: savedAct.id });
+              } else if (featuredActivityId === savedAct.id && !makeFeatured) {
+                await onUpdateSettings({ featuredActivityId: '' });
+              }
+            }
+            setIsEditorOpen(false);
+            showToast('Event updated successfully!');
+            if (savedAct.slug && savedAct.slug !== slug) {
+              onNavigate('activity_detail', savedAct.slug);
+            }
+          }}
+        />
+      )}
 
       <style>{`
         @media (max-width: 900px) {

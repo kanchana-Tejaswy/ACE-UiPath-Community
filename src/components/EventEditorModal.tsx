@@ -17,14 +17,30 @@ import {
   Plus, 
   Save, 
   Star,
-  Tag
+  Tag,
+  Calendar,
+  Clock,
+  BookOpen,
+  FileText,
+  FileCode,
+  Github,
+  Film,
+  Presentation,
+  CheckSquare
 } from 'lucide-react';
-import { Activity, ActivityCategory, ActivityEventType, ActivityStatus, ActivitySpeaker } from '../types';
+import { 
+  Activity, 
+  ActivityCategory, 
+  ActivityEventType, 
+  ActivityStatus, 
+  ActivitySpeaker, 
+  ActivityAgendaItem 
+} from '../types';
 
 interface Props {
   isOpen: boolean;
   activity: Activity | null;
-  isFeaturedOnHome: boolean;
+  isFeaturedOnHome?: boolean;
   onClose: () => void;
   onSave: (activity: Activity, makeFeatured: boolean) => void;
 }
@@ -49,7 +65,6 @@ function calculateAspectRatio(width: number, height: number): string {
   const wRatio = width / divisor;
   const hRatio = height / divisor;
 
-  // Approximate to standard ratios if near
   const decimal = width / height;
   if (Math.abs(decimal - 4 / 5) < 0.05) return '4:5 (Portrait Flyer)';
   if (Math.abs(decimal - 16 / 9) < 0.05) return '16:9 (Landscape Banner)';
@@ -63,10 +78,11 @@ function calculateAspectRatio(width: number, height: number): string {
 export const EventEditorModal: React.FC<Props> = ({
   isOpen,
   activity,
-  isFeaturedOnHome,
+  isFeaturedOnHome = false,
   onClose,
   onSave
 }) => {
+  const [activeTab, setActiveTab] = useState<'overview' | 'media' | 'speakers' | 'agenda' | 'vault'>('overview');
   const [formData, setFormData] = useState<Activity | null>(null);
   const [isFeatured, setIsFeatured] = useState(false);
   const [uploadTab, setUploadTab] = useState<'dropzone' | 'url'>('dropzone');
@@ -74,7 +90,14 @@ export const EventEditorModal: React.FC<Props> = ({
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [imageSpecs, setImageSpecs] = useState<{ width: number; height: number; ratio: string } | null>(null);
   const [isDirty, setIsDirty] = useState(false);
+
+  // New item inputs
+  const [newObjective, setNewObjective] = useState('');
+  const [newOutcome, setNewOutcome] = useState('');
+  const [newGalleryUrl, setNewGalleryUrl] = useState('');
+
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const galleryFileInputRef = useRef<HTMLInputElement>(null);
 
   const inspectImageDimensions = (url: string) => {
     if (!url) {
@@ -100,8 +123,7 @@ export const EventEditorModal: React.FC<Props> = ({
     setIsDirty(true);
   };
 
-  // Image upload handling
-  const processFile = (file: File) => {
+  const processFile = (file: File, target: 'banner' | 'gallery') => {
     setUploadError(null);
     const validFormats = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
     if (!validFormats.includes(file.type)) {
@@ -118,38 +140,18 @@ export const EventEditorModal: React.FC<Props> = ({
     reader.onload = (e) => {
       const result = e.target?.result as string;
       if (result) {
-        updateField('bannerImage', result);
-        inspectImageDimensions(result);
+        if (target === 'banner') {
+          updateField('bannerImage', result);
+          inspectImageDimensions(result);
+        } else {
+          updateField('galleryImages', [...(formData?.galleryImages || []), result]);
+        }
       }
     };
     reader.onerror = () => {
       setUploadError('Failed to read image file.');
     };
     reader.readAsDataURL(file);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      processFile(e.dataTransfer.files[0]);
-    }
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-  };
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      processFile(e.target.files[0]);
-    }
   };
 
   // Speaker Entity Management
@@ -164,9 +166,9 @@ export const EventEditorModal: React.FC<Props> = ({
     const newSpeaker: ActivitySpeaker = {
       id: `spk_${Date.now()}`,
       name: '',
-      roleTitle: '',
-      organization: '',
-      avatarUrl: '',
+      roleTitle: 'Speaker / RPA Lead',
+      organization: 'ACE UiPath Community',
+      avatarUrl: '/tejaswy.png',
       linkedinUrl: '',
       bio: ''
     };
@@ -177,6 +179,64 @@ export const EventEditorModal: React.FC<Props> = ({
     if (!formData?.speakers || formData.speakers.length <= 1) return;
     const updated = formData.speakers.filter((_, i) => i !== index);
     updateField('speakers', updated);
+  };
+
+  // Agenda Management
+  const updateAgendaItem = (index: number, field: keyof ActivityAgendaItem, value: string) => {
+    if (!formData?.agenda) return;
+    const updated = [...formData.agenda];
+    updated[index] = { ...updated[index], [field]: value };
+    updateField('agenda', updated);
+  };
+
+  const addAgendaItem = () => {
+    const newItem: ActivityAgendaItem = {
+      time: '10:00 AM - 10:45 AM',
+      title: 'Topic Overview & Hands-on Lab',
+      description: 'Step-by-step walkthrough in UiPath Studio.',
+      speaker: formData?.speakers?.[0]?.name || 'Lead Trainer'
+    };
+    updateField('agenda', [...(formData?.agenda || []), newItem]);
+  };
+
+  const removeAgendaItem = (index: number) => {
+    if (!formData?.agenda) return;
+    const updated = formData.agenda.filter((_, i) => i !== index);
+    updateField('agenda', updated);
+  };
+
+  // Objectives & Outcomes
+  const addObjective = () => {
+    if (!newObjective.trim()) return;
+    updateField('objectives', [...(formData?.objectives || []), newObjective.trim()]);
+    setNewObjective('');
+  };
+
+  const removeObjective = (index: number) => {
+    if (!formData?.objectives) return;
+    updateField('objectives', formData.objectives.filter((_, i) => i !== index));
+  };
+
+  const addOutcome = () => {
+    if (!newOutcome.trim()) return;
+    updateField('learningOutcomes', [...(formData?.learningOutcomes || []), newOutcome.trim()]);
+    setNewOutcome('');
+  };
+
+  const removeOutcome = (index: number) => {
+    if (!formData?.learningOutcomes) return;
+    updateField('learningOutcomes', formData.learningOutcomes.filter((_, i) => i !== index));
+  };
+
+  const addGalleryImage = () => {
+    if (!newGalleryUrl.trim()) return;
+    updateField('galleryImages', [...(formData?.galleryImages || []), newGalleryUrl.trim()]);
+    setNewGalleryUrl('');
+  };
+
+  const removeGalleryImage = (index: number) => {
+    if (!formData?.galleryImages) return;
+    updateField('galleryImages', formData.galleryImages.filter((_, i) => i !== index));
   };
 
   const handleSubmit = (e?: React.FormEvent | React.MouseEvent) => {
@@ -209,13 +269,22 @@ export const EventEditorModal: React.FC<Props> = ({
         ...activity,
         speakers: activity.speakers && activity.speakers.length > 0 
           ? activity.speakers 
-          : [{ id: `spk_${Date.now()}`, name: '', roleTitle: '', organization: '', avatarUrl: '', linkedinUrl: '', bio: '' }]
+          : [{ id: `spk_${Date.now()}`, name: '', roleTitle: 'Lead Trainer', organization: 'ACE UiPath Community', avatarUrl: '/tejaswy.png', linkedinUrl: '', bio: '' }],
+        agenda: activity.agenda && activity.agenda.length > 0
+          ? activity.agenda
+          : [
+              { time: '10:00 AM - 10:30 AM', title: 'Welcome & Problem Context', description: 'Overview of enterprise RPA use-case.', speaker: 'Lead Speaker' },
+              { time: '10:30 AM - 12:30 PM', title: 'Hands-on Workflow Automation', description: 'Live coding and debugging in UiPath Studio.', speaker: 'Technical Trainer' },
+              { time: '12:30 PM - 01:00 PM', title: 'Q&A & Certificate Assessment', description: 'Wrap-up, project deployment, and badges.', speaker: 'All Facilitators' }
+            ],
+        objectives: activity.objectives || ['Master enterprise robotic process automation', 'Build hands-on bots in UiPath Studio'],
+        learningOutcomes: activity.learningOutcomes || ['Deploy working automations with error handling', 'Understand UiPath Academic Alliance certification pathways'],
+        galleryImages: activity.galleryImages || []
       });
       setIsFeatured(isFeaturedOnHome || activity.isFeatured || false);
       setIsDirty(false);
       setUploadError(null);
 
-      // Check dimensions of existing banner
       if (activity.bannerImage) {
         inspectImageDimensions(activity.bannerImage);
       } else {
@@ -240,21 +309,21 @@ export const EventEditorModal: React.FC<Props> = ({
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 md:p-6 overflow-y-auto animate-in fade-in duration-200">
       <div 
-        className="max-w-3xl w-full max-h-[90vh] overflow-y-auto bg-[#121214] border border-neutral-800 rounded-2xl shadow-2xl p-6 md:p-8 text-neutral-100 flex flex-col justify-between relative"
+        className="max-w-4xl w-full max-h-[92vh] overflow-y-auto bg-[#121214] border border-neutral-800 rounded-2xl shadow-2xl p-6 md:p-8 text-neutral-100 flex flex-col justify-between relative"
         style={{ scrollbarWidth: 'thin', scrollbarColor: '#333 #121214' }}
       >
         {/* Modal Header */}
-        <div className="flex items-center justify-between pb-5 border-b border-neutral-800">
+        <div className="flex items-center justify-between pb-4 border-b border-neutral-800">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center text-[#FA4616]">
               <Sparkles size={20} />
             </div>
             <div>
               <h2 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
-                {formData.id.startsWith('act_') && !formData.title ? 'Create New Event / Workshop' : 'Edit Event & Workshop Details'}
+                {formData.id.startsWith('act_') && !formData.title ? 'Create New Activity / Meetup' : 'Complete Event & Meetup Editor'}
               </h2>
               <p className="text-xs text-neutral-400 mt-0.5">
-                Configure posters, session logistics, speakers, and public registration.
+                Full CMS control over session logistics, media assets, multi-speakers, curriculum agenda, and vault downloads.
               </p>
             </div>
           </div>
@@ -268,580 +337,793 @@ export const EventEditorModal: React.FC<Props> = ({
           </button>
         </div>
 
+        {/* Tab Navigation */}
+        <div className="flex flex-wrap items-center gap-2 border-b border-neutral-800 pt-3 pb-3">
+          {[
+            { id: 'overview', label: '1. Logistics & Overview', icon: Calendar },
+            { id: 'media', label: '2. Media & Posters', icon: ImageIcon },
+            { id: 'speakers', label: `3. Speakers (${formData.speakers?.length || 0})`, icon: User },
+            { id: 'agenda', label: '4. Curriculum & Agenda', icon: BookOpen },
+            { id: 'vault', label: '5. Post-Event Vault', icon: FileCode }
+          ].map((tab) => {
+            const Icon = tab.icon;
+            const isCurrent = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  isCurrent 
+                    ? 'bg-[#FA4616] text-white shadow-md shadow-orange-500/20' 
+                    : 'bg-neutral-900/70 text-neutral-400 hover:text-neutral-200 border border-neutral-800'
+                }`}
+              >
+                <Icon size={14} />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
         {/* Modal Body Form */}
-        <form id="event-editor-form" onSubmit={handleSubmit} className="space-y-6 pt-6 pb-2">
+        <form id="event-editor-form" onSubmit={handleSubmit} className="space-y-6 pt-4 pb-2">
           
-          {/* SECTION 1: PRIMARY DETAILS */}
-          <div className="space-y-4">
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">
-                Event Title <span className="text-[#FA4616]">*</span>
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.title}
-                onChange={(e) => updateField('title', e.target.value)}
-                placeholder="e.g., UiPath Studio Masterclass: Enterprise REFramework & Queues"
-                className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all font-medium"
-              />
-            </div>
-
-            {/* Category, Mode & Status Synchronized 3-Column Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {/* TAB 1: OVERVIEW & LOGISTICS */}
+          {activeTab === 'overview' && (
+            <div className="space-y-5">
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">
-                  Category
+                  Event Title <span className="text-[#FA4616]">*</span>
                 </label>
-                <select
-                  value={formData.category}
-                  onChange={(e) => updateField('category', e.target.value as ActivityCategory)}
-                  className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-orange-500 transition-all cursor-pointer"
-                >
-                  <option value="Workshop">Workshop</option>
-                  <option value="Community Meetup">Community Meetup</option>
-                  <option value="Hackathon">Hackathon</option>
-                  <option value="Bootcamp">Bootcamp</option>
-                  <option value="Masterclass">Masterclass</option>
-                  <option value="Certification">Certification</option>
-                  <option value="Guest Lecture">Guest Lecture</option>
-                  <option value="Ideathon">Ideathon</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">
-                  Mode
-                </label>
-                <select
-                  value={formData.eventType}
-                  onChange={(e) => updateField('eventType', e.target.value as ActivityEventType)}
-                  className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-orange-500 transition-all cursor-pointer"
-                >
-                  <option value="Offline">Offline (In-Person)</option>
-                  <option value="Hybrid">Hybrid (Campus + Zoom)</option>
-                  <option value="Online">Online (Virtual Stream)</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">
-                  Status
-                </label>
-                <select
-                  value={formData.status}
-                  onChange={(e) => updateField('status', e.target.value as ActivityStatus)}
-                  className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-orange-500 transition-all cursor-pointer font-medium"
-                >
-                  <option value="Upcoming">Upcoming</option>
-                  <option value="Ongoing">Ongoing / In Progress</option>
-                  <option value="Completed">Completed</option>
-                  <option value="Archived">Archived</option>
-                  <option value="Draft">Draft</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Featured on Homepage Hero Toggle Switch */}
-            <div className="bg-neutral-900/60 border border-neutral-800/80 rounded-xl p-3.5 flex items-center justify-between hover:border-neutral-700 transition-all">
-              <div className="flex items-center gap-3">
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isFeatured ? 'bg-orange-500/20 text-[#FA4616]' : 'bg-neutral-800 text-neutral-400'}`}>
-                  <Star size={16} className={isFeatured ? 'fill-orange-500 text-orange-500' : ''} />
-                </div>
-                <div>
-                  <div className="text-sm font-semibold text-white">Featured on Homepage</div>
-                  <div className="text-xs text-neutral-400">Pin this session as the top hero spotlight on the public landing page</div>
-                </div>
-              </div>
-              
-              <button
-                type="button"
-                role="switch"
-                aria-checked={isFeatured}
-                onClick={() => {
-                  setIsFeatured(!isFeatured);
-                  setIsDirty(true);
-                }}
-                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 focus:ring-offset-neutral-900 ${isFeatured ? 'bg-[#FA4616]' : 'bg-neutral-800'}`}
-              >
-                <span
-                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${isFeatured ? 'translate-x-5' : 'translate-x-0'}`}
-                />
-              </button>
-            </div>
-          </div>
-
-          {/* SECTION 2: POSTER & BANNER ASSET MANAGER */}
-          <div className="bg-neutral-900/40 border border-neutral-800 rounded-xl p-4 md:p-5 space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <ImageIcon size={16} className="text-[#FA4616]" />
-                <span className="text-xs font-semibold uppercase tracking-wider text-neutral-200">
-                  Poster & Banner Asset Manager
-                </span>
-              </div>
-              
-              {/* Explicit Dimension Guidelines Badge */}
-              <span className="inline-flex items-center gap-1.5 text-[11px] font-medium bg-neutral-950 text-neutral-300 border border-neutral-800 rounded-lg px-2.5 py-1">
-                <span className="text-orange-400 font-semibold">Recommended:</span> 1080×1350 px (4:5) or 1920×1080 px (16:9) • Max 5MB
-              </span>
-            </div>
-
-            {/* Dual Upload Strategy Tabs */}
-            <div className="flex items-center gap-2 border-b border-neutral-800 pb-2">
-              <button
-                type="button"
-                onClick={() => setUploadTab('dropzone')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${uploadTab === 'dropzone' ? 'bg-[#FA4616]/10 text-orange-400 border border-orange-500/30' : 'text-neutral-400 hover:text-white bg-neutral-900/60'}`}
-              >
-                <UploadCloud size={14} /> Direct File Upload / Drag & Drop
-              </button>
-              <button
-                type="button"
-                onClick={() => setUploadTab('url')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${uploadTab === 'url' ? 'bg-[#FA4616]/10 text-orange-400 border border-orange-500/30' : 'text-neutral-400 hover:text-white bg-neutral-900/60'}`}
-              >
-                <LinkIcon size={14} /> Asset URL / Quick Preset
-              </button>
-            </div>
-
-            {/* Tab 1: Drag & Drop Dropzone */}
-            {uploadTab === 'dropzone' && (
-              <div>
-                <input 
-                  type="file" 
-                  ref={fileInputRef} 
-                  onChange={handleFileSelect} 
-                  accept="image/png,image/jpeg,image/jpg,image/webp" 
-                  className="hidden" 
-                />
-                
-                <div
-                  onClick={() => fileInputRef.current?.click()}
-                  onDrop={handleDrop}
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                  className={`border-dashed border-2 rounded-xl p-6 text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-2 ${
-                    isDragging 
-                      ? 'border-orange-500 bg-orange-500/10' 
-                      : 'border-neutral-700 hover:border-orange-500/60 bg-neutral-950/60'
-                  }`}
-                >
-                  <div className="w-12 h-12 rounded-full bg-neutral-900 border border-neutral-700/80 flex items-center justify-center text-orange-400 group-hover:scale-105 transition-transform">
-                    <UploadCloud size={22} />
-                  </div>
-                  <div className="text-sm font-semibold text-neutral-200">
-                    Click to browse or drop event flyer / banner here
-                  </div>
-                  <div className="text-xs text-neutral-400">
-                    Supports PNG, JPG, WebP up to 5MB
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Tab 2: URL & Quick Presets */}
-            {uploadTab === 'url' && (
-              <div className="space-y-3">
                 <input
                   type="text"
-                  value={formData.bannerImage || ''}
-                  onChange={(e) => {
-                    updateField('bannerImage', e.target.value);
-                    if (e.target.value.trim()) {
-                      inspectImageDimensions(e.target.value.trim());
-                    } else {
-                      setImageSpecs(null);
-                    }
-                  }}
-                  placeholder="https://example.com/poster.jpg or /uipath-session-1.png"
-                  className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2 text-sm text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:border-orange-500 transition-all font-mono"
+                  required
+                  value={formData.title}
+                  onChange={(e) => updateField('title', e.target.value)}
+                  placeholder="e.g., RPA & AI Industry Expert Meetup 2026"
+                  className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all font-medium"
                 />
+              </div>
 
-                {/* Quick Presets */}
+              {/* Category, Mode & Status */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <div className="text-[11px] font-semibold text-neutral-400 uppercase mb-1.5 tracking-wider">
-                    Quick Community Presets
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">
+                    Category
+                  </label>
+                  <select
+                    value={formData.category}
+                    onChange={(e) => updateField('category', e.target.value as ActivityCategory)}
+                    className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-orange-500 transition-all cursor-pointer"
+                  >
+                    <option value="Workshop">Workshop</option>
+                    <option value="Community Meetup">Community Meetup</option>
+                    <option value="Hackathon">Hackathon</option>
+                    <option value="Bootcamp">Bootcamp</option>
+                    <option value="Masterclass">Masterclass</option>
+                    <option value="Certification">Certification</option>
+                    <option value="Guest Lecture">Guest Lecture</option>
+                    <option value="Ideathon">Ideathon</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">
+                    Mode
+                  </label>
+                  <select
+                    value={formData.eventType}
+                    onChange={(e) => updateField('eventType', e.target.value as ActivityEventType)}
+                    className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-orange-500 transition-all cursor-pointer"
+                  >
+                    <option value="Offline">Offline (In-Person)</option>
+                    <option value="Hybrid">Hybrid (Campus + Zoom)</option>
+                    <option value="Online">Online (Virtual Stream)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">
+                    Status
+                  </label>
+                  <select
+                    value={formData.status}
+                    onChange={(e) => updateField('status', e.target.value as ActivityStatus)}
+                    className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-orange-500 transition-all cursor-pointer font-medium"
+                  >
+                    <option value="Upcoming">Upcoming</option>
+                    <option value="Ongoing">Ongoing / In Progress</option>
+                    <option value="Completed">Completed</option>
+                    <option value="Archived">Archived</option>
+                    <option value="Draft">Draft</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Timing & Logistics */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">
+                    Date (YYYY-MM-DD) <span className="text-[#FA4616]">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={formData.date}
+                    onChange={(e) => updateField('date', e.target.value)}
+                    className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-orange-500 transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">
+                    Start Time
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.timeStart}
+                    onChange={(e) => updateField('timeStart', e.target.value)}
+                    placeholder="10:00 AM"
+                    className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-orange-500 transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">
+                    End Time
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.timeEnd}
+                    onChange={(e) => updateField('timeEnd', e.target.value)}
+                    placeholder="01:00 PM"
+                    className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-orange-500 transition-all"
+                  />
+                </div>
+              </div>
+
+              {/* Venue & Capacity */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5 flex items-center gap-1.5">
+                    <MapPin size={13} className="text-[#FA4616]" /> Venue / Campus Location
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.venue}
+                    onChange={(e) => updateField('venue', e.target.value)}
+                    placeholder="e.g., Auditorium B, ACE Engineering College"
+                    className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2 text-sm text-neutral-100 focus:outline-none focus:border-orange-500 transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5 flex items-center gap-1.5">
+                    <Users size={13} className="text-[#FA4616]" /> Seat Capacity & Target Audience
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.capacity || ''}
+                    onChange={(e) => updateField('capacity', e.target.value)}
+                    placeholder="e.g., 175 Seats / All CSE, IT & Engineering Years"
+                    className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2 text-sm text-neutral-100 focus:outline-none focus:border-orange-500 transition-all"
+                  />
+                </div>
+              </div>
+
+              {/* Links */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5 flex items-center gap-1.5">
+                    <LinkIcon size={13} className="text-[#FA4616]" /> Registration / RSVP URL
+                  </label>
+                  <input
+                    type="url"
+                    value={formData.registrationUrl || ''}
+                    onChange={(e) => updateField('registrationUrl', e.target.value)}
+                    placeholder="https://forms.gle/... or https://lu.ma/..."
+                    className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2 text-sm text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:border-orange-500 transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5 flex items-center gap-1.5">
+                    <Video size={13} className="text-[#FA4616]" /> Virtual Meeting Stream Link
+                  </label>
+                  <input
+                    type="url"
+                    value={formData.meetingUrl || ''}
+                    onChange={(e) => updateField('meetingUrl', e.target.value)}
+                    placeholder="https://zoom.us/j/... or https://meet.google.com/..."
+                    className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2 text-sm text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:border-orange-500 transition-all"
+                  />
+                </div>
+              </div>
+
+              {/* Featured on Homepage */}
+              <div className="bg-neutral-900/60 border border-neutral-800/80 rounded-xl p-3.5 flex items-center justify-between hover:border-neutral-700 transition-all">
+                <div className="flex items-center gap-3">
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isFeatured ? 'bg-orange-500/20 text-[#FA4616]' : 'bg-neutral-800 text-neutral-400'}`}>
+                    <Star size={16} className={isFeatured ? 'fill-orange-500 text-orange-500' : ''} />
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    {PRESET_POSTERS.map((preset, idx) => (
-                      <button
-                        key={idx}
-                        type="button"
-                        onClick={() => {
-                          updateField('bannerImage', preset.url);
-                          inspectImageDimensions(preset.url);
-                        }}
-                        className={`text-xs px-2.5 py-1 rounded-lg border transition-all cursor-pointer ${formData.bannerImage === preset.url ? 'bg-orange-500/20 text-orange-300 border-orange-500/40 font-semibold' : 'bg-neutral-900 text-neutral-300 border-neutral-800 hover:border-neutral-700'}`}
-                      >
-                        {preset.label}
-                      </button>
+                  <div>
+                    <div className="text-sm font-semibold text-white">Featured on Homepage</div>
+                    <div className="text-xs text-neutral-400">Pin this session as the top hero spotlight on the public landing page</div>
+                  </div>
+                </div>
+                
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={isFeatured}
+                  onClick={() => {
+                    setIsFeatured(!isFeatured);
+                    setIsDirty(true);
+                  }}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 focus:ring-offset-neutral-900 ${isFeatured ? 'bg-[#FA4616]' : 'bg-neutral-800'}`}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${isFeatured ? 'translate-x-5' : 'translate-x-0'}`}
+                  />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 2: MEDIA & POSTERS */}
+          {activeTab === 'media' && (
+            <div className="space-y-6">
+              {/* Primary Poster */}
+              <div className="bg-neutral-900/40 border border-neutral-800 rounded-xl p-4 md:p-5 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <ImageIcon size={16} className="text-[#FA4616]" />
+                    <span className="text-xs font-semibold uppercase tracking-wider text-neutral-200">
+                      Primary Event Poster / Banner
+                    </span>
+                  </div>
+                  <span className="inline-flex items-center gap-1.5 text-[11px] font-medium bg-neutral-950 text-neutral-300 border border-neutral-800 rounded-lg px-2.5 py-1">
+                    <span className="text-orange-400 font-semibold">Recommended:</span> 1080×1350 px (4:5) or 1920×1080 px (16:9)
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2 border-b border-neutral-800 pb-2">
+                  <button
+                    type="button"
+                    onClick={() => setUploadTab('dropzone')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${uploadTab === 'dropzone' ? 'bg-[#FA4616]/10 text-orange-400 border border-orange-500/30' : 'text-neutral-400 hover:text-white bg-neutral-900/60'}`}
+                  >
+                    <UploadCloud size={14} /> Direct File Upload
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setUploadTab('url')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${uploadTab === 'url' ? 'bg-[#FA4616]/10 text-orange-400 border border-orange-500/30' : 'text-neutral-400 hover:text-white bg-neutral-900/60'}`}
+                  >
+                    <LinkIcon size={14} /> Asset URL / Presets
+                  </button>
+                </div>
+
+                {uploadTab === 'dropzone' ? (
+                  <div>
+                    <input 
+                      type="file" 
+                      ref={fileInputRef} 
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files.length > 0) {
+                          processFile(e.target.files[0], 'banner');
+                        }
+                      }} 
+                      accept="image/png,image/jpeg,image/jpg,image/webp" 
+                      className="hidden" 
+                    />
+                    <div
+                      onClick={() => fileInputRef.current?.click()}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        setIsDragging(false);
+                        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                          processFile(e.dataTransfer.files[0], 'banner');
+                        }
+                      }}
+                      onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                      onDragLeave={(e) => { e.preventDefault(); setIsDragging(false); }}
+                      className={`border-dashed border-2 rounded-xl p-6 text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-2 ${
+                        isDragging ? 'border-orange-500 bg-orange-500/10' : 'border-neutral-700 hover:border-orange-500/60 bg-neutral-950/60'
+                      }`}
+                    >
+                      <div className="w-12 h-12 rounded-full bg-neutral-900 border border-neutral-700/80 flex items-center justify-center text-orange-400">
+                        <UploadCloud size={22} />
+                      </div>
+                      <div className="text-sm font-semibold text-neutral-200">
+                        Click to browse or drop event flyer / poster here
+                      </div>
+                      <div className="text-xs text-neutral-400">Supports PNG, JPG, WebP up to 5MB</div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <input
+                      type="text"
+                      value={formData.bannerImage || ''}
+                      onChange={(e) => {
+                        updateField('bannerImage', e.target.value);
+                        inspectImageDimensions(e.target.value.trim());
+                      }}
+                      placeholder="https://example.com/poster.jpg or /uipath-session-1.png"
+                      className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2 text-sm text-neutral-100 font-mono"
+                    />
+                    <div className="flex flex-wrap gap-2">
+                      {PRESET_POSTERS.map((preset, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => {
+                            updateField('bannerImage', preset.url);
+                            inspectImageDimensions(preset.url);
+                          }}
+                          className={`text-xs px-2.5 py-1 rounded-lg border transition-all cursor-pointer ${formData.bannerImage === preset.url ? 'bg-orange-500/20 text-orange-300 border-orange-500/40 font-semibold' : 'bg-neutral-900 text-neutral-300 border-neutral-800'}`}
+                        >
+                          {preset.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Preview */}
+                {formData.bannerImage && (
+                  <div className="bg-neutral-950 border border-neutral-800/90 rounded-xl p-3.5 flex flex-col sm:flex-row items-center gap-4">
+                    <div className="relative w-32 h-24 sm:w-36 sm:h-24 rounded-lg overflow-hidden border border-neutral-700/80 shrink-0 bg-neutral-900 flex items-center justify-center">
+                      <img
+                        src={formData.bannerImage}
+                        alt="Event Poster Preview"
+                        className="w-full h-full object-cover"
+                        onError={(e) => { (e.target as HTMLImageElement).src = '/uipath-session-1.png'; }}
+                      />
+                    </div>
+                    <div className="flex-1 w-full space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold text-neutral-300">Live Poster Preview</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            updateField('bannerImage', '');
+                            setImageSpecs(null);
+                          }}
+                          className="p-1.5 rounded-lg bg-red-950/40 text-red-400 hover:text-red-300 border border-red-800/40 text-xs flex items-center gap-1 cursor-pointer"
+                        >
+                          <Trash2 size={12} /> Remove
+                        </button>
+                      </div>
+                      {imageSpecs && (
+                        <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-emerald-950/40 border border-emerald-700/30 text-emerald-400 text-xs font-mono">
+                          <CheckCircle2 size={13} className="text-emerald-400 shrink-0" />
+                          <span>Detected: {imageSpecs.width} × {imageSpecs.height} px · Ratio {imageSpecs.ratio}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Gallery Images */}
+              <div className="bg-neutral-900/40 border border-neutral-800 rounded-xl p-4 md:p-5 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <ImageIcon size={16} className="text-[#FA4616]" />
+                    <span className="text-xs font-semibold uppercase tracking-wider text-neutral-200">
+                      Event Gallery Photos ({formData.galleryImages?.length || 0})
+                    </span>
+                  </div>
+                  <input
+                    type="file"
+                    ref={galleryFileInputRef}
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files.length > 0) {
+                        processFile(e.target.files[0], 'gallery');
+                      }
+                    }}
+                    accept="image/*"
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => galleryFileInputRef.current?.click()}
+                    className="text-xs bg-orange-500/10 text-orange-400 border border-orange-500/20 px-2.5 py-1 rounded-lg flex items-center gap-1 cursor-pointer"
+                  >
+                    <UploadCloud size={12} /> Upload Photo
+                  </button>
+                </div>
+
+                <div className="flex gap-2">
+                  <input
+                    type="url"
+                    value={newGalleryUrl}
+                    onChange={(e) => setNewGalleryUrl(e.target.value)}
+                    placeholder="Add photo URL: https://..."
+                    className="flex-1 bg-neutral-900 border border-neutral-800 rounded-xl px-3 py-1.5 text-xs text-neutral-100"
+                  />
+                  <button
+                    type="button"
+                    onClick={addGalleryImage}
+                    className="btn btn-secondary btn-sm"
+                  >
+                    <Plus size={14} /> Add
+                  </button>
+                </div>
+
+                {formData.galleryImages && formData.galleryImages.length > 0 && (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+                    {formData.galleryImages.map((imgUrl, idx) => (
+                      <div key={idx} className="relative group rounded-lg overflow-hidden border border-neutral-800 aspect-video bg-neutral-950">
+                        <img src={imgUrl} alt={`Gallery ${idx + 1}`} className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => removeGalleryImage(idx)}
+                          className="absolute top-1 right-1 bg-red-600/80 hover:bg-red-600 text-white p-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* TAB 3: SPEAKERS & GUESTS */}
+          {activeTab === 'speakers' && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold uppercase tracking-wider text-neutral-200 flex items-center gap-2">
+                  <User size={16} className="text-[#FA4616]" /> Speakers, Mentors & Facilitators
+                </span>
+                <button
+                  type="button"
+                  onClick={addSpeaker}
+                  className="text-xs text-orange-400 hover:text-orange-300 font-semibold flex items-center gap-1 cursor-pointer bg-orange-500/10 border border-orange-500/20 px-2.5 py-1 rounded-lg transition-all"
+                >
+                  <Plus size={12} /> Add Co-Speaker / Guest
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {formData.speakers?.map((spk, idx) => (
+                  <div key={spk.id || idx} className="bg-neutral-950 border border-neutral-800 rounded-xl p-4 space-y-3 relative group">
+                    <div className="flex items-center justify-between pb-2 border-b border-neutral-800/80">
+                      <span className="text-xs font-semibold text-neutral-300">Speaker #{idx + 1}</span>
+                      {formData.speakers.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeSpeaker(idx)}
+                          className="text-neutral-400 hover:text-red-400 p-1 rounded transition-colors cursor-pointer"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[11px] font-semibold text-neutral-400 uppercase mb-1">Speaker Name</label>
+                        <input
+                          type="text"
+                          value={spk.name}
+                          onChange={(e) => updateSpeaker(idx, 'name', e.target.value)}
+                          placeholder="e.g., Kanchana Tejaswy"
+                          className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3 py-2 text-sm text-neutral-100"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-semibold text-neutral-400 uppercase mb-1">Designation & Org</label>
+                        <input
+                          type="text"
+                          value={spk.roleTitle ? `${spk.roleTitle}${spk.organization ? ' • ' + spk.organization : ''}` : spk.organization || ''}
+                          onChange={(e) => {
+                            const parts = e.target.value.split('•');
+                            if (parts.length > 1) {
+                              updateSpeaker(idx, 'roleTitle', parts[0].trim());
+                              updateSpeaker(idx, 'organization', parts.slice(1).join('•').trim());
+                            } else {
+                              updateSpeaker(idx, 'roleTitle', e.target.value);
+                            }
+                          }}
+                          placeholder="e.g., Lead RPA Trainer • ACE UiPath Community"
+                          className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3 py-2 text-sm text-neutral-100"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                      <div>
+                        <label className="block text-[11px] font-semibold text-neutral-400 uppercase mb-1">Headshot Avatar URL</label>
+                        <div className="flex items-center gap-2">
+                          <div className="w-9 h-9 rounded-full border border-neutral-700 overflow-hidden bg-neutral-900 shrink-0 flex items-center justify-center">
+                            {spk.avatarUrl ? (
+                              <img src={spk.avatarUrl} alt={spk.name || 'Speaker'} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = '/tejaswy.png'; }} />
+                            ) : (
+                              <User size={16} className="text-neutral-500" />
+                            )}
+                          </div>
+                          <input
+                            type="text"
+                            value={spk.avatarUrl || ''}
+                            onChange={(e) => updateSpeaker(idx, 'avatarUrl', e.target.value)}
+                            placeholder="/tejaswy.png or https://..."
+                            className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3 py-2 text-xs text-neutral-100 font-mono"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-semibold text-neutral-400 uppercase mb-1">LinkedIn Profile</label>
+                        <div className="relative flex items-center">
+                          <div className="absolute left-3 pointer-events-none text-neutral-400"><Linkedin size={14} className="text-[#0A66C2]" /></div>
+                          <input
+                            type="url"
+                            value={spk.linkedinUrl || ''}
+                            onChange={(e) => updateSpeaker(idx, 'linkedinUrl', e.target.value)}
+                            placeholder="https://linkedin.com/in/username"
+                            className="w-full bg-neutral-900 border border-neutral-800 rounded-xl pl-9 pr-3 py-2 text-sm text-neutral-100 text-xs"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold text-neutral-400 uppercase mb-1">Short Speaker Bio</label>
+                      <input
+                        type="text"
+                        value={spk.bio || ''}
+                        onChange={(e) => updateSpeaker(idx, 'bio', e.target.value)}
+                        placeholder="Expertise in UiPath Studio, Document Understanding, and enterprise bot architecture."
+                        className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3 py-1.5 text-xs text-neutral-100"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* TAB 4: CURRICULUM, AGENDA & MARKDOWN */}
+          {activeTab === 'agenda' && (
+            <div className="space-y-5">
+              {/* Executive Summary */}
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">
+                  Executive Summary <span className="text-[#FA4616]">*</span>
+                </label>
+                <textarea
+                  rows={2}
+                  required
+                  value={formData.summary}
+                  onChange={(e) => updateField('summary', e.target.value)}
+                  placeholder="Brief summary of the session agenda, target automations, and takeaways..."
+                  className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2 text-sm text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:border-orange-500 transition-all resize-none"
+                />
+              </div>
+
+              {/* Topics Covered */}
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5 flex items-center gap-1.5">
+                  <Tag size={13} className="text-[#FA4616]" /> UiPath Topics Covered (comma-separated)
+                </label>
+                <input
+                  type="text"
+                  value={formData.uipathTopicsCovered ? formData.uipathTopicsCovered.join(', ') : ''}
+                  onChange={(e) => {
+                    const topics = e.target.value.split(',').map((t) => t.trim()).filter(Boolean);
+                    updateField('uipathTopicsCovered', topics);
+                  }}
+                  placeholder="UiPath Studio, REFramework, Orchestrator Queues, AI Computer Vision"
+                  className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2 text-sm text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:border-orange-500 transition-all"
+                />
+              </div>
+
+              {/* Objectives & Outcomes */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Objectives */}
+                <div className="bg-neutral-950 border border-neutral-800 rounded-xl p-3.5 space-y-2.5">
+                  <span className="text-xs font-semibold uppercase text-neutral-300 flex items-center gap-1.5">
+                    <CheckSquare size={13} className="text-[#FA4616]" /> Key Objectives
+                  </span>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newObjective}
+                      onChange={(e) => setNewObjective(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addObjective(); } }}
+                      placeholder="Add an objective..."
+                      className="flex-1 bg-neutral-900 border border-neutral-800 rounded-lg px-2.5 py-1 text-xs text-neutral-100"
+                    />
+                    <button type="button" onClick={addObjective} className="btn btn-secondary btn-sm"><Plus size={12} /></button>
+                  </div>
+                  <div className="space-y-1.5 max-h-36 overflow-y-auto">
+                    {formData.objectives?.map((obj, i) => (
+                      <div key={i} className="flex items-center justify-between text-xs bg-neutral-900/60 px-2.5 py-1.5 rounded border border-neutral-850">
+                        <span>• {obj}</span>
+                        <button type="button" onClick={() => removeObjective(i)} className="text-neutral-400 hover:text-red-400"><Trash2 size={12} /></button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Outcomes */}
+                <div className="bg-neutral-950 border border-neutral-800 rounded-xl p-3.5 space-y-2.5">
+                  <span className="text-xs font-semibold uppercase text-neutral-300 flex items-center gap-1.5">
+                    <CheckCircle2 size={13} className="text-emerald-400" /> Learning Outcomes
+                  </span>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newOutcome}
+                      onChange={(e) => setNewOutcome(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addOutcome(); } }}
+                      placeholder="Add an outcome..."
+                      className="flex-1 bg-neutral-900 border border-neutral-800 rounded-lg px-2.5 py-1 text-xs text-neutral-100"
+                    />
+                    <button type="button" onClick={addOutcome} className="btn btn-secondary btn-sm"><Plus size={12} /></button>
+                  </div>
+                  <div className="space-y-1.5 max-h-36 overflow-y-auto">
+                    {formData.learningOutcomes?.map((out, i) => (
+                      <div key={i} className="flex items-center justify-between text-xs bg-neutral-900/60 px-2.5 py-1.5 rounded border border-neutral-850">
+                        <span>• {out}</span>
+                        <button type="button" onClick={() => removeOutcome(i)} className="text-neutral-400 hover:text-red-400"><Trash2 size={12} /></button>
+                      </div>
                     ))}
                   </div>
                 </div>
               </div>
-            )}
 
-            {/* Error Message */}
-            {uploadError && (
-              <div className="flex items-center gap-2 p-2.5 bg-red-500/10 border border-red-500/20 rounded-lg text-xs text-red-400">
-                <AlertCircle size={14} className="shrink-0" />
-                <span>{uploadError}</span>
-              </div>
-            )}
-
-            {/* Live Poster Preview & Exact Dimension Checker */}
-            {formData.bannerImage && (
-              <div className="bg-neutral-950 border border-neutral-800/90 rounded-xl p-3.5 flex flex-col sm:flex-row items-center gap-4">
-                <div className="relative w-32 h-24 sm:w-36 sm:h-24 rounded-lg overflow-hidden border border-neutral-700/80 shrink-0 bg-neutral-900 flex items-center justify-center">
-                  <img
-                    src={formData.bannerImage}
-                    alt="Event Poster Preview"
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = '/uipath-session-1.png';
-                    }}
-                  />
+              {/* Agenda Timeline Items */}
+              <div className="bg-neutral-950 border border-neutral-800 rounded-xl p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-neutral-200 flex items-center gap-2">
+                    <Clock size={15} className="text-[#FA4616]" /> Interactive Session Agenda Timeline
+                  </span>
+                  <button
+                    type="button"
+                    onClick={addAgendaItem}
+                    className="text-xs bg-orange-500/10 text-orange-400 border border-orange-500/20 px-2.5 py-1 rounded-lg flex items-center gap-1 cursor-pointer"
+                  >
+                    <Plus size={12} /> Add Agenda Slot
+                  </button>
                 </div>
 
-                <div className="flex-1 w-full space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-neutral-300">Live Poster Preview</span>
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setUploadTab('dropzone');
-                          fileInputRef.current?.click();
-                        }}
-                        className="p-1.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-neutral-300 hover:text-white border border-neutral-750 transition-all text-xs flex items-center gap-1 cursor-pointer"
-                        title="Replace Image"
-                      >
-                        <RefreshCw size={12} /> Replace
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          updateField('bannerImage', '');
-                          setImageSpecs(null);
-                        }}
-                        className="p-1.5 rounded-lg bg-red-950/40 hover:bg-red-900/60 text-red-400 hover:text-red-300 border border-red-800/40 transition-all text-xs flex items-center gap-1 cursor-pointer"
-                        title="Remove Image"
-                      >
-                        <Trash2 size={12} /> Remove
-                      </button>
+                <div className="space-y-3">
+                  {formData.agenda?.map((item, idx) => (
+                    <div key={idx} className="bg-neutral-900 border border-neutral-800 rounded-lg p-3 space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <input
+                          type="text"
+                          value={item.time}
+                          onChange={(e) => updateAgendaItem(idx, 'time', e.target.value)}
+                          placeholder="e.g., 10:00 AM - 10:45 AM"
+                          className="w-1/3 bg-neutral-950 border border-neutral-800 rounded px-2 py-1 text-xs text-orange-400 font-mono"
+                        />
+                        <input
+                          type="text"
+                          value={item.title}
+                          onChange={(e) => updateAgendaItem(idx, 'title', e.target.value)}
+                          placeholder="Slot Title / Topic"
+                          className="flex-1 bg-neutral-950 border border-neutral-800 rounded px-2 py-1 text-xs text-neutral-100 font-semibold"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeAgendaItem(idx)}
+                          className="text-neutral-400 hover:text-red-400 p-1"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={item.description || ''}
+                          onChange={(e) => updateAgendaItem(idx, 'description', e.target.value)}
+                          placeholder="Brief description of activity..."
+                          className="flex-1 bg-neutral-950 border border-neutral-800 rounded px-2 py-1 text-xs text-neutral-400"
+                        />
+                        <input
+                          type="text"
+                          value={item.speaker || ''}
+                          onChange={(e) => updateAgendaItem(idx, 'speaker', e.target.value)}
+                          placeholder="Speaker"
+                          className="w-1/4 bg-neutral-950 border border-neutral-800 rounded px-2 py-1 text-xs text-neutral-300"
+                        />
+                      </div>
                     </div>
-                  </div>
-
-                  {/* Dynamic Dimension Badge */}
-                  {imageSpecs ? (
-                    <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-emerald-950/40 border border-emerald-700/30 text-emerald-400 text-xs font-mono">
-                      <CheckCircle2 size={13} className="text-emerald-400 shrink-0" />
-                      <span>
-                        Detected: {imageSpecs.width} × {imageSpecs.height} px · Ratio {imageSpecs.ratio}
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="text-xs text-neutral-400 italic">
-                      Inspecting image dimensions...
-                    </div>
-                  )}
+                  ))}
                 </div>
               </div>
-            )}
-          </div>
 
-          {/* SECTION 3: LOGISTICS & TIMING */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">
-                Date (YYYY-MM-DD) <span className="text-[#FA4616]">*</span>
-              </label>
-              <div className="relative">
-                <input
-                  type="date"
-                  required
-                  value={formData.date}
-                  onChange={(e) => updateField('date', e.target.value)}
-                  className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-orange-500 transition-all"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">
-                Start Time
-              </label>
-              <input
-                type="text"
-                value={formData.timeStart}
-                onChange={(e) => updateField('timeStart', e.target.value)}
-                placeholder="10:00 AM"
-                className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-orange-500 transition-all"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">
-                End Time
-              </label>
-              <input
-                type="text"
-                value={formData.timeEnd}
-                onChange={(e) => updateField('timeEnd', e.target.value)}
-                placeholder="01:00 PM"
-                className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-orange-500 transition-all"
-              />
-            </div>
-          </div>
-
-          {/* SECTION 4: LOCATION, REGISTRATION & CAPACITY CONTROLS */}
-          <div className="space-y-3.5 bg-neutral-900/40 border border-neutral-800 rounded-xl p-4 md:p-5">
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5 flex items-center gap-1.5">
-                <MapPin size={13} className="text-[#FA4616]" /> Venue / Campus Location
-              </label>
-              <input
-                type="text"
-                value={formData.venue}
-                onChange={(e) => updateField('venue', e.target.value)}
-                placeholder="e.g., Auditorium B, ACE Engineering College"
-                className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2 text-sm text-neutral-100 focus:outline-none focus:border-orange-500 transition-all"
-              />
-            </div>
-
-            {/* Dedicated Registration, Meeting & Capacity Inputs */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-2 border-t border-neutral-800/80">
-              {/* Registration / RSVP URL */}
+              {/* Full Description Markdown */}
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5 flex items-center gap-1.5">
-                  <LinkIcon size={13} className="text-[#FA4616]" /> Registration / RSVP URL
+                  <FileText size={13} className="text-[#FA4616]" /> Full Markdown Description & Curriculum Deep-Dive
                 </label>
-                <input
-                  type="url"
-                  value={formData.registrationUrl || ''}
-                  onChange={(e) => updateField('registrationUrl', e.target.value)}
-                  placeholder="https://forms.gle/... or https://lu.ma/..."
-                  className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2 text-sm text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:border-orange-500 transition-all"
-                />
-              </div>
-
-              {/* Virtual Meeting Link */}
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 flex items-center gap-1.5">
-                    <Video size={13} className="text-[#FA4616]" /> Virtual Meeting Link
-                  </label>
-                  {(formData.eventType === 'Online' || formData.eventType === 'Hybrid') && (
-                    <span className="text-[10px] bg-orange-500/10 text-orange-400 border border-orange-500/20 px-1.5 py-0.5 rounded font-medium">
-                      Active for {formData.eventType}
-                    </span>
-                  )}
-                </div>
-                <input
-                  type="url"
-                  value={formData.meetingUrl || ''}
-                  onChange={(e) => updateField('meetingUrl', e.target.value)}
-                  placeholder="https://zoom.us/j/... or https://meet.google.com/..."
-                  className={`w-full bg-neutral-900 border rounded-xl px-3.5 py-2 text-sm text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:border-orange-500 transition-all ${
-                    formData.eventType === 'Online' || formData.eventType === 'Hybrid'
-                      ? 'border-orange-500/40 ring-1 ring-orange-500/20'
-                      : 'border-neutral-800'
-                  }`}
+                <textarea
+                  rows={5}
+                  value={formData.fullDescriptionMd || ''}
+                  onChange={(e) => updateField('fullDescriptionMd', e.target.value)}
+                  placeholder="## Session Overview&#10;In this workshop, students built production-grade UiPath bots...&#10;&#10;### Key Takeaways&#10;- REFramework state transitions&#10;- Queue transaction processing"
+                  className="w-full bg-neutral-900 border border-neutral-800 rounded-xl p-3.5 text-xs text-neutral-100 font-mono leading-relaxed"
                 />
               </div>
             </div>
+          )}
 
-            {/* Seat Capacity & Target Audience */}
-            <div className="pt-2">
-              <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5 flex items-center gap-1.5">
-                <Users size={13} className="text-[#FA4616]" /> Seat Capacity & Target Audience
-              </label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <input
-                  type="text"
-                  value={formData.capacity || ''}
-                  onChange={(e) => updateField('capacity', e.target.value)}
-                  placeholder="e.g., 120 Seats / Unlimited Virtual"
-                  className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2 text-sm text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:border-orange-500 transition-all"
-                />
-                <input
-                  type="text"
-                  value={formData.targetAudience || ''}
-                  onChange={(e) => updateField('targetAudience', e.target.value)}
-                  placeholder="e.g., Open to CSE, IT, ECE & All Years"
-                  className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2 text-sm text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:border-orange-500 transition-all"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* SECTION 5: COMPLETE SPEAKER & GUEST ENTITY SECTION */}
-          <div className="bg-neutral-900/40 border border-neutral-800 rounded-xl p-4 md:p-5 space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <User size={16} className="text-[#FA4616]" />
-                <span className="text-xs font-semibold uppercase tracking-wider text-neutral-200">
-                  Speaker & Guest Entities
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={addSpeaker}
-                className="text-xs text-orange-400 hover:text-orange-300 font-semibold flex items-center gap-1 cursor-pointer bg-orange-500/10 border border-orange-500/20 px-2.5 py-1 rounded-lg transition-all"
-              >
-                <Plus size={12} /> Add Co-Speaker / Guest
-              </button>
-            </div>
-
+          {/* TAB 5: POST-EVENT VAULT ARTIFACTS */}
+          {activeTab === 'vault' && (
             <div className="space-y-4">
-              {formData.speakers?.map((spk, idx) => (
-                <div 
-                  key={spk.id || idx}
-                  className="bg-neutral-950 border border-neutral-800 rounded-xl p-4 space-y-3 relative group"
-                >
-                  <div className="flex items-center justify-between pb-2 border-b border-neutral-800/80">
-                    <span className="text-xs font-semibold text-neutral-300">
-                      Speaker {formData.speakers.length > 1 ? `#${idx + 1}` : 'Details'}
-                    </span>
-                    {formData.speakers.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => removeSpeaker(idx)}
-                        className="text-neutral-400 hover:text-red-400 p-1 rounded transition-colors cursor-pointer"
-                        title="Remove speaker"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    )}
+              <div className="bg-neutral-950 border border-neutral-800 rounded-xl p-5 space-y-4">
+                <span className="text-xs font-semibold uppercase tracking-wider text-neutral-200 flex items-center gap-2">
+                  <FileCode size={16} className="text-[#FA4616]" /> Post-Event Artifacts & Knowledge Vault Links
+                </span>
+                <p className="text-xs text-neutral-400">
+                  Provide direct public access to recordings, slide decks, source repositories, and ready-to-run UiPath workflows.
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                  <div>
+                    <label className="block text-xs font-semibold text-neutral-400 mb-1 flex items-center gap-1.5">
+                      <Film size={14} className="text-red-400" /> Session Video Recording URL
+                    </label>
+                    <input
+                      type="url"
+                      value={formData.recordingUrl || ''}
+                      onChange={(e) => updateField('recordingUrl', e.target.value)}
+                      placeholder="https://youtube.com/watch?v=... or Loom"
+                      className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2 text-xs text-neutral-100 font-mono"
+                    />
                   </div>
 
-                  {/* Speaker Multi-Column Grid */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-[11px] font-semibold text-neutral-400 uppercase mb-1">
-                        Speaker Full Name
-                      </label>
-                      <input
-                        type="text"
-                        value={spk.name}
-                        onChange={(e) => updateSpeaker(idx, 'name', e.target.value)}
-                        placeholder="e.g., Bhavani Munaga"
-                        className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3 py-2 text-sm text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:border-orange-500 transition-all"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[11px] font-semibold text-neutral-400 uppercase mb-1">
-                        Designation & Company / Org
-                      </label>
-                      <input
-                        type="text"
-                        value={spk.organization || spk.roleTitle ? `${spk.roleTitle ? spk.roleTitle + ' • ' : ''}${spk.organization}` : ''}
-                        onChange={(e) => {
-                          const parts = e.target.value.split('•');
-                          if (parts.length > 1) {
-                            updateSpeaker(idx, 'roleTitle', parts[0].trim());
-                            updateSpeaker(idx, 'organization', parts.slice(1).join('•').trim());
-                          } else {
-                            updateSpeaker(idx, 'organization', e.target.value);
-                            updateSpeaker(idx, 'roleTitle', 'Speaker');
-                          }
-                        }}
-                        placeholder="e.g., Senior RPA & AI Developer, UiPath Community Core Member"
-                        className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3 py-2 text-sm text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:border-orange-500 transition-all"
-                      />
-                    </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-neutral-400 mb-1 flex items-center gap-1.5">
+                      <Presentation size={14} className="text-amber-400" /> Presentation Slides Deck URL
+                    </label>
+                    <input
+                      type="url"
+                      value={formData.slidesUrl || ''}
+                      onChange={(e) => updateField('slidesUrl', e.target.value)}
+                      placeholder="https://docs.google.com/presentation/..."
+                      className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2 text-xs text-neutral-100 font-mono"
+                    />
                   </div>
 
-                  {/* Headshot & LinkedIn Link */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                    {/* Headshot with 40x40 Live Preview */}
-                    <div>
-                      <label className="block text-[11px] font-semibold text-neutral-400 uppercase mb-1">
-                        Speaker Headshot / Avatar URL
-                      </label>
-                      <div className="flex items-center gap-2">
-                        <div className="w-10 h-10 rounded-full border border-neutral-700 overflow-hidden bg-neutral-900 shrink-0 flex items-center justify-center">
-                          {spk.avatarUrl ? (
-                            <img
-                              src={spk.avatarUrl}
-                              alt={spk.name || 'Speaker'}
-                              className="w-full h-full object-cover"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src = PRESET_AVATARS[0];
-                              }}
-                            />
-                          ) : (
-                            <User size={18} className="text-neutral-500" />
-                          )}
-                        </div>
-                        <input
-                          type="url"
-                          value={spk.avatarUrl || ''}
-                          onChange={(e) => updateSpeaker(idx, 'avatarUrl', e.target.value)}
-                          placeholder="Avatar URL or preset"
-                          className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3 py-2 text-sm text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:border-orange-500 transition-all text-xs font-mono"
-                        />
-                      </div>
-                    </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-neutral-400 mb-1 flex items-center gap-1.5">
+                      <Github size={14} className="text-neutral-300" /> GitHub Code Repository URL
+                    </label>
+                    <input
+                      type="url"
+                      value={formData.githubUrl || ''}
+                      onChange={(e) => updateField('githubUrl', e.target.value)}
+                      placeholder="https://github.com/kanchana-Tejaswy/..."
+                      className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2 text-xs text-neutral-100 font-mono"
+                    />
+                  </div>
 
-                    {/* LinkedIn Profile Link */}
-                    <div>
-                      <label className="block text-[11px] font-semibold text-neutral-400 uppercase mb-1">
-                        Speaker LinkedIn Profile
-                      </label>
-                      <div className="relative flex items-center">
-                        <div className="absolute left-3 pointer-events-none text-neutral-400">
-                          <Linkedin size={14} className="text-[#0A66C2]" />
-                        </div>
-                        <input
-                          type="url"
-                          value={spk.linkedinUrl || ''}
-                          onChange={(e) => updateSpeaker(idx, 'linkedinUrl', e.target.value)}
-                          placeholder="https://linkedin.com/in/username"
-                          className="w-full bg-neutral-900 border border-neutral-800 rounded-xl pl-9 pr-3 py-2 text-sm text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:border-orange-500 transition-all text-xs"
-                        />
-                      </div>
-                    </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-neutral-400 mb-1 flex items-center gap-1.5">
+                      <FileCode size={14} className="text-emerald-400" /> Workflow Package (.xaml / .nupkg / .zip)
+                    </label>
+                    <input
+                      type="url"
+                      value={formData.workflowPackageUrl || ''}
+                      onChange={(e) => updateField('workflowPackageUrl', e.target.value)}
+                      placeholder="https://.../workflow.nupkg or .zip"
+                      className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2 text-xs text-neutral-100 font-mono"
+                    />
                   </div>
                 </div>
-              ))}
+              </div>
             </div>
-          </div>
-
-          {/* SECTION 6: EXECUTIVE SUMMARY & TOPICS */}
-          <div className="space-y-4">
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">
-                Executive Summary <span className="text-[#FA4616]">*</span>
-              </label>
-              <textarea
-                rows={3}
-                required
-                value={formData.summary}
-                onChange={(e) => updateField('summary', e.target.value)}
-                placeholder="Brief summary of the session agenda, target automations, and takeaways..."
-                className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2.5 text-sm text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:border-orange-500 transition-all resize-none"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5 flex items-center gap-1.5">
-                <Tag size={13} className="text-[#FA4616]" /> UiPath Topics Covered (comma-separated)
-              </label>
-              <input
-                type="text"
-                value={formData.uipathTopicsCovered ? formData.uipathTopicsCovered.join(', ') : ''}
-                onChange={(e) => {
-                  const topics = e.target.value.split(',').map((t) => t.trim()).filter(Boolean);
-                  updateField('uipathTopicsCovered', topics);
-                }}
-                placeholder="UiPath Studio, REFramework, Orchestrator Queues, AI Computer Vision"
-                className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2 text-sm text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:border-orange-500 transition-all"
-              />
-            </div>
-          </div>
+          )}
 
         </form>
 

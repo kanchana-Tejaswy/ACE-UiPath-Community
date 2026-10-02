@@ -10,20 +10,32 @@ import {
   Plus, 
   ArrowRight, 
   Download, 
-  Sparkles
+  Sparkles,
+  Edit3,
+  Trash2,
+  Star
 } from 'lucide-react';
 import { Activity, User } from '../types';
 import { hasPermission } from '../lib/security';
+import { EventEditorModal } from '../components/EventEditorModal';
 
 interface Props {
   activities: Activity[];
   currentUser: User;
+  featuredActivityId?: string;
+  onSaveActivity?: (act: Activity) => Promise<any> | void;
+  onDeleteActivity?: (id: string) => Promise<any> | void;
+  onUpdateSettings?: (settings: any) => Promise<any> | void;
   onNavigate: (view: string, detailId?: string) => void;
 }
 
 export const ActivitiesPage: React.FC<Props> = ({
   activities,
   currentUser,
+  featuredActivityId,
+  onSaveActivity,
+  onDeleteActivity,
+  onUpdateSettings,
   onNavigate
 }) => {
   const [selectedYear, setSelectedYear] = useState<string>('ALL');
@@ -32,8 +44,84 @@ export const ActivitiesPage: React.FC<Props> = ({
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [viewMode, setViewMode] = useState<'timeline' | 'grid'>('timeline');
 
+  // Modal Editing State
+  const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
+
+  const showToast = (msg: string) => {
+    setToastMsg(msg);
+    setTimeout(() => setToastMsg(null), 3000);
+  };
+
+  const isEditor = Boolean(currentUser && hasPermission(currentUser.role, 'CORE_TEAM'));
+
+  const handleOpenCreateModal = () => {
+    setEditingActivity({
+      id: `act_${Date.now()}`,
+      slug: `activity-${Date.now()}`,
+      title: '',
+      category: 'Workshop',
+      eventType: 'Offline',
+      date: new Date().toISOString().split('T')[0],
+      timeStart: '10:00 AM',
+      timeEnd: '01:00 PM',
+      venue: 'ACE Engineering College',
+      summary: '',
+      fullDescriptionMd: '',
+      objectives: ['Master enterprise robotic process automation', 'Build production bots in UiPath Studio'],
+      agenda: [
+        { time: '10:00 AM - 10:30 AM', title: 'Welcome & Context', description: 'Overview of enterprise RPA use-case.', speaker: 'Lead Trainer' },
+        { time: '10:30 AM - 12:30 PM', title: 'Hands-on Workflow Building', description: 'Live coding in UiPath Studio.', speaker: 'Technical Lead' }
+      ],
+      uipathTopicsCovered: ['UiPath Studio', 'REFramework'],
+      learningOutcomes: ['Deploy working automations with error handling'],
+      bannerImage: '/uipath-session-1.png',
+      galleryImages: [],
+      status: 'Upcoming',
+      isFeatured: false,
+      registrationUrl: '',
+      meetingUrl: '',
+      capacity: '',
+      targetAudience: '',
+      speakers: [{ id: `spk_${Date.now()}`, name: currentUser.name || 'Lead Speaker', roleTitle: 'Lead RPA Trainer', organization: 'ACE UiPath Community', avatarUrl: currentUser.avatarUrl || '/tejaswy.png', linkedinUrl: currentUser.linkedinUrl || '', bio: '' }]
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEditModal = (act: Activity, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setEditingActivity(act);
+    setIsModalOpen(true);
+  };
+
+  const handleSaveModal = async (actToSave: Activity, makeFeatured: boolean) => {
+    if (onSaveActivity) {
+      await onSaveActivity(actToSave);
+    }
+    if (onUpdateSettings) {
+      if (makeFeatured) {
+        onUpdateSettings({ featuredActivityId: actToSave.id });
+      } else if (featuredActivityId === actToSave.id && !makeFeatured) {
+        onUpdateSettings({ featuredActivityId: '' });
+      }
+    }
+    setIsModalOpen(false);
+    showToast(`Event "${actToSave.title}" saved successfully!`);
+  };
+
+  const handleDelete = async (act: Activity, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (window.confirm(`Are you sure you want to permanently delete the event "${act.title}"?`)) {
+      if (onDeleteActivity) {
+        await onDeleteActivity(act.id);
+        showToast('Event removed.');
+      }
+    }
+  };
+
   const years = ['ALL', '2026', '2025', '2024', '2023', '2022'];
-  const categories = ['ALL', 'Workshop', 'Hackathon', 'Certification', 'Bootcamp', 'Guest Lecture'];
+  const categories = ['ALL', 'Workshop', 'Hackathon', 'Certification', 'Bootcamp', 'Guest Lecture', 'Community Meetup'];
   const modes = ['ALL', 'Offline', 'Online', 'Hybrid'];
 
   const filteredActivities = activities.filter((act) => {
@@ -53,6 +141,25 @@ export const ActivitiesPage: React.FC<Props> = ({
 
   return (
     <div className="container" style={{ paddingTop: '3rem', paddingBottom: '5rem' }}>
+      {/* Toast Notification */}
+      {toastMsg && (
+        <div style={{
+          position: 'fixed',
+          bottom: '2rem',
+          right: '2rem',
+          zIndex: 9999,
+          background: '#FA4616',
+          color: '#FFF',
+          padding: '0.85rem 1.5rem',
+          borderRadius: 'var(--radius-md)',
+          boxShadow: '0 8px 30px rgba(250, 70, 22, 0.4)',
+          fontWeight: 600,
+          fontSize: '0.9rem'
+        }}>
+          {toastMsg}
+        </div>
+      )}
+
       {/* Header Banner */}
       <div style={{ marginBottom: '2.5rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem', marginBottom: '0.75rem' }}>
@@ -61,7 +168,7 @@ export const ActivitiesPage: React.FC<Props> = ({
               Institutional Knowledge Archive
             </span>
             <h1 style={{ fontSize: 'clamp(2rem, 3.8vw, 2.75rem)', fontWeight: 800, letterSpacing: '-0.025em' }}>
-              Activity Timeline & Memory
+              Activity Timeline & Meetups
             </h1>
           </div>
 
@@ -93,12 +200,14 @@ export const ActivitiesPage: React.FC<Props> = ({
               </button>
             </div>
 
-            {Boolean(currentUser && hasPermission(currentUser.role, 'CORE_TEAM')) && (
+            {/* Direct Add Event Button for Admin / Core Team */}
+            {isEditor && (
               <button
-                onClick={() => onNavigate('admin')}
+                onClick={handleOpenCreateModal}
                 className="btn btn-primary btn-sm"
+                style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 600 }}
               >
-                <Plus size={15} /> Draft Activity
+                <Plus size={16} /> Add New Event
               </button>
             )}
           </div>
@@ -237,7 +346,7 @@ export const ActivitiesPage: React.FC<Props> = ({
         /* TIMELINE VIEW */
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
           {filteredActivities.map((act) => (
-            <div key={act.id} className="glass-card" style={{ padding: '1.75rem' }}>
+            <div key={act.id} className="glass-card" style={{ padding: '1.75rem', position: 'relative' }}>
               <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', marginBottom: '1rem' }}>
                 <div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '0.5rem', alignItems: 'center' }}>
@@ -247,6 +356,11 @@ export const ActivitiesPage: React.FC<Props> = ({
                       {act.status === 'Upcoming' && <span className="status-dot-pulse" style={{ marginRight: '0.2rem' }} />}
                       {act.status}
                     </span>
+                    {act.id === featuredActivityId && (
+                      <span className="badge badge-orange" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                        <Star size={10} /> Homepage Hero
+                      </span>
+                    )}
                   </div>
 
                   <h2
@@ -266,27 +380,53 @@ export const ActivitiesPage: React.FC<Props> = ({
                   </h2>
                 </div>
 
-                {/* Metadata Chips */}
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.85rem',
-                  background: 'rgba(255, 255, 255, 0.04)',
-                  padding: '0.45rem 0.8rem',
-                  borderRadius: 'var(--radius-md)',
-                  border: '1px solid var(--border-subtle)',
-                  fontSize: '0.78rem',
-                  color: 'var(--text-muted)'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                    <Calendar size={13} style={{ color: 'var(--uipath-orange)' }} />
-                    <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{act.date}</span>
+                {/* Metadata Chips & Quick Admin Actions */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.85rem',
+                    background: 'rgba(255, 255, 255, 0.04)',
+                    padding: '0.45rem 0.8rem',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid var(--border-subtle)',
+                    fontSize: '0.78rem',
+                    color: 'var(--text-muted)'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                      <Calendar size={13} style={{ color: 'var(--uipath-orange)' }} />
+                      <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{act.date}</span>
+                    </div>
+                    <span style={{ opacity: 0.3 }}>|</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                      <MapPin size={13} style={{ color: 'var(--uipath-orange)' }} />
+                      <span>{act.venue}</span>
+                    </div>
                   </div>
-                  <span style={{ opacity: 0.3 }}>|</span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                    <MapPin size={13} style={{ color: 'var(--uipath-orange)' }} />
-                    <span>{act.venue}</span>
-                  </div>
+
+                  {/* Direct Edit / Delete buttons for Admin / Core Team */}
+                  {isEditor && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                      <button
+                        type="button"
+                        onClick={(e) => handleOpenEditModal(act, e)}
+                        className="btn btn-secondary btn-sm"
+                        style={{ padding: '0.45rem 0.65rem', display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.78rem' }}
+                        title="Edit event details"
+                      >
+                        <Edit3 size={13} /> Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => handleDelete(act, e)}
+                        className="btn btn-secondary btn-sm"
+                        style={{ padding: '0.45rem 0.5rem', color: '#EF4444' }}
+                        title="Delete event"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -364,6 +504,30 @@ export const ActivitiesPage: React.FC<Props> = ({
                   <span className="badge badge-orange">{act.category}</span>
                   <span className="badge badge-neutral">{act.eventType}</span>
                 </div>
+
+                {isEditor && (
+                  <button
+                    type="button"
+                    onClick={(e) => handleOpenEditModal(act, e)}
+                    style={{
+                      position: 'absolute',
+                      top: '0.65rem',
+                      right: '0.65rem',
+                      background: 'rgba(0,0,0,0.7)',
+                      color: '#FFF',
+                      border: '1px solid rgba(255,255,255,0.2)',
+                      borderRadius: '8px',
+                      padding: '0.35rem 0.5rem',
+                      fontSize: '0.75rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.25rem'
+                    }}
+                  >
+                    <Edit3 size={12} /> Edit
+                  </button>
+                )}
               </div>
 
               <div style={{ padding: '1.25rem', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
@@ -403,6 +567,15 @@ export const ActivitiesPage: React.FC<Props> = ({
           ))}
         </div>
       )}
+
+      {/* MODAL: EVENT EDITOR MODAL */}
+      <EventEditorModal
+        isOpen={isModalOpen}
+        activity={editingActivity}
+        isFeaturedOnHome={editingActivity ? editingActivity.id === featuredActivityId : false}
+        onClose={() => setIsModalOpen(false)}
+        onSave={handleSaveModal}
+      />
     </div>
   );
 };
