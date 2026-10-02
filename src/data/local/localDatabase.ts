@@ -125,12 +125,7 @@ export const localDatabase = {
     const loaded = getItem<SiteSettings>(STORAGE_KEYS.SETTINGS, INITIAL_SETTINGS);
     return {
       ...INITIAL_SETTINGS,
-      ...loaded,
-      heroHeading: loaded?.heroHeading || INITIAL_SETTINGS.heroHeading,
-      communityStoryImageUrl: loaded?.communityStoryImageUrl || INITIAL_SETTINGS.communityStoryImageUrl,
-      statistics: loaded?.statistics && loaded.statistics.length > 0 ? loaded.statistics : INITIAL_SETTINGS.statistics,
-      announcements: loaded?.announcements && loaded.announcements.length > 0 ? loaded.announcements : INITIAL_SETTINGS.announcements,
-      timelineMilestones: loaded?.timelineMilestones && loaded.timelineMilestones.length > 0 ? loaded.timelineMilestones : INITIAL_SETTINGS.timelineMilestones
+      ...(loaded || {})
     };
   },
   saveSettings: (data: SiteSettings): void => setItem(STORAGE_KEYS.SETTINGS, data),

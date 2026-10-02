@@ -42,7 +42,7 @@ export const AboutPage: React.FC<Props> = ({ leadership, settings, onNavigate })
   return (
     <div className="container" style={{ paddingTop: '3rem', paddingBottom: '6rem' }}>
       {/* Header */}
-      <div style={{ maxWidth: '850px', marginBottom: '3.5rem' }}>
+      <div style={{ maxWidth: '850px', marginBottom: '3rem' }}>
         <span className="badge badge-orange" style={{ marginBottom: '0.5rem' }}>
           {settings.aboutBadge || 'Institutional Legacy & Leadership'}
         </span>
@@ -52,6 +52,68 @@ export const AboutPage: React.FC<Props> = ({ leadership, settings, onNavigate })
         <p style={{ fontSize: '1.1rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
           {settings.aboutDescription || 'Founded at ACE Engineering College, our mission is to cultivate world-class automation engineers, bridge academia with Fortune-500 enterprise RPA practices, and maintain a permanent institutional repository of student innovations.'}
         </p>
+      </div>
+
+      {/* Community Origin Story & Visual Showcase */}
+      <div className="glass-panel" style={{
+        padding: '2.25rem',
+        background: 'linear-gradient(135deg, rgba(250, 70, 22, 0.05) 0%, rgba(20, 20, 20, 0.6) 100%)',
+        border: '1px solid var(--border-subtle)',
+        borderRadius: 'var(--radius-lg)',
+        marginBottom: '3.5rem',
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+        gap: '2.5rem',
+        alignItems: 'center'
+      }}>
+        <div>
+          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--uipath-orange)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
+            COMMUNITY ORIGIN & PURPOSE
+          </div>
+          <h2 style={{ fontSize: '1.75rem', fontWeight: 800, marginBottom: '1rem', color: 'var(--text-primary)' }}>
+            {settings.communityStoryHeading || 'Built by Students, Powered by UiPath'}
+          </h2>
+          <p style={{ fontSize: '0.975rem', color: 'var(--text-secondary)', lineHeight: 1.65, marginBottom: '1.25rem' }}>
+            {settings.communityStoryText || 'Founded in 2022 under the department of CSE & IT, the ACE UiPath Community started as a group of 15 students eager to automate routine campus processes. Today, it stands as one of the premier student automation hubs in the region.'}
+          </p>
+          <div style={{
+            padding: '0.85rem 1.15rem',
+            borderLeft: '3px solid var(--uipath-orange)',
+            background: 'var(--bg-primary)',
+            borderRadius: '0 var(--radius-sm) var(--radius-sm) 0',
+            fontSize: '0.875rem',
+            color: '#FED7AA'
+          }}>
+            {settings.communityStoryHighlight || 'Recognized by UiPath Academic Alliance with 450+ students trained and 38 software bots deployed across college administration.'}
+          </div>
+        </div>
+
+        <div style={{
+          borderRadius: '14px',
+          overflow: 'hidden',
+          border: '1px solid var(--border-subtle)',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+          position: 'relative'
+        }}>
+          <img
+            src={settings.communityStoryImageUrl || '/ace-campus.jpg'}
+            alt="ACE Campus Community Hub"
+            style={{ width: '100%', maxHeight: '260px', objectFit: 'cover', display: 'block' }}
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = '/ace-campus.jpg';
+            }}
+          />
+          <div style={{
+            padding: '0.65rem 1rem',
+            background: 'rgba(0,0,0,0.75)',
+            backdropFilter: 'blur(8px)',
+            fontSize: '0.75rem',
+            color: 'var(--text-muted)',
+            textAlign: 'center'
+          }}>
+            ACE Engineering College Campus, Hyderabad — Home of the UiPath Student Community
+          </div>
+        </div>
       </div>
 
       {/* History & Foundation Cards */}

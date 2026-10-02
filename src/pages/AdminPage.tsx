@@ -198,6 +198,7 @@ export const AdminPage: React.FC<Props> = ({
   const [allianceId, setAllianceId] = useState(settings.uipathAllianceId || '');
   const [communityEmail, setCommunityEmail] = useState(settings.communityEmail || 'uipath.community@aceec.ac.in');
   const campusImageFileInputRef = useRef<HTMLInputElement | null>(null);
+  const aboutImageFileInputRef = useRef<HTMLInputElement | null>(null);
 
   // ABOUT PAGE & STORY FORM STATE
   const [aboutBadge, setAboutBadge] = useState(settings.aboutBadge || 'Institutional Legacy & Leadership');
@@ -229,10 +230,10 @@ export const AdminPage: React.FC<Props> = ({
     setSecondaryCtaLink(settings.secondaryCtaLink || 'learn');
     setFeaturedActivityId(settings.featuredActivityId || activities[0]?.id || '');
     setStoryHeading(settings.communityStoryHeading || 'Built by Students, Powered by UiPath');
-    setStoryText(settings.communityStoryText || '');
-    setStoryHighlight(settings.communityStoryHighlight || '');
+    setStoryText(settings.communityStoryText || 'Founded in 2022 under the department of CSE & IT, the ACE UiPath Community started as a group of 15 students eager to automate routine campus processes. Today, it stands as one of the premier student automation hubs in the region.');
+    setStoryHighlight(settings.communityStoryHighlight || 'Recognized by UiPath Academic Alliance with 450+ students trained and 38 software bots deployed across college administration.');
     setStoryImageUrl(settings.communityStoryImageUrl || '/ace-campus.jpg');
-    setAllianceId(settings.uipathAllianceId || '');
+    setAllianceId(settings.uipathAllianceId || 'ACE-UIPATH-EDU-ALLIANCE-9421');
     setCommunityEmail(settings.communityEmail || 'uipath.community@aceec.ac.in');
 
     // Sync About Page Settings
@@ -270,15 +271,18 @@ export const AdminPage: React.FC<Props> = ({
       communityStoryText: storyText,
       communityStoryHighlight: storyHighlight,
       communityStoryImageUrl: storyImageUrl,
-      uipathAllianceId: allianceId,
       communityEmail
     });
-    showToast('Homepage content saved successfully! Changes are live.');
+    showToast('Homepage & Community Story saved successfully! Changes are live.');
   };
 
   const handleSaveAboutPage = (e: React.FormEvent) => {
     e.preventDefault();
     onUpdateSettings({
+      communityStoryHeading: storyHeading,
+      communityStoryText: storyText,
+      communityStoryHighlight: storyHighlight,
+      communityStoryImageUrl: storyImageUrl,
       aboutBadge,
       aboutTitle,
       aboutDescription,
@@ -301,7 +305,11 @@ export const AdminPage: React.FC<Props> = ({
   };
 
   const handleResetAboutDefaults = () => {
-    if (!window.confirm('Reset all About Page texts back to the institutional defaults?')) return;
+    if (!window.confirm('Reset all About Page and Story texts back to the institutional defaults?')) return;
+    setStoryHeading('Built by Students, Powered by UiPath');
+    setStoryText('Founded in 2022 under the department of CSE & IT, the ACE UiPath Community started as a group of 15 students eager to automate routine campus processes. Today, it stands as one of the premier student automation hubs in the region.');
+    setStoryHighlight('Recognized by UiPath Academic Alliance with 450+ students trained and 38 software bots deployed across college administration.');
+    setStoryImageUrl('/ace-campus.jpg');
     setAboutBadge('Institutional Legacy & Leadership');
     setAboutTitle('The Story of ACE UiPath Community');
     setAboutDescription('Founded at ACE Engineering College, our mission is to cultivate world-class automation engineers, bridge academia with Fortune-500 enterprise RPA practices, and maintain a permanent institutional repository of student innovations.');
@@ -1236,11 +1244,131 @@ export const AdminPage: React.FC<Props> = ({
 
               <form onSubmit={handleSaveAboutPage} style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                 
-                {/* SECTION 1: HEADER & MISSION */}
+                {/* SECTION 1: COMMUNITY ORIGIN STORY & VISUAL MEDIA */}
                 <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', padding: '1.5rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
                     <Sparkles size={18} style={{ color: 'var(--uipath-orange)' }} />
-                    <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>1. Header & Community Mission</h3>
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>1. Community Story & Campus Visual</h3>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                    <div>
+                      <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                        STORY SECTION HEADING
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={storyHeading}
+                        onChange={(e) => setStoryHeading(e.target.value)}
+                        placeholder="Built by Students, Powered by UiPath"
+                        style={{ width: '100%', padding: '0.7rem', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', color: '#FFF', marginTop: '0.35rem', fontSize: '0.95rem' }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                        STORY ORIGIN PARAGRAPH
+                      </label>
+                      <textarea
+                        rows={3}
+                        required
+                        value={storyText}
+                        onChange={(e) => setStoryText(e.target.value)}
+                        placeholder="Founded in 2022 under the department of CSE & IT..."
+                        style={{ width: '100%', padding: '0.7rem', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', color: '#FFF', marginTop: '0.35rem', fontSize: '0.9rem', lineHeight: 1.5 }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                        HIGHLIGHT CALLOUT BOX TEXT
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={storyHighlight}
+                        onChange={(e) => setStoryHighlight(e.target.value)}
+                        placeholder="Recognized by UiPath Academic Alliance with 450+ students trained..."
+                        style={{ width: '100%', padding: '0.7rem', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', color: '#FFF', marginTop: '0.35rem', fontSize: '0.9rem' }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                        CAMPUS / COMMUNITY IMAGE VISUAL
+                      </label>
+                      <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.35rem', alignItems: 'center' }}>
+                        <input
+                          type="text"
+                          value={storyImageUrl}
+                          onChange={(e) => setStoryImageUrl(e.target.value)}
+                          placeholder="/ace-campus.jpg"
+                          style={{ flex: 1, padding: '0.65rem', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', color: '#FFF' }}
+                        />
+                        <input
+                          type="file"
+                          ref={aboutImageFileInputRef}
+                          accept="image/*"
+                          style={{ display: 'none' }}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              if (file.size > 5 * 1024 * 1024) {
+                                alert('Image exceeds 5MB limit.');
+                                return;
+                              }
+                              const reader = new FileReader();
+                              reader.onload = (evt) => {
+                                const result = evt.target?.result as string;
+                                if (result) {
+                                  setStoryImageUrl(result);
+                                }
+                              };
+                              reader.readAsDataURL(file);
+                            }
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => aboutImageFileInputRef.current?.click()}
+                          className="btn btn-secondary btn-sm"
+                          style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', whiteSpace: 'nowrap' }}
+                        >
+                          <Upload size={14} /> Upload Image
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setStoryImageUrl('/ace-campus.jpg')}
+                          className="btn btn-secondary btn-sm"
+                          title="Reset to default ACE Campus Photo"
+                          style={{ whiteSpace: 'nowrap' }}
+                        >
+                          Campus Default
+                        </button>
+                      </div>
+
+                      {storyImageUrl && (
+                        <div style={{ marginTop: '0.75rem', maxWidth: '400px', borderRadius: 'var(--radius-sm)', overflow: 'hidden', border: '1px solid var(--border-subtle)' }}>
+                          <img
+                            src={storyImageUrl}
+                            alt="Story Visual Preview"
+                            style={{ width: '100%', maxHeight: '200px', objectFit: 'cover', display: 'block' }}
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = '/ace-campus.jpg';
+                            }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* SECTION 2: HEADER & MISSION */}
+                <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', padding: '1.5rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                    <BookOpen size={18} style={{ color: 'var(--uipath-orange)' }} />
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>2. Header & Institutional Mission</h3>
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>

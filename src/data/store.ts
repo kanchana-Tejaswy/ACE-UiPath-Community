@@ -96,9 +96,6 @@ export function useCommunityStore() {
               ...remoteSettings,
               ...localSettings
             };
-            if (!mergedSettings.communityStoryImageUrl || mergedSettings.communityStoryImageUrl.includes('photo-1522071820081')) {
-              mergedSettings.communityStoryImageUrl = '/ace-campus.jpg';
-            }
             setSettings(mergedSettings);
             localDatabase.saveSettings(mergedSettings);
           }
