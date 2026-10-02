@@ -44,13 +44,13 @@ export const AboutPage: React.FC<Props> = ({ leadership, settings, onNavigate })
       {/* Header */}
       <div style={{ maxWidth: '850px', marginBottom: '3.5rem' }}>
         <span className="badge badge-orange" style={{ marginBottom: '0.5rem' }}>
-          Institutional Legacy & Leadership
+          {settings.aboutBadge || 'Institutional Legacy & Leadership'}
         </span>
         <h1 style={{ fontSize: 'clamp(2rem, 4vw, 2.8rem)', fontWeight: 800, marginBottom: '1rem' }}>
-          The Story of ACE UiPath Community
+          {settings.aboutTitle || 'The Story of ACE UiPath Community'}
         </h1>
         <p style={{ fontSize: '1.1rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-          Founded at ACE Engineering College, our mission is to cultivate world-class automation engineers, bridge academia with Fortune-500 enterprise RPA practices, and maintain a permanent institutional repository of student innovations.
+          {settings.aboutDescription || 'Founded at ACE Engineering College, our mission is to cultivate world-class automation engineers, bridge academia with Fortune-500 enterprise RPA practices, and maintain a permanent institutional repository of student innovations.'}
         </p>
       </div>
 
@@ -63,25 +63,25 @@ export const AboutPage: React.FC<Props> = ({ leadership, settings, onNavigate })
       }}>
         <div className="glass-card" style={{ padding: '2rem' }}>
           <h3 style={{ fontSize: '1.3rem', marginBottom: '1rem', color: 'var(--text-primary)' }}>
-            The Genesis (2022)
+            {settings.aboutGenesisTitle || 'The Genesis (2022)'}
           </h3>
           <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '1rem' }}>
-            Recognizing the exponential rise of Robotic Process Automation in Fortune 500 enterprises, student visionary Siddharth Rao and faculty mentor Dr. S. K. Murthy established the ACE UiPath Student Chapter in 2022.
+            {settings.aboutGenesisParagraph1 || 'Recognizing the exponential rise of Robotic Process Automation in Fortune 500 enterprises, student visionary Siddharth Rao and faculty mentor Dr. S. K. Murthy established the ACE UiPath Student Chapter in 2022.'}
           </p>
           <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-            What began as an informal 20-student study circle quickly evolved into a campus-wide center of excellence, securing official recognition from the <strong>UiPath Academic Alliance</strong>.
+            {settings.aboutGenesisParagraph2 || 'What began as an informal 20-student study circle quickly evolved into a campus-wide center of excellence, securing official recognition from the UiPath Academic Alliance.'}
           </p>
         </div>
 
         <div className="glass-card" style={{ padding: '2rem' }}>
           <h3 style={{ fontSize: '1.3rem', marginBottom: '1rem', color: 'var(--text-primary)' }}>
-            Scaling to Enterprise Impact (2024-2026)
+            {settings.aboutImpactTitle || 'Scaling to Enterprise Impact (2024-2026)'}
           </h3>
           <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '1rem' }}>
-            Under the leadership of Kanchana Tejaswy and Rohit Varma, the community transitioned from basic script training to building real-world enterprise automations.
+            {settings.aboutImpactParagraph1 || 'Under the leadership of Kanchana Tejaswy and Rohit Varma, the community transitioned from basic script training to building real-world enterprise automations.'}
           </p>
           <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-            Students engineered bots that automate college result calculations, Koha LMS library fines, and medical prescription parsing, saving thousands of faculty hours.
+            {settings.aboutImpactParagraph2 || 'Students engineered bots that automate college result calculations, Koha LMS library fines, and medical prescription parsing, saving thousands of faculty hours.'}
           </p>
         </div>
       </div>
@@ -97,11 +97,15 @@ export const AboutPage: React.FC<Props> = ({ leadership, settings, onNavigate })
           <div style={{ maxWidth: '680px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
               <Award size={18} style={{ color: 'var(--uipath-orange)' }} />
-              <span style={{ fontWeight: 700, fontSize: '0.9rem', color: '#FED7AA' }}>OFFICIAL ACCREDITATION</span>
+              <span style={{ fontWeight: 700, fontSize: '0.9rem', color: '#FED7AA' }}>
+                {settings.aboutAccreditationBadge || 'OFFICIAL ACCREDITATION'}
+              </span>
             </div>
-            <h3 style={{ fontSize: '1.65rem', marginBottom: '0.75rem' }}>UiPath Academic Alliance Educator Partner</h3>
+            <h3 style={{ fontSize: '1.65rem', marginBottom: '0.75rem' }}>
+              {settings.aboutAccreditationTitle || 'UiPath Academic Alliance Educator Partner'}
+            </h3>
             <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-              ACE Engineering College is an official member of the global UiPath Academic Alliance. Our curriculum aligns directly with the official <strong>UiPath Certified Associate & Advanced RPA Developer</strong> blueprints.
+              {settings.aboutAccreditationDescription || 'ACE Engineering College is an official member of the global UiPath Academic Alliance. Our curriculum aligns directly with the official UiPath Certified Associate & Advanced RPA Developer blueprints.'}
             </p>
           </div>
 
@@ -113,7 +117,9 @@ export const AboutPage: React.FC<Props> = ({ leadership, settings, onNavigate })
               border: '1px solid var(--border-subtle)',
               textAlign: 'center'
             }}>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>ALLIANCE PARTNER ID</div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                {settings.aboutAllianceIdLabel || 'ALLIANCE PARTNER ID'}
+              </div>
               <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '1rem', color: '#FA4616', marginTop: '0.25rem' }}>
                 {settings.uipathAllianceId}
               </div>
@@ -125,10 +131,14 @@ export const AboutPage: React.FC<Props> = ({ leadership, settings, onNavigate })
       {/* Leadership Directory */}
       <div style={{ marginBottom: '4rem' }}>
         <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
-          <span className="badge badge-orange" style={{ marginBottom: '0.5rem' }}>Community Stewards</span>
-          <h2 style={{ fontSize: '2.2rem' }}>Leadership & Core Team Wall</h2>
+          <span className="badge badge-orange" style={{ marginBottom: '0.5rem' }}>
+            {settings.aboutLeadershipBadge || 'Community Stewards'}
+          </span>
+          <h2 style={{ fontSize: '2.2rem' }}>
+            {settings.aboutLeadershipTitle || 'Leadership & Core Team Wall'}
+          </h2>
           <p style={{ fontSize: '1rem', color: 'var(--text-secondary)', maxWidth: '600px', margin: '0.5rem auto 0 auto' }}>
-            The dedicated students, faculty advisors, and alumni mentors who steer the ACE UiPath Community.
+            {settings.aboutLeadershipSubtitle || 'The dedicated students, faculty advisors, and alumni mentors who steer the ACE UiPath Community.'}
           </p>
 
           {/* Multi-Role Category Filter Pills */}

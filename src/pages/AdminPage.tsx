@@ -36,7 +36,8 @@ import {
   PlayCircle,
   GraduationCap,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Award
 } from 'lucide-react';
 
 import { 
@@ -168,7 +169,7 @@ export const AdminPage: React.FC<Props> = ({
   articles = []
 }) => {
   const [activeTab, setActiveTab] = useState<
-    'homepage' | 'statistics' | 'events' | 'projects' | 'learning' | 'blogs' | 'hackathons' | 'resources' | 'timeline' | 'team' | 'announcements' | 'review_queue' | 'users' | 'analytics' | 'backup'
+    'homepage' | 'about' | 'statistics' | 'events' | 'projects' | 'learning' | 'blogs' | 'hackathons' | 'resources' | 'timeline' | 'team' | 'announcements' | 'review_queue' | 'users' | 'analytics' | 'backup'
   >('homepage');
 
   const [articleFilter, setArticleFilter] = useState<'ALL' | 'PUBLISHED' | 'SCHEDULED' | 'DRAFT'>('ALL');
@@ -198,6 +199,25 @@ export const AdminPage: React.FC<Props> = ({
   const [communityEmail, setCommunityEmail] = useState(settings.communityEmail || 'uipath.community@aceec.ac.in');
   const campusImageFileInputRef = useRef<HTMLInputElement | null>(null);
 
+  // ABOUT PAGE & STORY FORM STATE
+  const [aboutBadge, setAboutBadge] = useState(settings.aboutBadge || 'Institutional Legacy & Leadership');
+  const [aboutTitle, setAboutTitle] = useState(settings.aboutTitle || 'The Story of ACE UiPath Community');
+  const [aboutDescription, setAboutDescription] = useState(settings.aboutDescription || 'Founded at ACE Engineering College, our mission is to cultivate world-class automation engineers, bridge academia with Fortune-500 enterprise RPA practices, and maintain a permanent institutional repository of student innovations.');
+  const [aboutGenesisTitle, setAboutGenesisTitle] = useState(settings.aboutGenesisTitle || 'The Genesis (2022)');
+  const [aboutGenesisParagraph1, setAboutGenesisParagraph1] = useState(settings.aboutGenesisParagraph1 || 'Recognizing the exponential rise of Robotic Process Automation in Fortune 500 enterprises, student visionary Siddharth Rao and faculty mentor Dr. S. K. Murthy established the ACE UiPath Student Chapter in 2022.');
+  const [aboutGenesisParagraph2, setAboutGenesisParagraph2] = useState(settings.aboutGenesisParagraph2 || 'What began as an informal 20-student study circle quickly evolved into a campus-wide center of excellence, securing official recognition from the UiPath Academic Alliance.');
+  const [aboutImpactTitle, setAboutImpactTitle] = useState(settings.aboutImpactTitle || 'Scaling to Enterprise Impact (2024-2026)');
+  const [aboutImpactParagraph1, setAboutImpactParagraph1] = useState(settings.aboutImpactParagraph1 || 'Under the leadership of Kanchana Tejaswy and Rohit Varma, the community transitioned from basic script training to building real-world enterprise automations.');
+  const [aboutImpactParagraph2, setAboutImpactParagraph2] = useState(settings.aboutImpactParagraph2 || 'Students engineered bots that automate college result calculations, Koha LMS library fines, and medical prescription parsing, saving thousands of faculty hours.');
+  const [aboutAccreditationBadge, setAboutAccreditationBadge] = useState(settings.aboutAccreditationBadge || 'OFFICIAL ACCREDITATION');
+  const [aboutAccreditationTitle, setAboutAccreditationTitle] = useState(settings.aboutAccreditationTitle || 'UiPath Academic Alliance Educator Partner');
+  const [aboutAccreditationDescription, setAboutAccreditationDescription] = useState(settings.aboutAccreditationDescription || 'ACE Engineering College is an official member of the global UiPath Academic Alliance. Our curriculum aligns directly with the official UiPath Certified Associate & Advanced RPA Developer blueprints.');
+  const [aboutAllianceIdLabel, setAboutAllianceIdLabel] = useState(settings.aboutAllianceIdLabel || 'ALLIANCE PARTNER ID');
+  const [aboutAllianceId, setAboutAllianceId] = useState(settings.uipathAllianceId || 'ACE-UIPATH-EDU-ALLIANCE-9421');
+  const [aboutLeadershipBadge, setAboutLeadershipBadge] = useState(settings.aboutLeadershipBadge || 'Community Stewards');
+  const [aboutLeadershipTitle, setAboutLeadershipTitle] = useState(settings.aboutLeadershipTitle || 'Leadership & Core Team Wall');
+  const [aboutLeadershipSubtitle, setAboutLeadershipSubtitle] = useState(settings.aboutLeadershipSubtitle || 'The dedicated students, faculty advisors, and alumni mentors who steer the ACE UiPath Community.');
+
   // Sync state whenever settings update from upstream database/cloud
   useEffect(() => {
     setHeroHeading(settings.heroHeading || 'ACE UiPath Community');
@@ -214,6 +234,25 @@ export const AdminPage: React.FC<Props> = ({
     setStoryImageUrl(settings.communityStoryImageUrl || '/ace-campus.jpg');
     setAllianceId(settings.uipathAllianceId || '');
     setCommunityEmail(settings.communityEmail || 'uipath.community@aceec.ac.in');
+
+    // Sync About Page Settings
+    setAboutBadge(settings.aboutBadge || 'Institutional Legacy & Leadership');
+    setAboutTitle(settings.aboutTitle || 'The Story of ACE UiPath Community');
+    setAboutDescription(settings.aboutDescription || 'Founded at ACE Engineering College, our mission is to cultivate world-class automation engineers, bridge academia with Fortune-500 enterprise RPA practices, and maintain a permanent institutional repository of student innovations.');
+    setAboutGenesisTitle(settings.aboutGenesisTitle || 'The Genesis (2022)');
+    setAboutGenesisParagraph1(settings.aboutGenesisParagraph1 || 'Recognizing the exponential rise of Robotic Process Automation in Fortune 500 enterprises, student visionary Siddharth Rao and faculty mentor Dr. S. K. Murthy established the ACE UiPath Student Chapter in 2022.');
+    setAboutGenesisParagraph2(settings.aboutGenesisParagraph2 || 'What began as an informal 20-student study circle quickly evolved into a campus-wide center of excellence, securing official recognition from the UiPath Academic Alliance.');
+    setAboutImpactTitle(settings.aboutImpactTitle || 'Scaling to Enterprise Impact (2024-2026)');
+    setAboutImpactParagraph1(settings.aboutImpactParagraph1 || 'Under the leadership of Kanchana Tejaswy and Rohit Varma, the community transitioned from basic script training to building real-world enterprise automations.');
+    setAboutImpactParagraph2(settings.aboutImpactParagraph2 || 'Students engineered bots that automate college result calculations, Koha LMS library fines, and medical prescription parsing, saving thousands of faculty hours.');
+    setAboutAccreditationBadge(settings.aboutAccreditationBadge || 'OFFICIAL ACCREDITATION');
+    setAboutAccreditationTitle(settings.aboutAccreditationTitle || 'UiPath Academic Alliance Educator Partner');
+    setAboutAccreditationDescription(settings.aboutAccreditationDescription || 'ACE Engineering College is an official member of the global UiPath Academic Alliance. Our curriculum aligns directly with the official UiPath Certified Associate & Advanced RPA Developer blueprints.');
+    setAboutAllianceIdLabel(settings.aboutAllianceIdLabel || 'ALLIANCE PARTNER ID');
+    setAboutAllianceId(settings.uipathAllianceId || 'ACE-UIPATH-EDU-ALLIANCE-9421');
+    setAboutLeadershipBadge(settings.aboutLeadershipBadge || 'Community Stewards');
+    setAboutLeadershipTitle(settings.aboutLeadershipTitle || 'Leadership & Core Team Wall');
+    setAboutLeadershipSubtitle(settings.aboutLeadershipSubtitle || 'The dedicated students, faculty advisors, and alumni mentors who steer the ACE UiPath Community.');
   }, [settings, activities]);
 
   const handleSaveHomepage = (e: React.FormEvent) => {
@@ -235,6 +274,51 @@ export const AdminPage: React.FC<Props> = ({
       communityEmail
     });
     showToast('Homepage content saved successfully! Changes are live.');
+  };
+
+  const handleSaveAboutPage = (e: React.FormEvent) => {
+    e.preventDefault();
+    onUpdateSettings({
+      aboutBadge,
+      aboutTitle,
+      aboutDescription,
+      aboutGenesisTitle,
+      aboutGenesisParagraph1,
+      aboutGenesisParagraph2,
+      aboutImpactTitle,
+      aboutImpactParagraph1,
+      aboutImpactParagraph2,
+      aboutAccreditationBadge,
+      aboutAccreditationTitle,
+      aboutAccreditationDescription,
+      aboutAllianceIdLabel,
+      aboutLeadershipBadge,
+      aboutLeadershipTitle,
+      aboutLeadershipSubtitle,
+      uipathAllianceId: aboutAllianceId
+    });
+    showToast('About Page & Story content saved successfully! Changes are live.');
+  };
+
+  const handleResetAboutDefaults = () => {
+    if (!window.confirm('Reset all About Page texts back to the institutional defaults?')) return;
+    setAboutBadge('Institutional Legacy & Leadership');
+    setAboutTitle('The Story of ACE UiPath Community');
+    setAboutDescription('Founded at ACE Engineering College, our mission is to cultivate world-class automation engineers, bridge academia with Fortune-500 enterprise RPA practices, and maintain a permanent institutional repository of student innovations.');
+    setAboutGenesisTitle('The Genesis (2022)');
+    setAboutGenesisParagraph1('Recognizing the exponential rise of Robotic Process Automation in Fortune 500 enterprises, student visionary Siddharth Rao and faculty mentor Dr. S. K. Murthy established the ACE UiPath Student Chapter in 2022.');
+    setAboutGenesisParagraph2('What began as an informal 20-student study circle quickly evolved into a campus-wide center of excellence, securing official recognition from the UiPath Academic Alliance.');
+    setAboutImpactTitle('Scaling to Enterprise Impact (2024-2026)');
+    setAboutImpactParagraph1('Under the leadership of Kanchana Tejaswy and Rohit Varma, the community transitioned from basic script training to building real-world enterprise automations.');
+    setAboutImpactParagraph2('Students engineered bots that automate college result calculations, Koha LMS library fines, and medical prescription parsing, saving thousands of faculty hours.');
+    setAboutAccreditationBadge('OFFICIAL ACCREDITATION');
+    setAboutAccreditationTitle('UiPath Academic Alliance Educator Partner');
+    setAboutAccreditationDescription('ACE Engineering College is an official member of the global UiPath Academic Alliance. Our curriculum aligns directly with the official UiPath Certified Associate & Advanced RPA Developer blueprints.');
+    setAboutAllianceIdLabel('ALLIANCE PARTNER ID');
+    setAboutAllianceId('ACE-UIPATH-EDU-ALLIANCE-9421');
+    setAboutLeadershipBadge('Community Stewards');
+    setAboutLeadershipTitle('Leadership & Core Team Wall');
+    setAboutLeadershipSubtitle('The dedicated students, faculty advisors, and alumni mentors who steer the ACE UiPath Community.');
   };
 
   // 2. STATISTICS STATE & MODAL
@@ -824,6 +908,7 @@ export const AdminPage: React.FC<Props> = ({
 
           {[
             { id: 'homepage', label: 'Homepage Content', icon: LayoutDashboard },
+            { id: 'about', label: 'About & Story Page', icon: Sparkles },
             { id: 'statistics', label: `Statistics (${currentStatistics.length})`, icon: BarChart3 },
             { id: 'events', label: `Events & Meetups (${activities.length})`, icon: Calendar },
             { id: 'projects', label: `Student Projects (${projects.length})`, icon: Trophy },
@@ -1108,6 +1193,361 @@ export const AdminPage: React.FC<Props> = ({
                 <div style={{ paddingTop: '1rem' }}>
                   <button type="submit" className="btn btn-primary">
                     <Save size={16} /> Save Homepage Changes
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* TAB: ABOUT & STORY PAGE CMS */}
+          {activeTab === 'about' && (
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '1rem' }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                    <span className="badge badge-orange">About Page CMS</span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Public Story & Accreditation Control</span>
+                  </div>
+                  <h2 style={{ fontSize: '1.4rem', fontWeight: 700 }}>About & Institutional Story Settings</h2>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                    Customize the public story, historical genesis cards, enterprise impact milestones, accreditation details, and leadership wall header.
+                  </p>
+                </div>
+
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button
+                    type="button"
+                    onClick={handleResetAboutDefaults}
+                    className="btn btn-secondary btn-sm"
+                    title="Reset all fields to default institutional content"
+                  >
+                    Reset Defaults
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onNavigate('about')}
+                    className="btn btn-secondary btn-sm"
+                    style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+                  >
+                    <ExternalLink size={13} /> View Live About Page
+                  </button>
+                </div>
+              </div>
+
+              <form onSubmit={handleSaveAboutPage} style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                
+                {/* SECTION 1: HEADER & MISSION */}
+                <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', padding: '1.5rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                    <Sparkles size={18} style={{ color: 'var(--uipath-orange)' }} />
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>1. Header & Community Mission</h3>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                    <div>
+                      <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                        TOP BADGE TEXT
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={aboutBadge}
+                        onChange={(e) => setAboutBadge(e.target.value)}
+                        placeholder="Institutional Legacy & Leadership"
+                        style={{ width: '100%', padding: '0.7rem', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', color: '#FFF', marginTop: '0.35rem', fontSize: '0.9rem' }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                        MAIN PAGE HEADLINE (H1)
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={aboutTitle}
+                        onChange={(e) => setAboutTitle(e.target.value)}
+                        placeholder="The Story of ACE UiPath Community"
+                        style={{ width: '100%', padding: '0.7rem', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', color: '#FFF', marginTop: '0.35rem', fontSize: '0.95rem', fontWeight: 600 }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                        MISSION STATEMENT / INTRODUCTORY PARAGRAPH
+                      </label>
+                      <textarea
+                        rows={3}
+                        required
+                        value={aboutDescription}
+                        onChange={(e) => setAboutDescription(e.target.value)}
+                        placeholder="Founded at ACE Engineering College, our mission is..."
+                        style={{ width: '100%', padding: '0.7rem', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', color: '#FFF', marginTop: '0.35rem', fontSize: '0.9rem', lineHeight: 1.5 }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* SECTION 2: HISTORY CARDS */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem' }}>
+                  
+                  {/* Card 1: Genesis */}
+                  <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', padding: '1.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                      <History size={17} style={{ color: '#F97316' }} />
+                      <h3 style={{ fontSize: '1.05rem', fontWeight: 700 }}>2. Genesis & Foundation Card</h3>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                      <div>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                          CARD TITLE
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={aboutGenesisTitle}
+                          onChange={(e) => setAboutGenesisTitle(e.target.value)}
+                          placeholder="The Genesis (2022)"
+                          style={{ width: '100%', padding: '0.65rem', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', color: '#FFF', marginTop: '0.35rem', fontSize: '0.9rem' }}
+                        />
+                      </div>
+
+                      <div>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                          FIRST PARAGRAPH
+                        </label>
+                        <textarea
+                          rows={3}
+                          required
+                          value={aboutGenesisParagraph1}
+                          onChange={(e) => setAboutGenesisParagraph1(e.target.value)}
+                          style={{ width: '100%', padding: '0.65rem', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', color: '#FFF', marginTop: '0.35rem', fontSize: '0.85rem', lineHeight: 1.5 }}
+                        />
+                      </div>
+
+                      <div>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                          SECOND PARAGRAPH
+                        </label>
+                        <textarea
+                          rows={3}
+                          required
+                          value={aboutGenesisParagraph2}
+                          onChange={(e) => setAboutGenesisParagraph2(e.target.value)}
+                          style={{ width: '100%', padding: '0.65rem', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', color: '#FFF', marginTop: '0.35rem', fontSize: '0.85rem', lineHeight: 1.5 }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card 2: Impact */}
+                  <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', padding: '1.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                      <Trophy size={17} style={{ color: '#38BDF8' }} />
+                      <h3 style={{ fontSize: '1.05rem', fontWeight: 700 }}>3. Enterprise Scaling Card</h3>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                      <div>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                          CARD TITLE
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={aboutImpactTitle}
+                          onChange={(e) => setAboutImpactTitle(e.target.value)}
+                          placeholder="Scaling to Enterprise Impact (2024-2026)"
+                          style={{ width: '100%', padding: '0.65rem', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', color: '#FFF', marginTop: '0.35rem', fontSize: '0.9rem' }}
+                        />
+                      </div>
+
+                      <div>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                          FIRST PARAGRAPH
+                        </label>
+                        <textarea
+                          rows={3}
+                          required
+                          value={aboutImpactParagraph1}
+                          onChange={(e) => setAboutImpactParagraph1(e.target.value)}
+                          style={{ width: '100%', padding: '0.65rem', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', color: '#FFF', marginTop: '0.35rem', fontSize: '0.85rem', lineHeight: 1.5 }}
+                        />
+                      </div>
+
+                      <div>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                          SECOND PARAGRAPH
+                        </label>
+                        <textarea
+                          rows={3}
+                          required
+                          value={aboutImpactParagraph2}
+                          onChange={(e) => setAboutImpactParagraph2(e.target.value)}
+                          style={{ width: '100%', padding: '0.65rem', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', color: '#FFF', marginTop: '0.35rem', fontSize: '0.85rem', lineHeight: 1.5 }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* SECTION 3: UIPATH ALLIANCE ACCREDITATION */}
+                <div style={{ background: 'rgba(250, 70, 22, 0.04)', border: '1px solid rgba(250, 70, 22, 0.25)', borderRadius: 'var(--radius-md)', padding: '1.5rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                    <Award size={18} style={{ color: 'var(--uipath-orange)' }} />
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#FED7AA' }}>
+                      4. UiPath Academic Alliance Accreditation Box
+                    </h3>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '1rem' }}>
+                      <div>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                          ACCREDITATION BADGE
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={aboutAccreditationBadge}
+                          onChange={(e) => setAboutAccreditationBadge(e.target.value)}
+                          placeholder="OFFICIAL ACCREDITATION"
+                          style={{ width: '100%', padding: '0.65rem', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', color: '#FFF', marginTop: '0.35rem', fontSize: '0.85rem' }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                          PARTNER TITLE
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={aboutAccreditationTitle}
+                          onChange={(e) => setAboutAccreditationTitle(e.target.value)}
+                          placeholder="UiPath Academic Alliance Educator Partner"
+                          style={{ width: '100%', padding: '0.65rem', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', color: '#FFF', marginTop: '0.35rem', fontSize: '0.85rem' }}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                        ACCREDITATION DESCRIPTION / CURRICULUM BLUEPRINT NOTE
+                      </label>
+                      <textarea
+                        rows={2}
+                        required
+                        value={aboutAccreditationDescription}
+                        onChange={(e) => setAboutAccreditationDescription(e.target.value)}
+                        style={{ width: '100%', padding: '0.65rem', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', color: '#FFF', marginTop: '0.35rem', fontSize: '0.85rem', lineHeight: 1.5 }}
+                      />
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                      <div>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                          PARTNER ID LABEL
+                        </label>
+                        <input
+                          type="text"
+                          value={aboutAllianceIdLabel}
+                          onChange={(e) => setAboutAllianceIdLabel(e.target.value)}
+                          placeholder="ALLIANCE PARTNER ID"
+                          style={{ width: '100%', padding: '0.65rem', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', color: '#FFF', marginTop: '0.35rem', fontSize: '0.85rem' }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                          ALLIANCE PARTNER ID CODE
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={aboutAllianceId}
+                          onChange={(e) => setAboutAllianceId(e.target.value)}
+                          placeholder="ACE-UIPATH-EDU-ALLIANCE-9421"
+                          style={{ width: '100%', padding: '0.65rem', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', color: '#FA4616', fontFamily: 'monospace', fontWeight: 700, marginTop: '0.35rem', fontSize: '0.85rem' }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* SECTION 4: LEADERSHIP DIRECTORY WALL HEADER */}
+                <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', padding: '1.5rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <Users size={18} style={{ color: 'var(--uipath-orange)' }} />
+                      <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>5. Leadership & Team Wall Section</h3>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('team')}
+                      className="btn btn-secondary btn-sm"
+                      style={{ fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+                    >
+                      <Users size={14} /> Manage Team Members ({leadership.length})
+                    </button>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '1rem' }}>
+                      <div>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                          SECTION BADGE
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={aboutLeadershipBadge}
+                          onChange={(e) => setAboutLeadershipBadge(e.target.value)}
+                          placeholder="Community Stewards"
+                          style={{ width: '100%', padding: '0.65rem', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', color: '#FFF', marginTop: '0.35rem', fontSize: '0.85rem' }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                          SECTION TITLE
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={aboutLeadershipTitle}
+                          onChange={(e) => setAboutLeadershipTitle(e.target.value)}
+                          placeholder="Leadership & Core Team Wall"
+                          style={{ width: '100%', padding: '0.65rem', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', color: '#FFF', marginTop: '0.35rem', fontSize: '0.85rem' }}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                        SECTION SUBTITLE / ROSTER INTRO
+                      </label>
+                      <textarea
+                        rows={2}
+                        required
+                        value={aboutLeadershipSubtitle}
+                        onChange={(e) => setAboutLeadershipSubtitle(e.target.value)}
+                        placeholder="The dedicated students, faculty advisors, and alumni mentors who steer the ACE UiPath Community."
+                        style={{ width: '100%', padding: '0.65rem', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', color: '#FFF', marginTop: '0.35rem', fontSize: '0.85rem', lineHeight: 1.5 }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* SAVE BUTTONS */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', paddingTop: '0.5rem', borderTop: '1px solid var(--border-subtle)' }}>
+                  <button type="submit" className="btn btn-primary" style={{ padding: '0.85rem 1.75rem', fontSize: '0.95rem' }}>
+                    <Save size={16} /> Save About Page Changes
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onNavigate('about')}
+                    className="btn btn-secondary"
+                  >
+                    Preview Public Page
                   </button>
                 </div>
               </form>

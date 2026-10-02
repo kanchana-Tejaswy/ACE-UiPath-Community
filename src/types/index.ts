@@ -399,6 +399,23 @@ export interface SiteSettings {
   communityStoryText?: string;
   communityStoryHighlight?: string;
   communityStoryImageUrl?: string;
+  // About Page & Story Customizations
+  aboutBadge?: string;
+  aboutTitle?: string;
+  aboutDescription?: string;
+  aboutGenesisTitle?: string;
+  aboutGenesisParagraph1?: string;
+  aboutGenesisParagraph2?: string;
+  aboutImpactTitle?: string;
+  aboutImpactParagraph1?: string;
+  aboutImpactParagraph2?: string;
+  aboutAccreditationBadge?: string;
+  aboutAccreditationTitle?: string;
+  aboutAccreditationDescription?: string;
+  aboutAllianceIdLabel?: string;
+  aboutLeadershipBadge?: string;
+  aboutLeadershipTitle?: string;
+  aboutLeadershipSubtitle?: string;
   communityEmail: string;
   communityDiscordUrl: string;
   communityWhatsappUrl: string;
