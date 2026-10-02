@@ -19,7 +19,10 @@ import {
   Linkedin,
   Edit3,
   Trash2,
-  Youtube
+  Youtube,
+  Sparkles,
+  Tag,
+  CheckSquare
 } from 'lucide-react';
 import { Activity, User } from '../types';
 import { hasPermission } from '../lib/security';
@@ -333,34 +336,94 @@ export const ActivityDetailPage: React.FC<Props> = ({
               </div>
             )}
 
-            {/* 1. OBJECTIVES & UIPATH TOPICS */}
-            <div className="glass-card" style={{ padding: '2rem' }}>
-              <h3 style={{ fontSize: '1.25rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <BookOpen size={18} style={{ color: 'var(--uipath-orange)' }} /> Session Objectives
-              </h3>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.75rem' }}>
-                {activity.objectives.map((obj, oIdx) => (
-                  <div key={oIdx} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.65rem' }}>
-                    <CheckCircle2 size={18} style={{ color: '#10B981', flexShrink: 0, marginTop: '0.15rem' }} />
-                    <span style={{ fontSize: '0.95rem', color: 'var(--text-primary)' }}>{obj}</span>
-                  </div>
-                ))}
-              </div>
-
-              <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '1.25rem' }}>
-                <div style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '0.65rem' }}>
-                  UiPath Technologies Covered:
+            {/* 1. EXECUTIVE SUMMARY HIGHLIGHT CARD */}
+            {activity.summary && (
+              <div className="glass-card" style={{ padding: '2rem', borderLeft: '4px solid var(--uipath-orange)', background: 'linear-gradient(135deg, rgba(250, 70, 22, 0.06) 0%, rgba(18, 18, 20, 0.7) 100%)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.75rem' }}>
+                  <Sparkles size={18} style={{ color: 'var(--uipath-orange)' }} />
+                  <h3 style={{ fontSize: '1.15rem', color: '#FFF', margin: 0, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Executive Summary
+                  </h3>
                 </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                <p style={{ fontSize: '1.05rem', color: 'var(--text-primary)', lineHeight: 1.7, margin: 0 }}>
+                  {activity.summary}
+                </p>
+              </div>
+            )}
+
+            {/* 2. DUAL MATRIX: KEY OBJECTIVES & LEARNING OUTCOMES */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
+              {/* Key Objectives */}
+              {activity.objectives && activity.objectives.length > 0 && (
+                <div className="glass-card" style={{ padding: '1.75rem', display: 'flex', flexDirection: 'column', height: '100%', borderColor: 'rgba(250, 70, 22, 0.25)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '1.25rem' }}>
+                    <div style={{ width: '34px', height: '34px', borderRadius: '8px', background: 'rgba(250, 70, 22, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--uipath-orange)' }}>
+                      <CheckSquare size={18} />
+                    </div>
+                    <div>
+                      <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#FFF', margin: 0 }}>Key Objectives</h3>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Core curriculum focus areas</span>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', flex: 1 }}>
+                    {activity.objectives.map((obj, oIdx) => (
+                      <div key={oIdx} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                        <CheckCircle2 size={18} style={{ color: 'var(--uipath-orange)', flexShrink: 0, marginTop: '0.15rem' }} />
+                        <span style={{ fontSize: '0.925rem', color: 'var(--text-primary)', lineHeight: 1.5 }}>{obj}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Learning Outcomes */}
+              {activity.learningOutcomes && activity.learningOutcomes.length > 0 && (
+                <div className="glass-card" style={{ padding: '1.75rem', display: 'flex', flexDirection: 'column', height: '100%', borderColor: 'rgba(16, 185, 129, 0.25)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '1.25rem' }}>
+                    <div style={{ width: '34px', height: '34px', borderRadius: '8px', background: 'rgba(16, 185, 129, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#10B981' }}>
+                      <Sparkles size={18} />
+                    </div>
+                    <div>
+                      <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#FFF', margin: 0 }}>Learning Outcomes</h3>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Skills & competencies acquired</span>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', flex: 1 }}>
+                    {activity.learningOutcomes.map((out, oIdx) => (
+                      <div key={oIdx} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                        <CheckCircle2 size={18} style={{ color: '#10B981', flexShrink: 0, marginTop: '0.15rem' }} />
+                        <span style={{ fontSize: '0.925rem', color: 'var(--text-primary)', lineHeight: 1.5 }}>{out}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 3. UIPATH TECHNOLOGIES COVERED */}
+            {activity.uipathTopicsCovered && activity.uipathTopicsCovered.length > 0 && (
+              <div className="glass-card" style={{ padding: '1.5rem 2rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.85rem' }}>
+                  <Tag size={16} style={{ color: 'var(--uipath-orange)' }} />
+                  <span style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: 700, letterSpacing: '0.05em' }}>
+                    UiPath Technologies & Tools Covered:
+                  </span>
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                   {activity.uipathTopicsCovered.map((topic, tIdx) => (
-                    <span key={tIdx} className="badge badge-orange">
+                    <span
+                      key={tIdx}
+                      className="badge badge-orange"
+                      style={{ fontSize: '0.85rem', padding: '0.4rem 0.85rem', fontWeight: 600, background: 'rgba(250, 70, 22, 0.12)', border: '1px solid rgba(250, 70, 22, 0.35)' }}
+                    >
                       {topic}
                     </span>
                   ))}
                 </div>
               </div>
-            </div>
+            )}
 
             {/* 2. WHAT HAPPENED (Detailed Description) */}
             <div className="glass-card" style={{ padding: '2rem' }}>
