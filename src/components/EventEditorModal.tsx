@@ -76,42 +76,11 @@ export const EventEditorModal: React.FC<Props> = ({
   const [isDirty, setIsDirty] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Initialize form when modal opens
-  useEffect(() => {
-    if (activity) {
-      setFormData({
-        ...activity,
-        speakers: activity.speakers && activity.speakers.length > 0 
-          ? activity.speakers 
-          : [{ id: `spk_${Date.now()}`, name: '', roleTitle: '', organization: '', avatarUrl: '', linkedinUrl: '', bio: '' }]
-      });
-      setIsFeatured(isFeaturedOnHome || activity.isFeatured || false);
-      setIsDirty(false);
-      setUploadError(null);
-
-      // Check dimensions of existing banner
-      if (activity.bannerImage) {
-        inspectImageDimensions(activity.bannerImage);
-      } else {
-        setImageSpecs(null);
-      }
-    }
-  }, [activity, isFeaturedOnHome, isOpen]);
-
-  // Handle Escape Key
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) {
-        onClose();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
-
-  if (!isOpen || !formData) return null;
-
   const inspectImageDimensions = (url: string) => {
+    if (!url) {
+      setImageSpecs(null);
+      return;
+    }
     const img = new Image();
     img.onload = () => {
       const w = img.naturalWidth;
@@ -185,7 +154,7 @@ export const EventEditorModal: React.FC<Props> = ({
 
   // Speaker Entity Management
   const updateSpeaker = (index: number, field: keyof ActivitySpeaker, value: string) => {
-    if (!formData.speakers) return;
+    if (!formData?.speakers) return;
     const updated = [...formData.speakers];
     updated[index] = { ...updated[index], [field]: value };
     updateField('speakers', updated);
@@ -201,17 +170,20 @@ export const EventEditorModal: React.FC<Props> = ({
       linkedinUrl: '',
       bio: ''
     };
-    updateField('speakers', [...(formData.speakers || []), newSpeaker]);
+    updateField('speakers', [...(formData?.speakers || []), newSpeaker]);
   };
 
   const removeSpeaker = (index: number) => {
-    if (!formData.speakers || formData.speakers.length <= 1) return;
+    if (!formData?.speakers || formData.speakers.length <= 1) return;
     const updated = formData.speakers.filter((_, i) => i !== index);
     updateField('speakers', updated);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = (e?: React.FormEvent | React.MouseEvent) => {
+    if (e && e.preventDefault) {
+      e.preventDefault();
+    }
+    if (!formData) return;
     if (!formData.title.trim()) {
       alert('Event title is required');
       return;
@@ -229,6 +201,41 @@ export const EventEditorModal: React.FC<Props> = ({
 
     onSave(activityToSave, isFeatured);
   };
+
+  // Initialize form when modal opens
+  useEffect(() => {
+    if (activity) {
+      setFormData({
+        ...activity,
+        speakers: activity.speakers && activity.speakers.length > 0 
+          ? activity.speakers 
+          : [{ id: `spk_${Date.now()}`, name: '', roleTitle: '', organization: '', avatarUrl: '', linkedinUrl: '', bio: '' }]
+      });
+      setIsFeatured(isFeaturedOnHome || activity.isFeatured || false);
+      setIsDirty(false);
+      setUploadError(null);
+
+      // Check dimensions of existing banner
+      if (activity.bannerImage) {
+        inspectImageDimensions(activity.bannerImage);
+      } else {
+        setImageSpecs(null);
+      }
+    }
+  }, [activity, isFeaturedOnHome, isOpen]);
+
+  // Handle Escape Key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
+  if (!isOpen || !formData) return null;
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 md:p-6 overflow-y-auto animate-in fade-in duration-200">
