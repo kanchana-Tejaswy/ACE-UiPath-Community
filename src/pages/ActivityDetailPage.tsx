@@ -18,7 +18,8 @@ import {
   Check,
   Linkedin,
   Edit3,
-  Trash2
+  Trash2,
+  Youtube
 } from 'lucide-react';
 import { Activity, User } from '../types';
 import { hasPermission } from '../lib/security';
@@ -35,6 +36,13 @@ interface Props {
   onNavigate: (view: string, detailId?: string) => void;
 }
 
+function getYouTubeEmbedUrl(url?: string): string | null {
+  if (!url) return null;
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=|live\/)([^#&?]*).*/;
+  const match = url.match(regExp);
+  return (match && match[2].length === 11) ? `https://www.youtube-nocookie.com/embed/${match[2]}` : null;
+}
+
 export const ActivityDetailPage: React.FC<Props> = ({
   slug,
   activities,
@@ -48,6 +56,7 @@ export const ActivityDetailPage: React.FC<Props> = ({
   const [copiedLink, setCopiedLink] = useState(false);
   const [activeGalleryIndex, setActiveGalleryIndex] = useState<number | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [editorInitialTab, setEditorInitialTab] = useState<'overview' | 'media' | 'speakers' | 'agenda' | 'vault'>('overview');
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
@@ -97,6 +106,16 @@ export const ActivityDetailPage: React.FC<Props> = ({
       }
     }
   };
+
+  const youtubeEmbedUrl = getYouTubeEmbedUrl(activity.recordingUrl);
+
+  const knowledgeLinks = (activity.knowledgeGraphLinks && activity.knowledgeGraphLinks.length > 0)
+    ? activity.knowledgeGraphLinks
+    : [
+        { id: 'kg_1', category: 'Learning Academy', title: 'Track 3: REFramework Architect', subtitle: 'State machines & queues', targetView: 'learn' },
+        { id: 'kg_2', category: 'Student Automations', title: 'Grade Extractor Bot', subtitle: 'Saves 45 hrs/semester', targetView: 'projects' },
+        { id: 'kg_3', category: 'Resources Vault', title: 'REFramework Production Starter', subtitle: 'Starter template ZIP', targetView: 'resources' }
+      ];
 
   return (
     <div style={{ paddingBottom: '6rem', position: 'relative' }}>
@@ -149,7 +168,10 @@ export const ActivityDetailPage: React.FC<Props> = ({
             {isEditor && (
               <>
                 <button
-                  onClick={() => setIsEditorOpen(true)}
+                  onClick={() => {
+                    setEditorInitialTab('overview');
+                    setIsEditorOpen(true);
+                  }}
                   className="btn btn-primary btn-sm"
                   style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: 'linear-gradient(135deg, var(--uipath-orange) 0%, #EA580C 100%)', boxShadow: '0 2px 10px rgba(250, 70, 22, 0.3)' }}
                 >
@@ -187,6 +209,11 @@ export const ActivityDetailPage: React.FC<Props> = ({
               <span className={`badge ${activity.status === 'Upcoming' ? 'badge-green' : 'badge-slate'}`}>
                 {activity.status}
               </span>
+              {activity.recordingUrl && (
+                <span className="badge" style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#EF4444', border: '1px solid rgba(239, 68, 68, 0.3)', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <Youtube size={12} /> Recording Available
+                </span>
+              )}
             </div>
 
             <h1 style={{
@@ -274,6 +301,38 @@ export const ActivityDetailPage: React.FC<Props> = ({
         }} className="detail-layout">
           {/* Main Body */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
+            
+            {/* EMBEDDED YOUTUBE RECORDING / LIVE STREAM (If provided) */}
+            {youtubeEmbedUrl && (
+              <div className="glass-card" style={{ padding: '1.75rem', background: 'rgba(239, 68, 68, 0.03)', borderColor: 'rgba(239, 68, 68, 0.25)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  <h3 style={{ fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#FFF', margin: 0 }}>
+                    <Youtube size={22} style={{ color: '#EF4444' }} />
+                    <span>Session Video Recording & Live Broadcast</span>
+                  </h3>
+                  <a
+                    href={activity.recordingUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="btn btn-secondary btn-sm"
+                    style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#EF4444', borderColor: 'rgba(239, 68, 68, 0.4)' }}
+                  >
+                    <span>Open on YouTube</span>
+                    <ExternalLink size={12} />
+                  </a>
+                </div>
+                <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0, overflow: 'hidden', borderRadius: '12px', background: '#000', border: '1px solid var(--border-subtle)', boxShadow: '0 12px 36px rgba(0,0,0,0.5)' }}>
+                  <iframe
+                    src={youtubeEmbedUrl}
+                    title={activity.title}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                    style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }}
+                  />
+                </div>
+              </div>
+            )}
+
             {/* 1. OBJECTIVES & UIPATH TOPICS */}
             <div className="glass-card" style={{ padding: '2rem' }}>
               <h3 style={{ fontSize: '1.25rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -483,48 +542,78 @@ export const ActivityDetailPage: React.FC<Props> = ({
 
             {/* 7. CONNECTED COMMUNITY KNOWLEDGE GRAPH */}
             <div className="glass-card" style={{ padding: '2rem', background: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)' }}>
-              <h3 style={{ fontSize: '1.25rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-primary)' }}>
-                <BookOpen size={18} style={{ color: 'var(--uipath-orange)' }} /> Interlinked Community Knowledge Graph
-              </h3>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+                <h3 style={{ fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-primary)', margin: 0 }}>
+                  <BookOpen size={18} style={{ color: 'var(--uipath-orange)' }} /> Interlinked Community Knowledge Graph
+                </h3>
+                {isEditor && (
+                  <button
+                    onClick={() => {
+                      setEditorInitialTab('agenda');
+                      setIsEditorOpen(true);
+                    }}
+                    className="btn btn-secondary btn-sm"
+                    style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', borderColor: 'rgba(250, 70, 22, 0.4)', color: 'var(--uipath-orange)' }}
+                  >
+                    <Edit3 size={13} />
+                    <span>Edit Knowledge Graph</span>
+                  </button>
+                )}
+              </div>
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1.5rem', lineHeight: 1.5 }}>
                 Explore connected learning modules, student bots built using concepts from this activity, and resources:
               </p>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
-                <div
-                  onClick={() => onNavigate('learn')}
-                  style={{ padding: '1rem', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', cursor: 'pointer' }}
-                >
-                  <span className="badge badge-orange" style={{ marginBottom: '0.4rem', fontSize: '0.65rem' }}>Learning Academy</span>
-                  <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#FFF' }}>Track 3: REFramework Architect</div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>State machines & queues</div>
-                </div>
-
-                <div
-                  onClick={() => onNavigate('projects')}
-                  style={{ padding: '1rem', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', cursor: 'pointer' }}
-                >
-                  <span className="badge badge-neutral" style={{ marginBottom: '0.4rem', fontSize: '0.65rem' }}>Student Automations</span>
-                  <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#FFF' }}>Grade Extractor Bot</div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>Saves 45 hrs/semester</div>
-                </div>
-
-                <div
-                  onClick={() => onNavigate('resources')}
-                  style={{ padding: '1rem', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', cursor: 'pointer' }}
-                >
-                  <span className="badge badge-slate" style={{ marginBottom: '0.4rem', fontSize: '0.65rem' }}>Resources Vault</span>
-                  <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#FFF' }}>REFramework Production Starter</div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>Starter template ZIP</div>
-                </div>
+                {knowledgeLinks.map((kg, i) => (
+                  <div
+                    key={kg.id || i}
+                    onClick={() => {
+                      if (kg.targetView) {
+                        onNavigate(kg.targetView, kg.targetIdOrUrl);
+                      }
+                    }}
+                    className="glass-card hover-glow"
+                    style={{
+                      padding: '1.15rem',
+                      background: 'var(--bg-tertiary)',
+                      borderRadius: 'var(--radius-md)',
+                      border: '1px solid var(--border-subtle)',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between'
+                    }}
+                  >
+                    <div>
+                      <span className={`badge ${
+                        kg.category.toLowerCase().includes('academy') || kg.category.toLowerCase().includes('learn')
+                          ? 'badge-orange'
+                          : kg.category.toLowerCase().includes('automation') || kg.category.toLowerCase().includes('project')
+                          ? 'badge-neutral'
+                          : 'badge-slate'
+                      }`} style={{ marginBottom: '0.5rem', fontSize: '0.675rem' }}>
+                        {kg.category}
+                      </span>
+                      <div style={{ fontWeight: 600, fontSize: '0.925rem', color: '#FFF', lineHeight: 1.3 }}>
+                        {kg.title}
+                      </div>
+                    </div>
+                    <div style={{ fontSize: '0.775rem', color: 'var(--text-muted)', marginTop: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span>{kg.subtitle}</span>
+                      <ExternalLink size={12} style={{ opacity: 0.6 }} />
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
 
           {/* Sidebar: Registration & Downloadable Artifacts */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            {/* 1. Registration / Virtual Meeting Card */}
-            {(activity.registrationUrl || activity.meetingUrl || activity.status === 'Upcoming') && (
+            {/* 1. Registration / Virtual Meeting / Live Stream Card */}
+            {(activity.registrationUrl || activity.meetingUrl || activity.recordingUrl || activity.status === 'Upcoming') && (
               <div className="glass-card" style={{ padding: '1.75rem', background: 'rgba(250, 70, 22, 0.04)', borderColor: 'rgba(250, 70, 22, 0.25)' }}>
                 <h3 style={{ fontSize: '1.15rem', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#FFF' }}>
                   <ExternalLink size={18} style={{ color: '#FA4616' }} /> Session Participation
@@ -557,6 +646,19 @@ export const ActivityDetailPage: React.FC<Props> = ({
                     >
                       <Video size={16} style={{ color: '#FA4616' }} />
                       <span>Join Virtual Meeting</span>
+                    </a>
+                  )}
+
+                  {activity.recordingUrl && (
+                    <a
+                      href={activity.recordingUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="btn btn-secondary"
+                      style={{ width: '100%', justifyContent: 'center', borderColor: 'rgba(239, 68, 68, 0.4)', color: '#EF4444', background: 'rgba(239, 68, 68, 0.06)' }}
+                    >
+                      <Youtube size={16} />
+                      <span>Watch Live / Recording</span>
                     </a>
                   )}
                 </div>
@@ -651,6 +753,7 @@ export const ActivityDetailPage: React.FC<Props> = ({
           isOpen={isEditorOpen}
           activity={activity}
           isFeaturedOnHome={activity ? activity.id === featuredActivityId : false}
+          initialTab={editorInitialTab}
           onClose={() => setIsEditorOpen(false)}
           onSave={async (savedAct: Activity, makeFeatured: boolean) => {
             if (onSaveActivity) {

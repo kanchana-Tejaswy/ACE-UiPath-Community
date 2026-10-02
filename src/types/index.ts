@@ -148,11 +148,21 @@ export interface Activity {
   isFeatured: boolean;
   speakers: ActivitySpeaker[];
   achievements?: ActivityAchievement[];
+  knowledgeGraphLinks?: KnowledgeGraphLink[];
   registrationUrl?: string;
   meetingUrl?: string;
   capacity?: string;
   targetAudience?: string;
   createdAt?: string;
+}
+
+export interface KnowledgeGraphLink {
+  id: string;
+  category: string;
+  title: string;
+  subtitle: string;
+  targetView?: string;
+  targetIdOrUrl?: string;
 }
 
 export interface ModuleResource {

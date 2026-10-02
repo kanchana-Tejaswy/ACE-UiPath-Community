@@ -26,7 +26,9 @@ import {
   Github,
   Film,
   Presentation,
-  CheckSquare
+  CheckSquare,
+  Youtube,
+  ExternalLink
 } from 'lucide-react';
 import { 
   Activity, 
@@ -34,13 +36,15 @@ import {
   ActivityEventType, 
   ActivityStatus, 
   ActivitySpeaker, 
-  ActivityAgendaItem 
+  ActivityAgendaItem,
+  KnowledgeGraphLink
 } from '../types';
 
 interface Props {
   isOpen: boolean;
   activity: Activity | null;
   isFeaturedOnHome?: boolean;
+  initialTab?: 'overview' | 'media' | 'speakers' | 'agenda' | 'vault';
   onClose: () => void;
   onSave: (activity: Activity, makeFeatured: boolean) => void;
 }
@@ -79,10 +83,11 @@ export const EventEditorModal: React.FC<Props> = ({
   isOpen,
   activity,
   isFeaturedOnHome = false,
+  initialTab = 'overview',
   onClose,
   onSave
 }) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'media' | 'speakers' | 'agenda' | 'vault'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'media' | 'speakers' | 'agenda' | 'vault'>(initialTab);
   const [formData, setFormData] = useState<Activity | null>(null);
   const [isFeatured, setIsFeatured] = useState(false);
   const [uploadTab, setUploadTab] = useState<'dropzone' | 'url'>('dropzone');
@@ -239,6 +244,39 @@ export const EventEditorModal: React.FC<Props> = ({
     updateField('galleryImages', formData.galleryImages.filter((_, i) => i !== index));
   };
 
+  // Knowledge Graph Management
+  const updateKnowledgeGraphLink = (index: number, field: keyof KnowledgeGraphLink, value: string) => {
+    if (!formData?.knowledgeGraphLinks) return;
+    const updated = [...formData.knowledgeGraphLinks];
+    updated[index] = { ...updated[index], [field]: value };
+    updateField('knowledgeGraphLinks', updated);
+  };
+
+  const addKnowledgeGraphLink = () => {
+    const newLink: KnowledgeGraphLink = {
+      id: `kg_${Date.now()}`,
+      category: 'Learning Academy',
+      title: 'Track: UiPath Studio Automation',
+      subtitle: 'Hands-on workflow patterns',
+      targetView: 'learn'
+    };
+    updateField('knowledgeGraphLinks', [...(formData?.knowledgeGraphLinks || []), newLink]);
+  };
+
+  const removeKnowledgeGraphLink = (index: number) => {
+    if (!formData?.knowledgeGraphLinks) return;
+    const updated = formData.knowledgeGraphLinks.filter((_, i) => i !== index);
+    updateField('knowledgeGraphLinks', updated);
+  };
+
+  const resetKnowledgeGraphToDefaults = () => {
+    updateField('knowledgeGraphLinks', [
+      { id: 'kg_1', category: 'Learning Academy', title: 'Track 3: REFramework Architect', subtitle: 'State machines & queues', targetView: 'learn' },
+      { id: 'kg_2', category: 'Student Automations', title: 'Grade Extractor Bot', subtitle: 'Saves 45 hrs/semester', targetView: 'projects' },
+      { id: 'kg_3', category: 'Resources Vault', title: 'REFramework Production Starter', subtitle: 'Starter template ZIP', targetView: 'resources' }
+    ]);
+  };
+
   const handleSubmit = (e?: React.FormEvent | React.MouseEvent) => {
     if (e && e.preventDefault) {
       e.preventDefault();
@@ -262,6 +300,13 @@ export const EventEditorModal: React.FC<Props> = ({
     onSave(activityToSave, isFeatured);
   };
 
+  // Switch to initialTab whenever modal opens or initialTab changes
+  useEffect(() => {
+    if (initialTab && isOpen) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab, isOpen]);
+
   // Initialize form when modal opens
   useEffect(() => {
     if (activity) {
@@ -279,7 +324,14 @@ export const EventEditorModal: React.FC<Props> = ({
             ],
         objectives: activity.objectives || ['Master enterprise robotic process automation', 'Build hands-on bots in UiPath Studio'],
         learningOutcomes: activity.learningOutcomes || ['Deploy working automations with error handling', 'Understand UiPath Academic Alliance certification pathways'],
-        galleryImages: activity.galleryImages || []
+        galleryImages: activity.galleryImages || [],
+        knowledgeGraphLinks: activity.knowledgeGraphLinks && activity.knowledgeGraphLinks.length > 0
+          ? activity.knowledgeGraphLinks
+          : [
+              { id: 'kg_1', category: 'Learning Academy', title: 'Track 3: REFramework Architect', subtitle: 'State machines & queues', targetView: 'learn' },
+              { id: 'kg_2', category: 'Student Automations', title: 'Grade Extractor Bot', subtitle: 'Saves 45 hrs/semester', targetView: 'projects' },
+              { id: 'kg_3', category: 'Resources Vault', title: 'REFramework Production Starter', subtitle: 'Starter template ZIP', targetView: 'resources' }
+            ]
       });
       setIsFeatured(isFeaturedOnHome || activity.isFeatured || false);
       setIsDirty(false);
@@ -539,6 +591,40 @@ export const EventEditorModal: React.FC<Props> = ({
                     className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2 text-sm text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:border-orange-500 transition-all"
                   />
                 </div>
+              </div>
+
+              {/* Live YouTube Channel / Recording URL */}
+              <div className="bg-neutral-900/50 border border-neutral-800/90 rounded-xl p-3.5 space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-200 flex items-center gap-1.5">
+                    <Youtube size={15} className="text-red-500" /> Session Recording / Live YouTube Channel Link
+                  </label>
+                  {formData.recordingUrl && (
+                    <a
+                      href={formData.recordingUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-[11px] text-red-400 hover:text-red-300 flex items-center gap-1 hover:underline font-medium"
+                    >
+                      Test Link <ExternalLink size={11} />
+                    </a>
+                  )}
+                </div>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-red-500">
+                    <Youtube size={16} />
+                  </div>
+                  <input
+                    type="url"
+                    value={formData.recordingUrl || ''}
+                    onChange={(e) => updateField('recordingUrl', e.target.value)}
+                    placeholder="https://youtube.com/live/... or https://youtube.com/watch?v=... or https://youtube.com/@channel"
+                    className="w-full bg-neutral-950 border border-neutral-800 rounded-xl pl-9 pr-3.5 py-2 text-sm text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:border-red-500 transition-all font-mono"
+                  />
+                </div>
+                <p className="text-[11px] text-neutral-400">
+                  Provide a YouTube Live stream link, YouTube channel URL, or session video recording. This automatically embeds an interactive video player on the event details page.
+                </p>
               </div>
 
               {/* Featured on Homepage */}
@@ -1054,6 +1140,112 @@ export const EventEditorModal: React.FC<Props> = ({
                   className="w-full bg-neutral-900 border border-neutral-800 rounded-xl p-3.5 text-xs text-neutral-100 font-mono leading-relaxed"
                 />
               </div>
+
+              {/* Interlinked Community Knowledge Graph Cards */}
+              <div className="bg-neutral-950 border border-neutral-800 rounded-xl p-4 md:p-5 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <BookOpen size={16} className="text-[#FA4616]" />
+                    <span className="text-xs font-semibold uppercase tracking-wider text-neutral-200">
+                      Interlinked Community Knowledge Graph Cards
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={resetKnowledgeGraphToDefaults}
+                      className="text-[11px] text-neutral-400 hover:text-neutral-200 bg-neutral-900 border border-neutral-800 px-2.5 py-1 rounded-lg cursor-pointer transition-all"
+                    >
+                      Reset Defaults
+                    </button>
+                    <button
+                      type="button"
+                      onClick={addKnowledgeGraphLink}
+                      className="text-xs bg-orange-500/10 text-orange-400 border border-orange-500/20 px-2.5 py-1 rounded-lg flex items-center gap-1 cursor-pointer hover:bg-orange-500/20 transition-all font-semibold"
+                    >
+                      <Plus size={12} /> Add Knowledge Card
+                    </button>
+                  </div>
+                </div>
+                <p className="text-xs text-neutral-400">
+                  Connect related learning tracks, student automation bots, and resource starters directly to this activity.
+                </p>
+
+                <div className="space-y-3">
+                  {(!formData.knowledgeGraphLinks || formData.knowledgeGraphLinks.length === 0) ? (
+                    <div className="text-center py-4 text-xs text-neutral-500 bg-neutral-900/40 rounded-lg border border-neutral-800">
+                      No custom knowledge cards configured. <button type="button" onClick={resetKnowledgeGraphToDefaults} className="text-orange-400 underline">Add default cards</button>
+                    </div>
+                  ) : (
+                    formData.knowledgeGraphLinks.map((kg, kgIdx) => (
+                      <div key={kg.id || kgIdx} className="bg-neutral-900 border border-neutral-800 rounded-xl p-3.5 space-y-2.5">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                          <div>
+                            <label className="block text-[10px] uppercase font-semibold text-neutral-400 mb-1">Badge / Category</label>
+                            <input
+                              type="text"
+                              value={kg.category}
+                              onChange={(e) => updateKnowledgeGraphLink(kgIdx, 'category', e.target.value)}
+                              placeholder="e.g., Learning Academy"
+                              className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-2.5 py-1.5 text-xs text-orange-400 font-semibold"
+                            />
+                          </div>
+
+                          <div className="sm:col-span-2">
+                            <div className="flex items-center justify-between mb-1">
+                              <label className="block text-[10px] uppercase font-semibold text-neutral-400">Card Title</label>
+                              <button
+                                type="button"
+                                onClick={() => removeKnowledgeGraphLink(kgIdx)}
+                                className="text-neutral-400 hover:text-red-400 text-xs p-0.5"
+                                title="Delete card"
+                              >
+                                <Trash2 size={13} />
+                              </button>
+                            </div>
+                            <input
+                              type="text"
+                              value={kg.title}
+                              onChange={(e) => updateKnowledgeGraphLink(kgIdx, 'title', e.target.value)}
+                              placeholder="e.g., Track 3: REFramework Architect"
+                              className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-2.5 py-1.5 text-xs text-white font-medium"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-[10px] uppercase font-semibold text-neutral-400 mb-1">Subtitle / Highlight</label>
+                            <input
+                              type="text"
+                              value={kg.subtitle}
+                              onChange={(e) => updateKnowledgeGraphLink(kgIdx, 'subtitle', e.target.value)}
+                              placeholder="e.g., State machines & queues"
+                              className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-2.5 py-1.5 text-xs text-neutral-300"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-[10px] uppercase font-semibold text-neutral-400 mb-1">Target View / Destination</label>
+                            <select
+                              value={kg.targetView || 'learn'}
+                              onChange={(e) => updateKnowledgeGraphLink(kgIdx, 'targetView', e.target.value)}
+                              className="w-full bg-neutral-950 border border-neutral-800 rounded-lg px-2.5 py-1.5 text-xs text-neutral-200 font-mono"
+                            >
+                              <option value="learn">Academy Track (learn)</option>
+                              <option value="projects">Projects Showcase (projects)</option>
+                              <option value="resources">Resources Vault (resources)</option>
+                              <option value="challenges">Hackathons & Challenges (challenges)</option>
+                              <option value="blogs">Articles & Blogs (blogs)</option>
+                              <option value="join">Join Community (join)</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
             </div>
           )}
 
@@ -1070,14 +1262,26 @@ export const EventEditorModal: React.FC<Props> = ({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                   <div>
-                    <label className="block text-xs font-semibold text-neutral-400 mb-1 flex items-center gap-1.5">
-                      <Film size={14} className="text-red-400" /> Session Video Recording URL
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-xs font-semibold text-neutral-300 flex items-center gap-1.5">
+                        <Youtube size={14} className="text-red-500" /> Session Video Recording / YouTube Live URL
+                      </label>
+                      {formData.recordingUrl && (
+                        <a
+                          href={formData.recordingUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-[11px] text-red-400 hover:text-red-300 flex items-center gap-1 hover:underline"
+                        >
+                          Test <ExternalLink size={11} />
+                        </a>
+                      )}
+                    </div>
                     <input
                       type="url"
                       value={formData.recordingUrl || ''}
                       onChange={(e) => updateField('recordingUrl', e.target.value)}
-                      placeholder="https://youtube.com/watch?v=... or Loom"
+                      placeholder="https://youtube.com/live/... or watch?v=..."
                       className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3.5 py-2 text-xs text-neutral-100 font-mono"
                     />
                   </div>
