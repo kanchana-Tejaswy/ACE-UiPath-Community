@@ -91,7 +91,7 @@ export const localDatabase = {
   getLeadership: (): LeadershipMember[] => {
     const raw = getItem<LeadershipMember[]>(STORAGE_KEYS.LEADERSHIP, INITIAL_LEADERSHIP);
     return (raw || []).map((m) => {
-      if (m.name.toLowerCase().includes('tejaswy') || m.avatarUrl?.includes('photo-1534528741775-53994a69daeb')) {
+      if (m.name.toLowerCase().includes('tejaswy') && (!m.avatarUrl || m.avatarUrl.includes('photo-1534528741775-53994a69daeb'))) {
         return { ...m, avatarUrl: '/tejaswy.png' };
       }
       return m;
@@ -123,17 +123,11 @@ export const localDatabase = {
 
   getSettings: (): SiteSettings => {
     const loaded = getItem<SiteSettings>(STORAGE_KEYS.SETTINGS, INITIAL_SETTINGS);
-    const heroHeading = (loaded?.heroHeading && !loaded.heroHeading.includes('Student Community'))
-      ? loaded.heroHeading
-      : INITIAL_SETTINGS.heroHeading;
-    const storyImage = (!loaded?.communityStoryImageUrl || loaded.communityStoryImageUrl.includes('photo-1522071820081'))
-      ? INITIAL_SETTINGS.communityStoryImageUrl
-      : loaded.communityStoryImageUrl;
     return {
       ...INITIAL_SETTINGS,
       ...loaded,
-      heroHeading,
-      communityStoryImageUrl: storyImage,
+      heroHeading: loaded?.heroHeading || INITIAL_SETTINGS.heroHeading,
+      communityStoryImageUrl: loaded?.communityStoryImageUrl || INITIAL_SETTINGS.communityStoryImageUrl,
       statistics: loaded?.statistics && loaded.statistics.length > 0 ? loaded.statistics : INITIAL_SETTINGS.statistics,
       announcements: loaded?.announcements && loaded.announcements.length > 0 ? loaded.announcements : INITIAL_SETTINGS.announcements,
       timelineMilestones: loaded?.timelineMilestones && loaded.timelineMilestones.length > 0 ? loaded.timelineMilestones : INITIAL_SETTINGS.timelineMilestones

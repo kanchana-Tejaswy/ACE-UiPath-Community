@@ -90,44 +90,89 @@ export function useCommunityStore() {
         ]);
 
         if (isMounted) {
-          if (remoteSettings && remoteSettings.heroHeading) {
-            if (!remoteSettings.communityStoryImageUrl || remoteSettings.communityStoryImageUrl.includes('photo-1522071820081')) {
-              remoteSettings.communityStoryImageUrl = '/ace-campus.jpg';
+          if (remoteSettings && typeof remoteSettings === 'object' && remoteSettings.heroHeading) {
+            const localSettings = localDatabase.getSettings();
+            const mergedSettings: SiteSettings = {
+              ...remoteSettings,
+              ...localSettings
+            };
+            if (!mergedSettings.communityStoryImageUrl || mergedSettings.communityStoryImageUrl.includes('photo-1522071820081')) {
+              mergedSettings.communityStoryImageUrl = '/ace-campus.jpg';
             }
-            setSettings(remoteSettings);
-            localDatabase.saveSettings(remoteSettings);
+            setSettings(mergedSettings);
+            localDatabase.saveSettings(mergedSettings);
           }
           if (remoteActivities !== null && Array.isArray(remoteActivities) && remoteActivities.length > 0) {
-            setActivities(remoteActivities);
-            localDatabase.saveActivities(remoteActivities);
+            const localActs = localDatabase.getActivities();
+            const map = new Map<string, Activity>();
+            remoteActivities.forEach((a) => map.set(a.id, a));
+            localActs.forEach((a) => map.set(a.id, a));
+            const merged = Array.from(map.values());
+            setActivities(merged);
+            localDatabase.saveActivities(merged);
           }
           if (remoteProjects !== null && Array.isArray(remoteProjects) && remoteProjects.length > 0) {
-            setProjects(remoteProjects);
-            localDatabase.saveProjects(remoteProjects);
+            const localProj = localDatabase.getProjects();
+            const map = new Map<string, ProjectShowcase>();
+            remoteProjects.forEach((p) => map.set(p.id, p));
+            localProj.forEach((p) => map.set(p.id, p));
+            const merged = Array.from(map.values());
+            setProjects(merged);
+            localDatabase.saveProjects(merged);
           }
           if (remoteResources !== null && Array.isArray(remoteResources) && remoteResources.length > 0) {
-            setResources(remoteResources);
-            localDatabase.saveResources(remoteResources);
+            const localRes = localDatabase.getResources();
+            const map = new Map<string, CommunityResource>();
+            remoteResources.forEach((r) => map.set(r.id, r));
+            localRes.forEach((r) => map.set(r.id, r));
+            const merged = Array.from(map.values());
+            setResources(merged);
+            localDatabase.saveResources(merged);
           }
-          if (remoteLearningPaths !== null && Array.isArray(remoteLearningPaths)) {
-            setLearningPaths(remoteLearningPaths);
-            localDatabase.saveLearningPaths(remoteLearningPaths);
+          if (remoteLearningPaths !== null && Array.isArray(remoteLearningPaths) && remoteLearningPaths.length > 0) {
+            const localPaths = localDatabase.getLearningPaths();
+            const map = new Map<string, LearningPath>();
+            remoteLearningPaths.forEach((lp) => map.set(lp.id, lp));
+            localPaths.forEach((lp) => map.set(lp.id, lp));
+            const merged = Array.from(map.values());
+            setLearningPaths(merged);
+            localDatabase.saveLearningPaths(merged);
           }
           if (remoteChallenges !== null && Array.isArray(remoteChallenges) && remoteChallenges.length > 0) {
-            setChallenges(remoteChallenges);
-            localDatabase.saveChallenges(remoteChallenges);
+            const localChal = localDatabase.getChallenges();
+            const map = new Map<string, Challenge>();
+            remoteChallenges.forEach((c) => map.set(c.id, c));
+            localChal.forEach((c) => map.set(c.id, c));
+            const merged = Array.from(map.values());
+            setChallenges(merged);
+            localDatabase.saveChallenges(merged);
           }
           if (remoteLeadership !== null && Array.isArray(remoteLeadership) && remoteLeadership.length > 0) {
-            setLeadership(remoteLeadership);
-            localDatabase.saveLeadership(remoteLeadership);
+            const localLdr = localDatabase.getLeadership();
+            const map = new Map<string, LeadershipMember>();
+            remoteLeadership.forEach((m) => map.set(m.id, m));
+            localLdr.forEach((m) => map.set(m.id, m));
+            const merged = Array.from(map.values());
+            setLeadership(merged);
+            localDatabase.saveLeadership(merged);
           }
           if (remoteDrafts !== null && Array.isArray(remoteDrafts) && remoteDrafts.length > 0) {
-            setActivityDrafts(remoteDrafts);
-            localDatabase.saveActivityDrafts(remoteDrafts);
+            const localDrafts = localDatabase.getActivityDrafts();
+            const map = new Map<string, ActivityDraft>();
+            remoteDrafts.forEach((d) => map.set(d.id, d));
+            localDrafts.forEach((d) => map.set(d.id, d));
+            const merged = Array.from(map.values());
+            setActivityDrafts(merged);
+            localDatabase.saveActivityDrafts(merged);
           }
           if (remoteArticles !== null && Array.isArray(remoteArticles) && remoteArticles.length > 0) {
-            setArticles(remoteArticles);
-            localDatabase.saveArticles(remoteArticles);
+            const localArticles = localDatabase.getArticles();
+            const map = new Map<string, Article>();
+            remoteArticles.forEach((art) => map.set(art.id, art));
+            localArticles.forEach((art) => map.set(art.id, art));
+            const merged = Array.from(map.values());
+            setArticles(merged);
+            localDatabase.saveArticles(merged);
           }
         }
       } catch (err) {
@@ -273,9 +318,6 @@ export function useCommunityStore() {
 
   const saveActivity = async (activity: Activity): Promise<{ success: boolean; error?: string }> => {
     try {
-      if (activeAdapter.isCloudConnected()) {
-        await activeAdapter.saveActivity(activity);
-      }
       const updated = activitiesRepository.save(activity);
       setActivities(updated);
       localDatabase.addAuditLog({
@@ -286,6 +328,15 @@ export function useCommunityStore() {
         performedBy: currentUser.name
       });
       notifyDbChange();
+
+      if (activeAdapter.isCloudConnected()) {
+        try {
+          await activeAdapter.saveActivity(activity);
+        } catch (e) {
+          console.warn('Cloud saveActivity sync notice:', e);
+        }
+      }
+
       return { success: true };
     } catch (err: any) {
       console.error('Save activity failed:', err);
@@ -296,9 +347,6 @@ export function useCommunityStore() {
   const deleteActivity = async (id: string): Promise<{ success: boolean; error?: string }> => {
     try {
       const act = activities.find((a) => a.id === id);
-      if (activeAdapter.isCloudConnected()) {
-        await activeAdapter.deleteActivity(id);
-      }
       const updated = activitiesRepository.delete(id);
       setActivities(updated);
       localDatabase.addAuditLog({
@@ -309,6 +357,15 @@ export function useCommunityStore() {
         performedBy: currentUser.name
       });
       notifyDbChange();
+
+      if (activeAdapter.isCloudConnected()) {
+        try {
+          await activeAdapter.deleteActivity(id);
+        } catch (e) {
+          console.warn('Cloud deleteActivity sync notice:', e);
+        }
+      }
+
       return { success: true };
     } catch (err: any) {
       console.error('Delete activity failed:', err);
@@ -318,9 +375,6 @@ export function useCommunityStore() {
 
   const saveProject = async (project: ProjectShowcase): Promise<{ success: boolean; error?: string }> => {
     try {
-      if (activeAdapter.isCloudConnected()) {
-        await activeAdapter.saveProject(project);
-      }
       const updated = projectsRepository.save(project);
       setProjects(updated);
       localDatabase.addAuditLog({
@@ -331,6 +385,15 @@ export function useCommunityStore() {
         performedBy: currentUser.name
       });
       notifyDbChange();
+
+      if (activeAdapter.isCloudConnected()) {
+        try {
+          await activeAdapter.saveProject(project);
+        } catch (e) {
+          console.warn('Cloud saveProject sync notice:', e);
+        }
+      }
+
       return { success: true };
     } catch (err: any) {
       console.error('Save project failed:', err);
@@ -341,9 +404,6 @@ export function useCommunityStore() {
   const deleteProject = async (id: string): Promise<{ success: boolean; error?: string }> => {
     try {
       const proj = projects.find((p) => p.id === id);
-      if (activeAdapter.isCloudConnected()) {
-        await activeAdapter.deleteProject(id);
-      }
       const updated = projectsRepository.delete(id);
       setProjects(updated);
       localDatabase.addAuditLog({
@@ -354,6 +414,15 @@ export function useCommunityStore() {
         performedBy: currentUser.name
       });
       notifyDbChange();
+
+      if (activeAdapter.isCloudConnected()) {
+        try {
+          await activeAdapter.deleteProject(id);
+        } catch (e) {
+          console.warn('Cloud deleteProject sync notice:', e);
+        }
+      }
+
       return { success: true };
     } catch (err: any) {
       console.error('Delete project failed:', err);
@@ -377,9 +446,6 @@ export function useCommunityStore() {
 
   const saveResource = async (res: CommunityResource): Promise<{ success: boolean; error?: string }> => {
     try {
-      if (activeAdapter.isCloudConnected()) {
-        await activeAdapter.saveResource(res);
-      }
       const updated = resourcesRepository.save(res);
       setResources(updated);
       localDatabase.addAuditLog({
@@ -390,6 +456,15 @@ export function useCommunityStore() {
         performedBy: currentUser.name
       });
       notifyDbChange();
+
+      if (activeAdapter.isCloudConnected()) {
+        try {
+          await activeAdapter.saveResource(res);
+        } catch (e) {
+          console.warn('Cloud saveResource sync notice:', e);
+        }
+      }
+
       return { success: true };
     } catch (err: any) {
       console.error('Save resource failed:', err);
@@ -400,9 +475,6 @@ export function useCommunityStore() {
   const deleteResource = async (id: string): Promise<{ success: boolean; error?: string }> => {
     try {
       const res = resources.find((r) => r.id === id);
-      if (activeAdapter.isCloudConnected()) {
-        await activeAdapter.deleteResource(id);
-      }
       const updated = resourcesRepository.delete(id);
       setResources(updated);
       localDatabase.addAuditLog({
@@ -413,6 +485,15 @@ export function useCommunityStore() {
         performedBy: currentUser.name
       });
       notifyDbChange();
+
+      if (activeAdapter.isCloudConnected()) {
+        try {
+          await activeAdapter.deleteResource(id);
+        } catch (e) {
+          console.warn('Cloud deleteResource sync notice:', e);
+        }
+      }
+
       return { success: true };
     } catch (err: any) {
       console.error('Delete resource failed:', err);
@@ -428,10 +509,6 @@ export function useCommunityStore() {
     }
 
     try {
-      if (activeAdapter.isCloudConnected()) {
-        await activeAdapter.saveArticle(article);
-      }
-
       const updated = articlesRepository.save(article);
       setArticles(updated);
 
@@ -449,6 +526,15 @@ export function useCommunityStore() {
         performedBy: currentUser.name
       });
       notifyDbChange();
+
+      if (activeAdapter.isCloudConnected()) {
+        try {
+          await activeAdapter.saveArticle(article);
+        } catch (e) {
+          console.warn('Cloud saveArticle sync notice:', e);
+        }
+      }
+
       return { success: true };
     } catch (err: any) {
       console.error('Save article failed:', err);
@@ -469,10 +555,6 @@ export function useCommunityStore() {
 
     try {
       const target = articles.find((a) => a.id === id);
-      if (activeAdapter.isCloudConnected()) {
-        await activeAdapter.deleteArticle(id);
-      }
-
       const updated = articlesRepository.delete(id);
       setArticles(updated);
 
@@ -488,6 +570,15 @@ export function useCommunityStore() {
         performedBy: currentUser.name
       });
       notifyDbChange();
+
+      if (activeAdapter.isCloudConnected()) {
+        try {
+          await activeAdapter.deleteArticle(id);
+        } catch (e) {
+          console.warn('Cloud deleteArticle sync notice:', e);
+        }
+      }
+
       return { success: true };
     } catch (err: any) {
       console.error('Delete article failed:', err);
@@ -505,9 +596,6 @@ export function useCommunityStore() {
 
   const saveChallenge = async (chal: Challenge): Promise<{ success: boolean; error?: string }> => {
     try {
-      if (activeAdapter.isCloudConnected()) {
-        await activeAdapter.saveChallenge(chal);
-      }
       const currentChallenges = localDatabase.getChallenges();
       const existingIndex = currentChallenges.findIndex((c) => c.id === chal.id);
       let updated: Challenge[];
@@ -527,6 +615,15 @@ export function useCommunityStore() {
         performedBy: currentUser.name
       });
       notifyDbChange();
+
+      if (activeAdapter.isCloudConnected()) {
+        try {
+          await activeAdapter.saveChallenge(chal);
+        } catch (e) {
+          console.warn('Cloud saveChallenge sync notice:', e);
+        }
+      }
+
       return { success: true };
     } catch (err: any) {
       console.error('Save challenge failed:', err);
@@ -538,9 +635,6 @@ export function useCommunityStore() {
     try {
       const currentChallenges = localDatabase.getChallenges();
       const chal = currentChallenges.find((c) => c.id === id);
-      if (activeAdapter.isCloudConnected()) {
-        await activeAdapter.deleteChallenge(id);
-      }
       const updated = currentChallenges.filter((c) => c.id !== id);
       setChallenges(updated);
       localDatabase.saveChallenges(updated);
@@ -552,6 +646,15 @@ export function useCommunityStore() {
         performedBy: currentUser.name
       });
       notifyDbChange();
+
+      if (activeAdapter.isCloudConnected()) {
+        try {
+          await activeAdapter.deleteChallenge(id);
+        } catch (e) {
+          console.warn('Cloud deleteChallenge sync notice:', e);
+        }
+      }
+
       return { success: true };
     } catch (err: any) {
       console.error('Delete challenge failed:', err);
@@ -561,9 +664,6 @@ export function useCommunityStore() {
 
   const updateSettings = async (newSettings: Partial<SiteSettings>): Promise<{ success: boolean; error?: string }> => {
     try {
-      if (activeAdapter.isCloudConnected()) {
-        await activeAdapter.updateSettings(newSettings);
-      }
       const updated = settingsRepository.update(newSettings);
       setSettings(updated);
       localDatabase.addAuditLog({
@@ -574,6 +674,15 @@ export function useCommunityStore() {
         performedBy: currentUser.name
       });
       notifyDbChange();
+
+      if (activeAdapter.isCloudConnected()) {
+        try {
+          await activeAdapter.updateSettings(newSettings);
+        } catch (e) {
+          console.warn('Cloud updateSettings sync notice:', e);
+        }
+      }
+
       return { success: true };
     } catch (err: any) {
       console.error('Update settings failed:', err);
@@ -949,7 +1058,6 @@ export function useCommunityStore() {
       return { success: false, error: msg };
     }
     try {
-      await activeAdapter.saveLeadership(member);
       const all = localDatabase.getLeadership();
       const idx = all.findIndex((m) => m.id === member.id);
       let updated: LeadershipMember[];
@@ -969,6 +1077,15 @@ export function useCommunityStore() {
         performedBy: currentUser.name
       });
       notifyDbChange();
+
+      if (activeAdapter.isCloudConnected()) {
+        try {
+          await activeAdapter.saveLeadership(member);
+        } catch (e) {
+          console.warn('Cloud saveLeadership sync notice:', e);
+        }
+      }
+
       return { success: true };
     } catch (err: any) {
       console.error('Save leadership failed:', err);
@@ -983,7 +1100,6 @@ export function useCommunityStore() {
       return { success: false, error: msg };
     }
     try {
-      await activeAdapter.deleteLeadership(id);
       const all = localDatabase.getLeadership();
       const target = all.find((m) => m.id === id);
       const updated = all.filter((m) => m.id !== id);
@@ -997,6 +1113,15 @@ export function useCommunityStore() {
         performedBy: currentUser.name
       });
       notifyDbChange();
+
+      if (activeAdapter.isCloudConnected()) {
+        try {
+          await activeAdapter.deleteLeadership(id);
+        } catch (e) {
+          console.warn('Cloud deleteLeadership sync notice:', e);
+        }
+      }
+
       return { success: true };
     } catch (err: any) {
       console.error('Delete leadership failed:', err);
