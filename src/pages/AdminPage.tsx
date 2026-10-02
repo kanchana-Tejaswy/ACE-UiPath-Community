@@ -219,43 +219,6 @@ export const AdminPage: React.FC<Props> = ({
   const [aboutLeadershipTitle, setAboutLeadershipTitle] = useState(settings.aboutLeadershipTitle || 'Leadership & Core Team Wall');
   const [aboutLeadershipSubtitle, setAboutLeadershipSubtitle] = useState(settings.aboutLeadershipSubtitle || 'The dedicated students, faculty advisors, and alumni mentors who steer the ACE UiPath Community.');
 
-  // Sync state whenever settings update from upstream database/cloud
-  useEffect(() => {
-    setHeroHeading(settings.heroHeading || 'ACE UiPath Community');
-    setHeroTagline(settings.heroTagline || 'A student community at ACE Engineering College focused on learning, building and exploring automation.');
-    setHeroSubheadline(settings.heroSubheadline || '');
-    setPrimaryCtaText(settings.primaryCtaText || 'Explore the Community');
-    setPrimaryCtaLink(settings.primaryCtaLink || 'activities');
-    setSecondaryCtaText(settings.secondaryCtaText || 'Start Learning');
-    setSecondaryCtaLink(settings.secondaryCtaLink || 'learn');
-    setFeaturedActivityId(settings.featuredActivityId || activities[0]?.id || '');
-    setStoryHeading(settings.communityStoryHeading || 'Built by Students, Powered by UiPath');
-    setStoryText(settings.communityStoryText || 'Founded in 2022 under the department of CSE & IT, the ACE UiPath Community started as a group of 15 students eager to automate routine campus processes. Today, it stands as one of the premier student automation hubs in the region.');
-    setStoryHighlight(settings.communityStoryHighlight || 'Recognized by UiPath Academic Alliance with 450+ students trained and 38 software bots deployed across college administration.');
-    setStoryImageUrl(settings.communityStoryImageUrl || '/ace-campus.jpg');
-    setAllianceId(settings.uipathAllianceId || 'ACE-UIPATH-EDU-ALLIANCE-9421');
-    setCommunityEmail(settings.communityEmail || 'uipath.community@aceec.ac.in');
-
-    // Sync About Page Settings
-    setAboutBadge(settings.aboutBadge || 'Institutional Legacy & Leadership');
-    setAboutTitle(settings.aboutTitle || 'The Story of ACE UiPath Community');
-    setAboutDescription(settings.aboutDescription || 'Founded at ACE Engineering College, our mission is to cultivate world-class automation engineers, bridge academia with Fortune-500 enterprise RPA practices, and maintain a permanent institutional repository of student innovations.');
-    setAboutGenesisTitle(settings.aboutGenesisTitle || 'The Genesis (2022)');
-    setAboutGenesisParagraph1(settings.aboutGenesisParagraph1 || 'Recognizing the exponential rise of Robotic Process Automation in Fortune 500 enterprises, student visionary Siddharth Rao and faculty mentor Dr. S. K. Murthy established the ACE UiPath Student Chapter in 2022.');
-    setAboutGenesisParagraph2(settings.aboutGenesisParagraph2 || 'What began as an informal 20-student study circle quickly evolved into a campus-wide center of excellence, securing official recognition from the UiPath Academic Alliance.');
-    setAboutImpactTitle(settings.aboutImpactTitle || 'Scaling to Enterprise Impact (2024-2026)');
-    setAboutImpactParagraph1(settings.aboutImpactParagraph1 || 'Under the leadership of Kanchana Tejaswy and Rohit Varma, the community transitioned from basic script training to building real-world enterprise automations.');
-    setAboutImpactParagraph2(settings.aboutImpactParagraph2 || 'Students engineered bots that automate college result calculations, Koha LMS library fines, and medical prescription parsing, saving thousands of faculty hours.');
-    setAboutAccreditationBadge(settings.aboutAccreditationBadge || 'OFFICIAL ACCREDITATION');
-    setAboutAccreditationTitle(settings.aboutAccreditationTitle || 'UiPath Academic Alliance Educator Partner');
-    setAboutAccreditationDescription(settings.aboutAccreditationDescription || 'ACE Engineering College is an official member of the global UiPath Academic Alliance. Our curriculum aligns directly with the official UiPath Certified Associate & Advanced RPA Developer blueprints.');
-    setAboutAllianceIdLabel(settings.aboutAllianceIdLabel || 'ALLIANCE PARTNER ID');
-    setAboutAllianceId(settings.uipathAllianceId || 'ACE-UIPATH-EDU-ALLIANCE-9421');
-    setAboutLeadershipBadge(settings.aboutLeadershipBadge || 'Community Stewards');
-    setAboutLeadershipTitle(settings.aboutLeadershipTitle || 'Leadership & Core Team Wall');
-    setAboutLeadershipSubtitle(settings.aboutLeadershipSubtitle || 'The dedicated students, faculty advisors, and alumni mentors who steer the ACE UiPath Community.');
-  }, [settings, activities]);
-
   const handleSaveHomepage = (e: React.FormEvent) => {
     e.preventDefault();
     onUpdateSettings({
