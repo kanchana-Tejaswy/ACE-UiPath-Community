@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { Copy, Check, Info, AlertTriangle, Lightbulb, AlertOctagon, ExternalLink } from 'lucide-react';
+import { Copy, Check, Info, AlertTriangle, Lightbulb, AlertOctagon } from 'lucide-react';
 
 interface Props {
-  content: string;
+  content?: string;
   className?: string;
 }
 
-export const TechnicalMarkdownRenderer: React.FC<Props> = ({ content, className = '' }) => {
+export const TechnicalMarkdownRenderer: React.FC<Props> = ({ content = '', className = '' }) => {
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
 
   const handleCopyCode = (codeText: string, idx: number) => {
@@ -16,14 +16,21 @@ export const TechnicalMarkdownRenderer: React.FC<Props> = ({ content, className 
   };
 
   if (!content || !content.trim()) {
-    return null;
+    return (
+      <div style={{ color: 'var(--text-muted, #6B7280)', fontStyle: 'italic', fontSize: '0.9rem' }}>
+        No technical description provided yet.
+      </div>
+    );
   }
 
   // Pre-process markdown into structured sections
   const codeBlocks: { lang: string; code: string }[] = [];
 
-  // 1. Normalize line endings
+  // 1. Normalize line endings and unescape literal '\n' if present
   let normalized = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  if (normalized.includes('\\n') && !normalized.includes('\n')) {
+    normalized = normalized.replace(/\\n/g, '\n').replace(/\\r/g, '');
+  }
 
   // 2. Replace code blocks with placeholders first to preserve whitespace
   normalized = normalized.replace(/```([a-zA-Z0-9_#-]*)\n([\s\S]*?)```/g, (_, lang, code) => {
@@ -33,7 +40,7 @@ export const TechnicalMarkdownRenderer: React.FC<Props> = ({ content, className 
   });
 
   // 3. Remove orphan `#` lines that have no title text (e.g. solitary `#` or `##` on a line)
-  normalized = normalized.replace(/(^|\n)[ \t]*#+[ \t]*(\n|$)/g, '$1\n$2');
+  normalized = normalized.replace(/(^|\n)[ \t]*#+[ \t]*(?=\n|$)/g, '$1\n');
 
   // 4. Ensure headings with content are isolated on their own blocks
   normalized = normalized.replace(/(^|\n)(#{1,6}\s+[^\n]+)(\n|$)/g, '\n\n$2\n\n');
@@ -48,7 +55,15 @@ export const TechnicalMarkdownRenderer: React.FC<Props> = ({ content, className 
   const rawBlocks = normalized.split(/\n\s*\n/).map(b => b.trim()).filter(Boolean);
 
   return (
-    <div className={`technical-markdown-body ${className}`} style={{ color: 'var(--text-primary, #F3F4F6)', lineHeight: 1.75, fontSize: '0.975rem' }}>
+    <div
+      className={`technical-markdown-body ${className}`}
+      style={{
+        color: 'var(--text-primary, #F3F4F6)',
+        lineHeight: 1.75,
+        fontSize: '0.975rem',
+        wordBreak: 'break-word'
+      }}
+    >
       {rawBlocks.map((block, blockIdx) => {
         // 1. Code Block Placeholder
         const codeMatch = block.match(/^__CODE_BLOCK_(\d+)__$/);
@@ -333,7 +348,7 @@ export const TechnicalMarkdownRenderer: React.FC<Props> = ({ content, className 
           );
         }
 
-        // 7. Render Mixed Content (Paragraphs, Ordered Lists, Unordered Lists) within block
+        // 7. Render Mixed Content (Paragraphs, Section Titles, Numbered Items, and Bullet Lists)
         return renderMixedBlock(block, blockIdx);
       })}
     </div>
@@ -343,76 +358,141 @@ export const TechnicalMarkdownRenderer: React.FC<Props> = ({ content, className 
 // Helper: render mixed block that may contain a mix of paragraphs, numbered items, and bullet points
 function renderMixedBlock(block: string, blockIdx: number) {
   const lines = block.split('\n');
-  const sections: { type: 'p' | 'ul' | 'ol'; items: string[] }[] = [];
+  const elements: {
+    type: 'heading' | 'p' | 'ol-header' | 'ul';
+    content?: string;
+    items?: string[];
+    num?: string;
+  }[] = [];
 
-  let currentType: 'p' | 'ul' | 'ol' | null = null;
-  let currentItems: string[] = [];
+  let currentUlItems: string[] = [];
+
+  const flushUl = () => {
+    if (currentUlItems.length > 0) {
+      elements.push({ type: 'ul', items: [...currentUlItems] });
+      currentUlItems = [];
+    }
+  };
 
   for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    const trimmed = line.trim();
+    const rawLine = lines[i];
+    const line = rawLine.trim();
 
-    if (!trimmed) continue;
+    if (!line) continue;
 
-    // Check line type
-    if (/^[-*+]\s+/.test(trimmed)) {
-      const itemContent = trimmed.replace(/^[-*+]\s+/, '');
-      if (currentType === 'ul') {
-        currentItems.push(itemContent);
-      } else {
-        if (currentType && currentItems.length > 0) {
-          sections.push({ type: currentType, items: [...currentItems] });
-        }
-        currentType = 'ul';
-        currentItems = [itemContent];
-      }
-    } else if (/^\d+\.\s+/.test(trimmed)) {
-      const itemContent = trimmed.replace(/^\d+\.\s+/, '');
-      if (currentType === 'ol') {
-        currentItems.push(itemContent);
-      } else {
-        if (currentType && currentItems.length > 0) {
-          sections.push({ type: currentType, items: [...currentItems] });
-        }
-        currentType = 'ol';
-        currentItems = [itemContent];
-      }
-    } else {
-      // Paragraph line
-      if (currentType === 'p') {
-        currentItems.push(trimmed);
-      } else {
-        if (currentType && currentItems.length > 0) {
-          sections.push({ type: currentType, items: [...currentItems] });
-        }
-        currentType = 'p';
-        currentItems = [trimmed];
-      }
+    // 1. Bullet list item: - item, * item, + item
+    if (/^[-*+]\s+/.test(line)) {
+      const itemContent = line.replace(/^[-*+]\s+/, '');
+      currentUlItems.push(itemContent);
+      continue;
     }
+
+    // If not a bullet item, flush any active bullet list
+    flushUl();
+
+    // 2. Numbered item / step header: 1. Title or 1) Title
+    const numMatch = line.match(/^(\d+)[\.\)]\s+(.*)$/);
+    if (numMatch) {
+      elements.push({
+        type: 'ol-header',
+        num: numMatch[1],
+        content: numMatch[2]
+      });
+      continue;
+    }
+
+    // 3. Short Standalone Titles: e.g. "About the Session", "Curriculum", "**Key Highlights:**"
+    const isShortStandaloneHeader = 
+      (line.startsWith('**') && line.endsWith('**') && !line.slice(2, -2).includes('**')) ||
+      (line.length <= 40 && !/[.!?]$/.test(line) && !line.includes(': ') && !line.includes(', '));
+
+    if (isShortStandaloneHeader) {
+      elements.push({
+        type: 'heading',
+        content: line.replace(/^\*\*|\*\*$/g, '')
+      });
+      continue;
+    }
+
+    // 4. Regular paragraph line
+    elements.push({
+      type: 'p',
+      content: line
+    });
   }
 
-  if (currentType && currentItems.length > 0) {
-    sections.push({ type: currentType, items: [...currentItems] });
-  }
+  flushUl();
 
   return (
-    <div key={`mixed-block-${blockIdx}`} style={{ marginBottom: '1.2rem' }}>
-      {sections.map((section, sIdx) => {
-        if (section.type === 'ul') {
+    <div key={`mixed-block-${blockIdx}`} style={{ marginBottom: '1.25rem' }}>
+      {elements.map((el, eIdx) => {
+        if (el.type === 'heading') {
+          return (
+            <h4
+              key={`h-${blockIdx}-${eIdx}`}
+              style={{
+                fontSize: '1.18rem',
+                fontWeight: 700,
+                color: '#FFFFFF',
+                marginTop: eIdx === 0 && blockIdx === 0 ? '0.25rem' : '1.35rem',
+                marginBottom: '0.6rem',
+                letterSpacing: '-0.01em',
+                lineHeight: 1.35
+              }}
+              dangerouslySetInnerHTML={{ __html: inlineMarkdown(el.content || '') }}
+            />
+          );
+        }
+
+        if (el.type === 'ol-header') {
+          return (
+            <div
+              key={`olh-${blockIdx}-${eIdx}`}
+              style={{
+                fontSize: '1.05rem',
+                fontWeight: 700,
+                color: '#FFFFFF',
+                marginTop: eIdx === 0 ? '0.5rem' : '1.1rem',
+                marginBottom: '0.45rem',
+                display: 'flex',
+                alignItems: 'baseline',
+                gap: '0.5rem'
+              }}
+            >
+              <span
+                style={{
+                  color: 'var(--uipath-orange, #FA4616)',
+                  fontFamily: 'var(--font-mono, monospace)',
+                  fontSize: '1rem',
+                  fontWeight: 800
+                }}
+              >
+                {el.num}.
+              </span>
+              <span dangerouslySetInnerHTML={{ __html: inlineMarkdown(el.content || '') }} />
+            </div>
+          );
+        }
+
+        if (el.type === 'ul') {
           return (
             <ul
-              key={`ul-${blockIdx}-${sIdx}`}
+              key={`ul-${blockIdx}-${eIdx}`}
               style={{
                 paddingLeft: '1.5rem',
-                margin: '0.65rem 0 1rem 0',
+                margin: '0.45rem 0 0.85rem 0',
                 color: 'var(--text-secondary, #D1D5DB)',
                 listStyleType: 'disc'
               }}
             >
-              {section.items.map((item, i) => (
+              {(el.items || []).map((item, i) => (
                 <li
                   key={i}
-                  style={{ marginBottom: '0.45rem', lineHeight: 1.65 }}
+                  style={{
+                    marginBottom: '0.4rem',
+                    lineHeight: 1.65,
+                    fontSize: '0.95rem'
+                  }}
                   dangerouslySetInnerHTML={{ __html: inlineMarkdown(item) }}
                 />
               ))}
@@ -420,39 +500,18 @@ function renderMixedBlock(block: string, blockIdx: number) {
           );
         }
 
-        if (section.type === 'ol') {
-          return (
-            <ol
-              key={`ol-${blockIdx}-${sIdx}`}
-              style={{
-                paddingLeft: '1.5rem',
-                margin: '0.65rem 0 1rem 0',
-                color: 'var(--text-secondary, #D1D5DB)'
-              }}
-            >
-              {section.items.map((item, i) => (
-                <li
-                  key={i}
-                  style={{ marginBottom: '0.45rem', lineHeight: 1.65 }}
-                  dangerouslySetInnerHTML={{ __html: inlineMarkdown(item) }}
-                />
-              ))}
-            </ol>
-          );
-        }
-
         // Paragraph
         return (
           <p
-            key={`p-${blockIdx}-${sIdx}`}
+            key={`p-${blockIdx}-${eIdx}`}
             style={{
-              fontSize: '1rem',
+              fontSize: '0.975rem',
               color: 'var(--text-secondary, #D1D5DB)',
               lineHeight: 1.75,
               marginBottom: '0.75rem',
               wordBreak: 'break-word'
             }}
-            dangerouslySetInnerHTML={{ __html: inlineMarkdown(section.items.join(' ')) }}
+            dangerouslySetInnerHTML={{ __html: inlineMarkdown(el.content || '') }}
           />
         );
       })}
@@ -476,22 +535,25 @@ function inlineMarkdown(text: string): string {
   html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" style="color:var(--uipath-orange, #FA4616);text-decoration:underline;text-underline-offset:3px;font-weight:600;display:inline-flex;align-items:center;gap:3px;">$1</a>');
 
   // Bold & Italic: ***text*** or ___text___
-  html = html.replace(/(\*\*\*|___)([^*_]+)\1/g, '<strong style="color:#FFF;"><em>$2</em></strong>');
+  html = html.replace(/\*\*\*([\s\S]+?)\*\*\*/g, '<strong style="color:#FFF;"><em>$1</em></strong>');
+  html = html.replace(/___([\s\S]+?)___/g, '<strong style="color:#FFF;"><em>$1</em></strong>');
 
   // Bold: **text** or __text__
-  html = html.replace(/(\*\*|__)([^*_]+)\1/g, '<strong style="color:#FFFFFF;font-weight:700;">$2</strong>');
+  html = html.replace(/\*\*([\s\S]+?)\*\*/g, '<strong style="color:#FFFFFF;font-weight:700;">$1</strong>');
+  html = html.replace(/__([\s\S]+?)__/g, '<strong style="color:#FFFFFF;font-weight:700;">$1</strong>');
 
   // Highlights: ==text==
   html = html.replace(/==([^=]+)==/g, '<mark style="background:rgba(250,70,22,0.22);color:#FED7AA;padding:2px 6px;border-radius:4px;border:1px solid rgba(250,70,22,0.3);font-weight:600;">$1</mark>');
 
-  // Italic: *text* or _text_
-  html = html.replace(/(\*|_)([^*_]+)\1/g, '<em>$2</em>');
+  // Italic: *text* or _text_ (ensuring not matched inside words if preceded by a letter/digit)
+  html = html.replace(/(^|[^*])\*([^*\n]+)\*([^*]|$)/g, '$1<em>$2</em>$3');
+  html = html.replace(/(^|[^_])_([^_\n]+)_([^_]|$)/g, '$1<em>$2</em>$3');
 
   // Strikethrough: ~~text~~
   html = html.replace(/~~([^~]+)~~/g, '<del style="opacity:0.65;">$1</del>');
 
   // Inline code: `code`
-  html = html.replace(/`([^`]+)`/g, '<code style="background:rgba(255, 255, 255, 0.08);color:#FED7AA;padding:2px 6px;border-radius:4px;font-size:0.88em;font-family:var(--font-mono, monospace);border:1px solid rgba(255, 255, 255, 0.1);">$1</code>');
+  html = html.replace(/`([^`\n]+)`/g, '<code style="background:rgba(255, 255, 255, 0.08);color:#FED7AA;padding:2px 6px;border-radius:4px;font-size:0.88em;font-family:var(--font-mono, monospace);border:1px solid rgba(255, 255, 255, 0.1);">$1</code>');
 
   return html;
 }

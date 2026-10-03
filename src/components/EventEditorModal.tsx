@@ -39,6 +39,7 @@ import {
   ActivityAgendaItem,
   KnowledgeGraphLink
 } from '../types';
+import { TechnicalMarkdownRenderer } from './TechnicalMarkdownRenderer';
 
 interface Props {
   isOpen: boolean;
@@ -95,6 +96,7 @@ export const EventEditorModal: React.FC<Props> = ({
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [imageSpecs, setImageSpecs] = useState<{ width: number; height: number; ratio: string } | null>(null);
   const [isDirty, setIsDirty] = useState(false);
+  const [mdTab, setMdTab] = useState<'write' | 'preview'>('write');
 
   // New item inputs
   const [newObjective, setNewObjective] = useState('');
@@ -1128,17 +1130,97 @@ export const EventEditorModal: React.FC<Props> = ({
               </div>
 
               {/* Full Description Markdown */}
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5 flex items-center gap-1.5">
-                  <FileText size={13} className="text-[#FA4616]" /> Full Markdown Description & Curriculum Deep-Dive
-                </label>
-                <textarea
-                  rows={5}
-                  value={formData.fullDescriptionMd || ''}
-                  onChange={(e) => updateField('fullDescriptionMd', e.target.value)}
-                  placeholder="## Session Overview&#10;In this workshop, students built production-grade UiPath bots...&#10;&#10;### Key Takeaways&#10;- REFramework state transitions&#10;- Queue transaction processing"
-                  className="w-full bg-neutral-900 border border-neutral-800 rounded-xl p-3.5 text-xs text-neutral-100 font-mono leading-relaxed"
-                />
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-neutral-400 flex items-center gap-1.5">
+                    <FileText size={13} className="text-[#FA4616]" /> Full Markdown Description & Curriculum Deep-Dive
+                  </label>
+                  
+                  {/* Mode Selector */}
+                  <div className="flex items-center gap-1 bg-neutral-900 border border-neutral-800 rounded-lg p-0.5">
+                    <button
+                      type="button"
+                      onClick={() => setMdTab('write')}
+                      className={`px-2.5 py-1 rounded text-[11px] font-medium transition-all ${
+                        mdTab === 'write' ? 'bg-[#FA4616] text-white shadow-sm' : 'text-neutral-400 hover:text-white'
+                      }`}
+                    >
+                      Write Markdown
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setMdTab('preview')}
+                      className={`px-2.5 py-1 rounded text-[11px] font-medium transition-all ${
+                        mdTab === 'preview' ? 'bg-neutral-800 text-white shadow-sm' : 'text-neutral-400 hover:text-white'
+                      }`}
+                    >
+                      Live Preview
+                    </button>
+                  </div>
+                </div>
+
+                {mdTab === 'write' ? (
+                  <div className="space-y-1.5">
+                    {/* Quick Format Actions */}
+                    <div className="flex flex-wrap items-center gap-1.5 bg-neutral-950 border border-neutral-800/80 rounded-lg px-2.5 py-1.5 text-[11px] text-neutral-400">
+                      <span className="text-[10px] text-neutral-500 font-semibold uppercase mr-1">Quick Tools:</span>
+                      <button
+                        type="button"
+                        onClick={() => updateField('fullDescriptionMd', (formData.fullDescriptionMd || '') + '\n\n### Heading Title\n')}
+                        className="hover:text-white px-1.5 py-0.5 bg-neutral-900 border border-neutral-800 rounded cursor-pointer"
+                      >
+                        + Heading
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => updateField('fullDescriptionMd', (formData.fullDescriptionMd || '') + ' **bold text** ')}
+                        className="hover:text-white px-1.5 py-0.5 bg-neutral-900 border border-neutral-800 rounded cursor-pointer font-bold"
+                      >
+                        **B**
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => updateField('fullDescriptionMd', (formData.fullDescriptionMd || '') + '\n- Bullet point 1\n- Bullet point 2\n')}
+                        className="hover:text-white px-1.5 py-0.5 bg-neutral-900 border border-neutral-800 rounded cursor-pointer"
+                      >
+                        • List
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => updateField('fullDescriptionMd', (formData.fullDescriptionMd || '') + '\n1. Step 1\n2. Step 2\n')}
+                        className="hover:text-white px-1.5 py-0.5 bg-neutral-900 border border-neutral-800 rounded cursor-pointer"
+                      >
+                        1. Numbered
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => updateField('fullDescriptionMd', (formData.fullDescriptionMd || '') + '\n```vb\n// UiPath code snippet\n```\n')}
+                        className="hover:text-white px-1.5 py-0.5 bg-neutral-900 border border-neutral-800 rounded cursor-pointer"
+                      >
+                        &lt;/&gt; Code
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => updateField('fullDescriptionMd', (formData.fullDescriptionMd || '') + '\n> [!NOTE]\n> Important session detail or prerequisite here.\n')}
+                        className="hover:text-white px-1.5 py-0.5 bg-neutral-900 border border-neutral-800 rounded cursor-pointer"
+                      >
+                        [!Note]
+                      </button>
+                    </div>
+
+                    <textarea
+                      rows={7}
+                      value={formData.fullDescriptionMd || ''}
+                      onChange={(e) => updateField('fullDescriptionMd', e.target.value)}
+                      placeholder="### About the Session&#10;**RPA Kickstart: Mastering UiPath Basics** is a beginner-friendly session...&#10;&#10;### Curriculum&#10;1. Introduction to RPA & UiPath&#10;- Understand fundamentals of automation&#10;- UiPath Studio workflow setup"
+                      className="w-full bg-neutral-900 border border-neutral-800 rounded-xl p-3.5 text-xs text-neutral-100 font-mono leading-relaxed focus:border-[#FA4616] focus:outline-none transition-all"
+                    />
+                  </div>
+                ) : (
+                  <div className="bg-neutral-900/90 border border-neutral-800 rounded-xl p-4 min-h-[160px] max-h-[350px] overflow-y-auto">
+                    <TechnicalMarkdownRenderer content={formData.fullDescriptionMd || ''} />
+                  </div>
+                )}
               </div>
 
               {/* Interlinked Community Knowledge Graph Cards */}
