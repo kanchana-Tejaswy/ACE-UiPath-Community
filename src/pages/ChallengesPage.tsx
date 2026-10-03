@@ -22,6 +22,7 @@ import {
   Check
 } from 'lucide-react';
 import { Challenge, User, ChallengeVideoRecording, ChallengeUseCaseTrack, ChallengeReferenceMaterial } from '../types';
+import { TechnicalMarkdownRenderer } from '../components/TechnicalMarkdownRenderer';
 
 interface Props {
   challenges: Challenge[];
@@ -323,13 +324,7 @@ export const ChallengesPage: React.FC<Props> = ({
                 )}
 
                 {/* Markdown Description */}
-                <div className="markdown-body" style={{ color: 'var(--text-secondary)', fontSize: '0.975rem' }}>
-                  <div dangerouslySetInnerHTML={{
-                    __html: activeChallenge.descriptionMd
-                      .replace(/### (.*?)\n/g, '<h4 style="color:#FFF;margin:1.25rem 0 0.5rem 0;font-size:1.1rem;font-weight:700">$1</h4>')
-                      .replace(/\n/g, '<br/>')
-                  }} />
-                </div>
+                <TechnicalMarkdownRenderer content={activeChallenge.descriptionMd} />
               </div>
             </div>
 
@@ -536,11 +531,7 @@ export const ChallengesPage: React.FC<Props> = ({
               <h3 style={{ fontSize: '1.2rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <FileText size={18} style={{ color: 'var(--uipath-orange)' }} /> Competition Rules & Disqualification Policy
               </h3>
-              <div className="markdown-body" style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                <div dangerouslySetInnerHTML={{
-                  __html: activeChallenge.rulesMd.replace(/\n/g, '<br/>')
-                }} />
-              </div>
+              <TechnicalMarkdownRenderer content={activeChallenge.rulesMd} />
             </div>
 
             {/* Past Winners (if completed) */}

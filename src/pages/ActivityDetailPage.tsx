@@ -27,6 +27,7 @@ import {
 import { Activity, User } from '../types';
 import { hasPermission } from '../lib/security';
 import { EventEditorModal } from '../components/EventEditorModal';
+import { TechnicalMarkdownRenderer } from '../components/TechnicalMarkdownRenderer';
 
 interface Props {
   slug: string;
@@ -428,9 +429,7 @@ export const ActivityDetailPage: React.FC<Props> = ({
             {/* 2. WHAT HAPPENED (Detailed Description) */}
             <div className="glass-card" style={{ padding: '2rem' }}>
               <h3 style={{ fontSize: '1.25rem', marginBottom: '1.25rem' }}>Technical Deep-Dive & Summary</h3>
-              <div className="markdown-body" style={{ color: 'var(--text-secondary)', fontSize: '0.975rem' }}>
-                <div dangerouslySetInnerHTML={{ __html: activity.fullDescriptionMd.replace(/### (.*?)\n/g, '<h4 style="color:#FFF;margin:1rem 0 0.5rem 0;font-size:1.1rem">$1</h4>').replace(/\n/g, '<br/>') }} />
-              </div>
+              <TechnicalMarkdownRenderer content={activity.fullDescriptionMd} />
             </div>
 
             {/* 3. MINUTE-BY-MINUTE AGENDA */}
