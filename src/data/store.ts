@@ -93,83 +93,43 @@ export function useCommunityStore() {
           if (remoteSettings && typeof remoteSettings === 'object' && remoteSettings.heroHeading) {
             const localSettings = localDatabase.getSettings();
             const mergedSettings: SiteSettings = {
-              ...remoteSettings,
-              ...localSettings
+              ...localSettings,
+              ...remoteSettings
             };
             setSettings(mergedSettings);
             localDatabase.saveSettings(mergedSettings);
           }
-          if (remoteActivities !== null && Array.isArray(remoteActivities) && remoteActivities.length > 0) {
-            const localActs = localDatabase.getActivities();
-            const map = new Map<string, Activity>();
-            remoteActivities.forEach((a) => map.set(a.id, a));
-            localActs.forEach((a) => map.set(a.id, a));
-            const merged = Array.from(map.values());
-            setActivities(merged);
-            localDatabase.saveActivities(merged);
+          if (remoteActivities !== null && Array.isArray(remoteActivities)) {
+            setActivities(remoteActivities);
+            localDatabase.saveActivities(remoteActivities);
           }
-          if (remoteProjects !== null && Array.isArray(remoteProjects) && remoteProjects.length > 0) {
-            const localProj = localDatabase.getProjects();
-            const map = new Map<string, ProjectShowcase>();
-            remoteProjects.forEach((p) => map.set(p.id, p));
-            localProj.forEach((p) => map.set(p.id, p));
-            const merged = Array.from(map.values());
-            setProjects(merged);
-            localDatabase.saveProjects(merged);
+          if (remoteProjects !== null && Array.isArray(remoteProjects)) {
+            setProjects(remoteProjects);
+            localDatabase.saveProjects(remoteProjects);
           }
-          if (remoteResources !== null && Array.isArray(remoteResources) && remoteResources.length > 0) {
-            const localRes = localDatabase.getResources();
-            const map = new Map<string, CommunityResource>();
-            remoteResources.forEach((r) => map.set(r.id, r));
-            localRes.forEach((r) => map.set(r.id, r));
-            const merged = Array.from(map.values());
-            setResources(merged);
-            localDatabase.saveResources(merged);
+          if (remoteResources !== null && Array.isArray(remoteResources)) {
+            setResources(remoteResources);
+            localDatabase.saveResources(remoteResources);
           }
-          if (remoteLearningPaths !== null && Array.isArray(remoteLearningPaths) && remoteLearningPaths.length > 0) {
-            const localPaths = localDatabase.getLearningPaths();
-            const map = new Map<string, LearningPath>();
-            remoteLearningPaths.forEach((lp) => map.set(lp.id, lp));
-            localPaths.forEach((lp) => map.set(lp.id, lp));
-            const merged = Array.from(map.values());
-            setLearningPaths(merged);
-            localDatabase.saveLearningPaths(merged);
+          if (remoteLearningPaths !== null && Array.isArray(remoteLearningPaths)) {
+            setLearningPaths(remoteLearningPaths);
+            localDatabase.saveLearningPaths(remoteLearningPaths);
           }
-          if (remoteChallenges !== null && Array.isArray(remoteChallenges) && remoteChallenges.length > 0) {
-            const localChal = localDatabase.getChallenges();
-            const map = new Map<string, Challenge>();
-            remoteChallenges.forEach((c) => map.set(c.id, c));
-            localChal.forEach((c) => map.set(c.id, c));
-            const merged = Array.from(map.values());
-            setChallenges(merged);
-            localDatabase.saveChallenges(merged);
+          if (remoteChallenges !== null && Array.isArray(remoteChallenges)) {
+            setChallenges(remoteChallenges);
+            localDatabase.saveChallenges(remoteChallenges);
           }
-          if (remoteLeadership !== null && Array.isArray(remoteLeadership) && remoteLeadership.length > 0) {
-            const localLdr = localDatabase.getLeadership();
-            const map = new Map<string, LeadershipMember>();
-            remoteLeadership.forEach((m) => map.set(m.id, m));
-            localLdr.forEach((m) => map.set(m.id, m));
-            const merged = Array.from(map.values());
-            setLeadership(merged);
-            localDatabase.saveLeadership(merged);
+          if (remoteLeadership !== null && Array.isArray(remoteLeadership)) {
+            setLeadership(remoteLeadership);
+            localDatabase.saveLeadership(remoteLeadership);
           }
-          if (remoteDrafts !== null && Array.isArray(remoteDrafts) && remoteDrafts.length > 0) {
-            const localDrafts = localDatabase.getActivityDrafts();
-            const map = new Map<string, ActivityDraft>();
-            remoteDrafts.forEach((d) => map.set(d.id, d));
-            localDrafts.forEach((d) => map.set(d.id, d));
-            const merged = Array.from(map.values());
-            setActivityDrafts(merged);
-            localDatabase.saveActivityDrafts(merged);
+          if (remoteDrafts !== null && Array.isArray(remoteDrafts)) {
+            setActivityDrafts(remoteDrafts);
+            localDatabase.saveActivityDrafts(remoteDrafts);
           }
-          if (remoteArticles !== null && Array.isArray(remoteArticles) && remoteArticles.length > 0) {
-            const localArticles = localDatabase.getArticles();
-            const map = new Map<string, Article>();
-            remoteArticles.forEach((art) => map.set(art.id, art));
-            localArticles.forEach((art) => map.set(art.id, art));
-            const merged = Array.from(map.values());
-            setArticles(merged);
-            localDatabase.saveArticles(merged);
+          if (remoteArticles !== null && Array.isArray(remoteArticles)) {
+            setArticles(remoteArticles);
+            localDatabase.saveArticles(remoteArticles);
           }
         }
       } catch (err) {
@@ -222,13 +182,19 @@ export function useCommunityStore() {
       setArticles(articlesRepository.getAll());
     };
 
+    const handleWindowFocus = () => {
+      syncCloudBackend();
+    };
+
     window.addEventListener(DB_CHANGE_EVENT, handleUpdate);
     window.addEventListener('storage', handleUpdate);
+    window.addEventListener('focus', handleWindowFocus);
     return () => {
       isMounted = false;
       clearInterval(scheduledTimer);
       window.removeEventListener(DB_CHANGE_EVENT, handleUpdate);
       window.removeEventListener('storage', handleUpdate);
+      window.removeEventListener('focus', handleWindowFocus);
     };
   }, []);
 
