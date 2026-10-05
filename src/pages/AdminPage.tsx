@@ -2504,7 +2504,7 @@ export const AdminPage: React.FC<Props> = ({
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                {leadership.map((mem) => {
+                {[...leadership].sort((a, b) => a.orderIndex - b.orderIndex).map((mem) => {
                   const badge = getRosterBadgeConfig(mem.category);
                   const active = isMemberActive(mem);
                   const tenure = getMemberTenure(mem);

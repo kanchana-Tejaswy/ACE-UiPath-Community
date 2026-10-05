@@ -31,7 +31,30 @@ interface Props {
 
 export const AboutPage: React.FC<Props> = ({ leadership, settings, onNavigate }) => {
   const [selectedRoleFilter, setSelectedRoleFilter] = useState<string>('ALL');
-  const sortedLeadership = [...leadership].sort((a, b) => a.orderIndex - b.orderIndex);
+
+  const sortedLeadership = [...leadership].sort((a, b) => {
+    // 1. Faculty Advisor always placed at the very first position
+    const aIsFaculty = a.category === 'Faculty Advisor' || (Array.isArray(a.rosterCategories) && a.rosterCategories.includes('Faculty Advisor'));
+    const bIsFaculty = b.category === 'Faculty Advisor' || (Array.isArray(b.rosterCategories) && b.rosterCategories.includes('Faculty Advisor'));
+    if (aIsFaculty && !bIsFaculty) return -1;
+    if (!aIsFaculty && bIsFaculty) return 1;
+
+    // 2. Explicit orderIndex
+    if (a.orderIndex !== b.orderIndex) {
+      return a.orderIndex - b.orderIndex;
+    }
+
+    // 3. Active members first
+    const aActive = isMemberActive(a);
+    const bActive = isMemberActive(b);
+    if (aActive && !bActive) return -1;
+    if (!aActive && bActive) return 1;
+
+    // 4. Timeline descending (most recent first)
+    const aYear = parseInt(String(a.startYear || (typeof a.academicYear === 'string' ? a.academicYear.match(/\d{4}/)?.[0] : '') || '0'), 10);
+    const bYear = parseInt(String(b.startYear || (typeof b.academicYear === 'string' ? b.academicYear.match(/\d{4}/)?.[0] : '') || '0'), 10);
+    return bYear - aYear;
+  });
 
   const filteredLeadership = sortedLeadership.filter((member) => {
     if (selectedRoleFilter === 'ALL') return true;
