@@ -491,57 +491,116 @@ export const ActivitiesPage: React.FC<Props> = ({
         </div>
       ) : (
         /* GRID VIEW */
-        <div className="grid-responsive-3">
+        <div className="grid-responsive-3" style={{ alignItems: 'start' }}>
           {filteredActivities.map((act) => (
-            <div key={act.id} className="glass-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', overflow: 'hidden' }}>
-              <div style={{ height: '170px', position: 'relative', overflow: 'hidden' }}>
-                <img
-                  src={act.bannerImage}
-                  alt={act.title}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                />
-                <div style={{ position: 'absolute', top: '0.65rem', left: '0.65rem', display: 'flex', gap: '0.3rem' }}>
-                  <span className="badge badge-orange">{act.category}</span>
-                  <span className="badge badge-neutral">{act.eventType}</span>
-                </div>
-
-                {isEditor && (
-                  <button
-                    type="button"
-                    onClick={(e) => handleOpenEditModal(act, e)}
+            <div
+              key={act.id}
+              className="glass-card hover-glow"
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                overflow: 'hidden',
+                borderRadius: 'var(--radius-lg)',
+                border: '1px solid var(--border-subtle)',
+                transition: 'transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease'
+              }}
+            >
+              {/* Natural Aspect Ratio Poster Container */}
+              {act.bannerImage && (
+                <div
+                  onClick={() => onNavigate('activity_detail', act.slug)}
+                  style={{
+                    position: 'relative',
+                    overflow: 'hidden',
+                    background: 'radial-gradient(circle at 50% 50%, rgba(30, 30, 35, 0.9) 0%, rgba(10, 10, 12, 1) 100%)',
+                    cursor: 'pointer',
+                    borderBottom: '1px solid var(--border-subtle)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '100%'
+                  }}
+                >
+                  <img
+                    src={act.bannerImage}
+                    alt={act.title}
                     style={{
-                      position: 'absolute',
-                      top: '0.65rem',
-                      right: '0.65rem',
-                      background: 'rgba(0,0,0,0.7)',
-                      color: '#FFF',
-                      border: '1px solid rgba(255,255,255,0.2)',
-                      borderRadius: '8px',
-                      padding: '0.35rem 0.5rem',
-                      fontSize: '0.75rem',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.25rem'
+                      width: '100%',
+                      height: 'auto',
+                      maxHeight: '480px',
+                      objectFit: 'contain',
+                      display: 'block',
+                      transition: 'transform 0.3s ease'
                     }}
-                  >
-                    <Edit3 size={12} /> Edit
-                  </button>
-                )}
-              </div>
+                    onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.02)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1)')}
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = '/logo.png';
+                    }}
+                  />
+
+                  {isEditor && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpenEditModal(act, e);
+                      }}
+                      style={{
+                        position: 'absolute',
+                        top: '0.65rem',
+                        right: '0.65rem',
+                        background: 'rgba(0,0,0,0.75)',
+                        backdropFilter: 'blur(8px)',
+                        color: '#FFF',
+                        border: '1px solid rgba(255,255,255,0.2)',
+                        borderRadius: '8px',
+                        padding: '0.35rem 0.55rem',
+                        fontSize: '0.75rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.3rem',
+                        zIndex: 2
+                      }}
+                    >
+                      <Edit3 size={12} /> Edit
+                    </button>
+                  )}
+                </div>
+              )}
 
               <div style={{ padding: '1.25rem', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                 <div>
+                  {/* Category & Status Badges */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '0.65rem' }}>
+                    <span className="badge badge-orange" style={{ fontSize: '0.7rem' }}>{act.category}</span>
+                    <span className="badge badge-neutral" style={{ fontSize: '0.7rem' }}>{act.eventType}</span>
+                    <span className={`badge ${act.status === 'Upcoming' ? 'badge-green' : 'badge-slate'}`} style={{ fontSize: '0.7rem' }}>
+                      {act.status === 'Upcoming' && <span className="status-dot-pulse" style={{ marginRight: '0.2rem' }} />}
+                      {act.status}
+                    </span>
+                    {act.id === featuredActivityId && (
+                      <span className="badge badge-orange" style={{ fontSize: '0.65rem', display: 'inline-flex', alignItems: 'center', gap: '0.2rem' }}>
+                        <Star size={9} /> Featured
+                      </span>
+                    )}
+                  </div>
+
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
                     <Calendar size={12} style={{ color: 'var(--uipath-orange)' }} />
                     <span>{act.date}</span>
                     <span>•</span>
+                    <MapPin size={12} style={{ color: 'var(--uipath-orange)' }} />
                     <span>{act.venue}</span>
                   </div>
 
                   <h3
                     onClick={() => onNavigate('activity_detail', act.slug)}
                     style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.65rem', cursor: 'pointer', lineHeight: 1.35 }}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = '#FA4616')}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-primary)')}
                   >
                     {act.title}
                   </h3>
@@ -553,7 +612,7 @@ export const ActivitiesPage: React.FC<Props> = ({
 
                 <div style={{ paddingTop: '0.85rem', borderTop: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span className="badge badge-slate" style={{ fontSize: '0.675rem' }}>
-                    {act.uipathTopicsCovered[0]}
+                    {act.uipathTopicsCovered[0] || act.category}
                   </span>
                   <button
                     onClick={() => onNavigate('activity_detail', act.slug)}

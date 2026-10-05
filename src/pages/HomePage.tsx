@@ -329,7 +329,7 @@ export const HomePage: React.FC<Props> = ({
                   alignItems: 'center'
                 }}
               >
-                {/* Event Image / Poster with Rounded Border & Aspect Ratio Wrapper */}
+                {/* Event Image / Poster with Rounded Border & Natural Ratio Wrapper */}
                 {featuredActivity.bannerImage && (
                   <div style={{
                     borderRadius: '10px',
@@ -339,8 +339,7 @@ export const HomePage: React.FC<Props> = ({
                     background: '#141414',
                     position: 'relative',
                     width: '100%',
-                    aspectRatio: '16 / 10',
-                    maxHeight: '380px',
+                    maxHeight: '400px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center'
@@ -350,8 +349,9 @@ export const HomePage: React.FC<Props> = ({
                       alt={featuredActivity.title}
                       style={{
                         width: '100%',
-                        height: '100%',
-                        objectFit: 'cover',
+                        height: 'auto',
+                        maxHeight: '400px',
+                        objectFit: 'contain',
                         display: 'block',
                         transition: 'transform 240ms cubic-bezier(0.16, 1, 0.3, 1)'
                       }}
