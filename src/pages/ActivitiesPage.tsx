@@ -42,7 +42,7 @@ export const ActivitiesPage: React.FC<Props> = ({
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [selectedMode, setSelectedMode] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [viewMode, setViewMode] = useState<'timeline' | 'grid'>('timeline');
+  const [viewMode, setViewMode] = useState<'timeline' | 'grid'>('grid');
 
   // Modal Editing State
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
