@@ -443,6 +443,7 @@ export const ActivityDetailPage: React.FC<Props> = ({
                   {activity.agenda.map((item, aIdx) => (
                     <div
                       key={aIdx}
+                      className="agenda-item-row"
                       style={{
                         display: 'flex',
                         gap: '1.25rem',
@@ -841,6 +842,15 @@ export const ActivityDetailPage: React.FC<Props> = ({
         @media (max-width: 900px) {
           .detail-layout {
             grid-template-columns: 1fr !important;
+          }
+        }
+        @media (max-width: 540px) {
+          .agenda-item-row {
+            flex-direction: column !important;
+            gap: 0.35rem !important;
+          }
+          .agenda-item-row > div:first-child {
+            min-width: 0 !important;
           }
         }
       `}</style>

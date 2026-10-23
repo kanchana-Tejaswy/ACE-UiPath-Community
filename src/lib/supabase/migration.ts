@@ -6,6 +6,7 @@ import { resourcesRepository } from '../../data/repositories/resourcesRepository
 import { learningRepository } from '../../data/repositories/learningRepository';
 import { activityDraftsRepository } from '../../data/repositories/activityDraftsRepository';
 import { settingsRepository } from '../../data/repositories/settingsRepository';
+import { articlesRepository } from '../../data/repositories/articlesRepository';
 import { 
   mapActivityEntityToRow, 
   mapProjectEntityToRow, 
@@ -13,7 +14,8 @@ import {
   mapLearningPathEntityToRow, 
   mapChallengeEntityToRow, 
   mapLeadershipEntityToRow, 
-  mapActivityDraftEntityToRow 
+  mapActivityDraftEntityToRow,
+  mapArticleEntityToRow
 } from './mappers';
 
 export interface MigrationReport {
@@ -28,6 +30,7 @@ export interface MigrationReport {
     resources: number;
     leadership: number;
     drafts: number;
+    articles: number;
   };
   errors: string[];
 }
@@ -44,7 +47,8 @@ export async function migrateLocalToSupabase(): Promise<MigrationReport> {
       challenges: 0, 
       resources: 0, 
       leadership: 0, 
-      drafts: 0 
+      drafts: 0,
+      articles: 0
     },
     errors: []
   };
@@ -154,9 +158,38 @@ export async function migrateLocalToSupabase(): Promise<MigrationReport> {
       }
     }
 
+    // 9. Migrate Articles & Technical Publications
+    const articles = articlesRepository.getAll();
+    if (articles.length > 0) {
+      const rows = articles.map(mapArticleEntityToRow);
+      const cleanedRows = rows.map((r) => {
+        const cleaned: Record<string, any> = {};
+        for (const [k, v] of Object.entries(r)) {
+          if (v !== undefined) cleaned[k] = v;
+        }
+        return cleaned;
+      });
+      let { error } = await supabase.from('articles').upsert(cleanedRows);
+      if (error && (
+        error.message?.toLowerCase().includes('aspect_ratio') || 
+        error.details?.toLowerCase().includes('aspect_ratio') || 
+        error.hint?.toLowerCase().includes('aspect_ratio') ||
+        error.code === 'PGRST204'
+      )) {
+        const rowsWithoutAspectRatio = cleanedRows.map(({ aspect_ratio, ...rest }) => rest);
+        const retryResult = await supabase.from('articles').upsert(rowsWithoutAspectRatio);
+        error = retryResult.error;
+      }
+      if (error) {
+        report.errors.push(`Articles migration error: ${error.message}`);
+      } else {
+        report.counts.articles = articles.length;
+      }
+    }
+
     report.success = report.errors.length === 0;
     report.message = report.success 
-      ? `Successfully migrated local dataset to Supabase (${report.counts.activities} activities, ${report.counts.projects} projects, ${report.counts.resources} resources, ${report.counts.learningPaths} paths, ${report.counts.challenges} challenges).`
+      ? `Successfully migrated local dataset to Supabase (${report.counts.activities} activities, ${report.counts.articles} articles, ${report.counts.projects} projects, ${report.counts.resources} resources, ${report.counts.learningPaths} paths, ${report.counts.challenges} challenges).`
       : `Migration completed with ${report.errors.length} warning(s).`;
 
     localDatabase.addAuditLog({

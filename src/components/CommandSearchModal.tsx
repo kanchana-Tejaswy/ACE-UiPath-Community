@@ -150,6 +150,7 @@ export const CommandSearchModal: React.FC<Props> = ({
   return (
     <div
       onClick={onClose}
+      className="command-search-overlay"
       style={{
         position: 'fixed',
         inset: 0,
@@ -159,7 +160,7 @@ export const CommandSearchModal: React.FC<Props> = ({
         display: 'flex',
         alignItems: 'flex-start',
         justifyContent: 'center',
-        padding: '5rem 1.5rem 2rem 1.5rem'
+        padding: 'clamp(1rem, 5vh, 5rem) 1rem max(1rem, env(safe-area-inset-bottom, 1rem)) 1rem'
       }}
     >
       <div
@@ -168,6 +169,9 @@ export const CommandSearchModal: React.FC<Props> = ({
         style={{
           width: '100%',
           maxWidth: '680px',
+          maxHeight: 'calc(90dvh - env(safe-area-inset-top, 0px))',
+          display: 'flex',
+          flexDirection: 'column',
           background: 'var(--bg-secondary)',
           border: '1px solid var(--border-glow)',
           boxShadow: '0 25px 60px rgba(0,0,0,0.85)',
@@ -315,20 +319,31 @@ export const CommandSearchModal: React.FC<Props> = ({
         </div>
 
         {/* Footer Hint */}
-        <div style={{
-          padding: '0.65rem 1.25rem',
-          background: 'var(--bg-primary)',
-          borderTop: '1px solid var(--border-subtle)',
-          fontSize: '0.75rem',
-          color: 'var(--text-muted)',
-          display: 'flex',
-          justifyContent: 'space-between'
-        }}>
+        <div 
+          className="command-search-footer"
+          style={{
+            padding: '0.65rem 1.25rem',
+            background: 'var(--bg-primary)',
+            borderTop: '1px solid var(--border-subtle)',
+            fontSize: '0.75rem',
+            color: 'var(--text-muted)',
+            display: 'flex',
+            justifyContent: 'space-between'
+          }}
+        >
           <span><kbd style={{ background: 'var(--bg-secondary)', padding: '0.1rem 0.35rem', borderRadius: '4px' }}>↑</kbd> <kbd style={{ background: 'var(--bg-secondary)', padding: '0.1rem 0.35rem', borderRadius: '4px' }}>↓</kbd> Navigate</span>
           <span><kbd style={{ background: 'var(--bg-secondary)', padding: '0.1rem 0.35rem', borderRadius: '4px' }}>Enter</kbd> Select</span>
           <span><kbd style={{ background: 'var(--bg-secondary)', padding: '0.1rem 0.35rem', borderRadius: '4px' }}>ESC</kbd> Close</span>
         </div>
       </div>
+
+      <style>{`
+        @media (max-width: 480px) {
+          .command-search-footer {
+            display: none !important;
+          }
+        }
+      `}</style>
     </div>
   );
 };

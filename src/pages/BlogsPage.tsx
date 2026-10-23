@@ -32,16 +32,21 @@ export const BlogsPage: React.FC<Props> = ({ articles, currentUser, onNavigate }
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [sortBy, setSortBy] = useState<SortOption>('latest');
 
-  // Filter only published or past-scheduled articles
+  // Filter only published or past-scheduled articles (or drafts for privileged users)
+  const isPrivileged = Boolean(currentUser && hasPermission(currentUser.role, 'CORE_TEAM'));
   const now = new Date();
   const visibleArticles = useMemo(() => {
     return articles.filter((a) => {
-      if (a.status === 'PUBLISHED') return true;
-      if (a.status === 'SCHEDULED' && a.scheduledAt && new Date(a.scheduledAt) <= now) return true;
-      // If user is ADMIN or CORE_TEAM, also let them view draft/scheduled preview if needed
+      const statusNorm = String(a.status || 'PUBLISHED').toUpperCase().trim();
+      if (statusNorm === 'PUBLISHED' || !a.status) return true;
+      if (statusNorm === 'SCHEDULED') {
+        if (!a.scheduledAt) return true;
+        return new Date(a.scheduledAt) <= now;
+      }
+      if (statusNorm === 'DRAFT' && isPrivileged) return true;
       return false;
     });
-  }, [articles, now]);
+  }, [articles, now, isPrivileged]);
 
   // Determine the featured hero article
   const featuredArticle = useMemo(() => {
@@ -88,9 +93,9 @@ export const BlogsPage: React.FC<Props> = ({ articles, currentUser, onNavigate }
   const canCreate = Boolean(currentUser && hasPermission(currentUser.role, 'CORE_TEAM'));
 
   return (
-    <div className="page-container" style={{ paddingBottom: '6rem' }}>
+    <div className="container" style={{ paddingTop: 'clamp(2rem, 4vw, 3rem)', paddingBottom: '6rem' }}>
       {/* HEADER SECTION */}
-      <section style={{ marginBottom: '3rem', position: 'relative' }}>
+      <section style={{ marginBottom: 'clamp(1.75rem, 3.5vw, 2.75rem)', position: 'relative' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1.5rem' }}>
           <div>
             <div
@@ -114,7 +119,7 @@ export const BlogsPage: React.FC<Props> = ({ articles, currentUser, onNavigate }
 
             <h1
               style={{
-                fontSize: 'clamp(2rem, 4vw, 2.75rem)',
+                fontSize: 'clamp(1.85rem, 4vw, 2.75rem)',
                 fontWeight: 800,
                 letterSpacing: '-0.025em',
                 lineHeight: 1.15,
@@ -127,7 +132,7 @@ export const BlogsPage: React.FC<Props> = ({ articles, currentUser, onNavigate }
 
             <p
               style={{
-                fontSize: '1.05rem',
+                fontSize: 'clamp(0.92rem, 1.8vw, 1.05rem)',
                 color: 'var(--text-secondary)',
                 maxWidth: '680px',
                 lineHeight: 1.6,
@@ -158,7 +163,7 @@ export const BlogsPage: React.FC<Props> = ({ articles, currentUser, onNavigate }
 
       {/* FEATURED SPOTLIGHT HERO (if articles exist) */}
       {featuredArticle && !searchQuery && selectedCategory === 'All' && (
-        <section style={{ marginBottom: '3.5rem' }}>
+        <section style={{ marginBottom: 'clamp(2rem, 3.5vw, 3.5rem)' }}>
           <div
             onClick={() => onNavigate('blog_detail', featuredArticle.slug || featuredArticle.id)}
             style={{
@@ -169,13 +174,13 @@ export const BlogsPage: React.FC<Props> = ({ articles, currentUser, onNavigate }
               cursor: 'pointer',
               transition: 'all 0.25s ease',
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))',
               boxShadow: '0 12px 32px rgba(0, 0, 0, 0.4)'
             }}
             className="card-hover-border"
           >
             {/* Left/Top: Cover Image */}
-            <div style={{ position: 'relative', minHeight: '280px', overflow: 'hidden' }}>
+            <div style={{ position: 'relative', minHeight: 'clamp(220px, 28vw, 320px)', overflow: 'hidden' }}>
               <img
                 src={featuredArticle.coverImageUrl || featuredArticle.coverImage}
                 alt={featuredArticle.title}
@@ -192,7 +197,7 @@ export const BlogsPage: React.FC<Props> = ({ articles, currentUser, onNavigate }
                 style={{
                   position: 'absolute',
                   inset: 0,
-                  background: 'linear-gradient(to right, rgba(0,0,0,0.4) 0%, transparent 60%)'
+                  background: 'linear-gradient(to bottom, rgba(0,0,0,0.65) 0%, transparent 45%, rgba(0,0,0,0.4) 100%)'
                 }}
               />
               <div
@@ -200,8 +205,12 @@ export const BlogsPage: React.FC<Props> = ({ articles, currentUser, onNavigate }
                   position: 'absolute',
                   top: '1rem',
                   left: '1rem',
+                  right: '1rem',
                   display: 'flex',
-                  gap: '0.5rem'
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: '0.5rem',
+                  zIndex: 2
                 }}
               >
                 <span
@@ -212,15 +221,29 @@ export const BlogsPage: React.FC<Props> = ({ articles, currentUser, onNavigate }
                     fontWeight: 700,
                     padding: '0.25rem 0.65rem',
                     borderRadius: '999px',
-                    display: 'flex',
+                    display: 'inline-flex',
                     alignItems: 'center',
                     gap: '0.3rem',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.4)'
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
+                    whiteSpace: 'nowrap'
                   }}
                 >
                   <Star size={11} style={{ fill: '#FFF' }} /> FEATURED PUBLICATION
                 </span>
-                <span className="badge badge-neutral" style={{ fontSize: '0.72rem', backdropFilter: 'blur(6px)' }}>
+                <span 
+                  style={{ 
+                    fontSize: '0.72rem', 
+                    fontWeight: 600,
+                    padding: '0.25rem 0.65rem',
+                    borderRadius: '999px',
+                    background: 'rgba(10, 10, 12, 0.85)',
+                    backdropFilter: 'blur(8px)',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    color: '#FFFFFF',
+                    boxShadow: '0 2px 6px rgba(0, 0, 0, 0.4)',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
                   {featuredArticle.category}
                 </span>
               </div>
@@ -229,7 +252,7 @@ export const BlogsPage: React.FC<Props> = ({ articles, currentUser, onNavigate }
             {/* Right/Bottom: Content */}
             <div
               style={{
-                padding: '2.25rem',
+                padding: 'clamp(1.25rem, 3.5vw, 2.25rem)',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'space-between'
@@ -243,7 +266,8 @@ export const BlogsPage: React.FC<Props> = ({ articles, currentUser, onNavigate }
                     gap: '0.75rem',
                     fontSize: '0.8rem',
                     color: 'var(--text-muted)',
-                    marginBottom: '0.75rem'
+                    marginBottom: '0.75rem',
+                    flexWrap: 'wrap'
                   }}
                 >
                   <span>{new Date(featuredArticle.publishedAt || featuredArticle.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
@@ -259,11 +283,11 @@ export const BlogsPage: React.FC<Props> = ({ articles, currentUser, onNavigate }
 
                 <h2
                   style={{
-                    fontSize: '1.75rem',
+                    fontSize: 'clamp(1.3rem, 2.5vw, 1.75rem)',
                     fontWeight: 800,
                     color: '#FFFFFF',
                     lineHeight: 1.3,
-                    marginBottom: '1rem',
+                    marginBottom: '0.75rem',
                     letterSpacing: '-0.015em'
                   }}
                 >
@@ -272,10 +296,10 @@ export const BlogsPage: React.FC<Props> = ({ articles, currentUser, onNavigate }
 
                 <p
                   style={{
-                    fontSize: '0.95rem',
+                    fontSize: 'clamp(0.88rem, 1.5vw, 0.95rem)',
                     color: 'var(--text-secondary)',
                     lineHeight: 1.65,
-                    marginBottom: '1.5rem'
+                    marginBottom: '1.25rem'
                   }}
                 >
                   {featuredArticle.excerpt}
@@ -436,9 +460,9 @@ export const BlogsPage: React.FC<Props> = ({ articles, currentUser, onNavigate }
           </div>
 
           {/* Search & Sort Controls */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', flex: '1 1 auto' }}>
             {/* Search Input */}
-            <div style={{ position: 'relative', width: '240px' }}>
+            <div style={{ position: 'relative', minWidth: 'min(100%, 200px)', flex: '1 1 200px' }}>
               <Search
                 size={14}
                 style={{
@@ -496,7 +520,7 @@ export const BlogsPage: React.FC<Props> = ({ articles, currentUser, onNavigate }
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))',
               gap: '1.75rem'
             }}
           >

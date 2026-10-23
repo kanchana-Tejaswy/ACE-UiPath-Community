@@ -363,7 +363,7 @@ export const EventEditorModal: React.FC<Props> = ({
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 md:p-6 overflow-y-auto animate-in fade-in duration-200">
       <div 
-        className="max-w-4xl w-full max-h-[92vh] overflow-y-auto bg-[#121214] border border-neutral-800 rounded-2xl shadow-2xl p-6 md:p-8 text-neutral-100 flex flex-col justify-between relative"
+        className="max-w-4xl w-full max-h-[92vh] overflow-y-auto bg-[#121214] border border-neutral-800 rounded-2xl shadow-2xl p-4 sm:p-6 md:p-8 text-neutral-100 flex flex-col justify-between relative"
         style={{ scrollbarWidth: 'thin', scrollbarColor: '#333 #121214' }}
       >
         {/* Modal Header */}

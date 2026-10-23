@@ -56,11 +56,12 @@ export const AcademyBreadcrumbs: React.FC<Props> = ({
         display: 'flex',
         alignItems: 'center',
         flexWrap: 'wrap',
-        gap: '0.4rem',
-        fontSize: '0.85rem',
+        gap: '0.45rem',
+        fontSize: '0.82rem',
         color: 'var(--text-muted, #9CA3AF)',
-        marginBottom: '1.5rem',
-        padding: '0.5rem 0'
+        marginBottom: '1.25rem',
+        padding: '0.25rem 0',
+        lineHeight: 1.5
       }}
     >
       {items.map((item, index) => {

@@ -276,7 +276,7 @@ export const ChallengeEditorModal: React.FC<Props> = ({
         aria-modal="true"
       >
         {/* LAYER 1: FIXED MODAL HEADER */}
-        <div className="flex-shrink-0 z-20 flex items-center justify-between border-b border-neutral-800/80 px-6 py-4 bg-[#121214] rounded-t-2xl">
+        <div className="flex-shrink-0 z-20 flex items-center justify-between border-b border-neutral-800/80 px-4 sm:px-6 py-3 sm:py-4 bg-[#121214] rounded-t-2xl">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-orange-500/10 border border-orange-500/30 flex items-center justify-center text-[#FA4616]">
               <Trophy size={20} />
@@ -305,7 +305,7 @@ export const ChallengeEditorModal: React.FC<Props> = ({
         </div>
 
         {/* LAYER 2: FIXED TAB NAVIGATION BAR */}
-        <div className="flex-shrink-0 z-10 flex border-b border-neutral-800 bg-[#151518] px-6 gap-2 overflow-x-auto select-none">
+        <div className="flex-shrink-0 z-10 flex border-b border-neutral-800 bg-[#151518] px-3 sm:px-6 gap-2 overflow-x-auto select-none">
           {[
             { id: 'overview', label: 'Overview & Dates', icon: Calendar, count: null },
             { id: 'useCases', label: 'Bot Use Cases & Tracks', icon: Code2, count: formData.useCases?.length || 0 },

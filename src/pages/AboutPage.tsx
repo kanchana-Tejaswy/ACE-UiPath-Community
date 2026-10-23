@@ -85,7 +85,7 @@ export const AboutPage: React.FC<Props> = ({ leadership, settings, onNavigate })
         borderRadius: 'var(--radius-lg)',
         marginBottom: '3.5rem',
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
         gap: '2.5rem',
         alignItems: 'center'
       }}>
@@ -142,7 +142,7 @@ export const AboutPage: React.FC<Props> = ({ leadership, settings, onNavigate })
       {/* History & Foundation Cards */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
         gap: '2rem',
         marginBottom: '4.5rem'
       }}>
@@ -279,11 +279,11 @@ export const AboutPage: React.FC<Props> = ({ leadership, settings, onNavigate })
               return (
                 <div
                   key={member.id}
-                  className="glass-card"
+                  className="glass-card leadership-card"
                   style={{
-                    padding: '2rem',
+                    padding: 'clamp(1.25rem, 3vw, 2rem)',
                     display: 'flex',
-                    gap: '1.5rem',
+                    gap: 'clamp(0.85rem, 2.5vw, 1.5rem)',
                     alignItems: 'flex-start'
                   }}
                 >
@@ -415,6 +415,15 @@ export const AboutPage: React.FC<Props> = ({ leadership, settings, onNavigate })
           </div>
         )}
       </div>
+
+      <style>{`
+        @media (max-width: 480px) {
+          .leadership-card {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+          }
+        }
+      `}</style>
     </div>
   );
 };

@@ -49,7 +49,7 @@ export const CommunityAccessModal: React.FC<Props> = ({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '1.5rem'
+        padding: 'max(1rem, env(safe-area-inset-top, 1rem)) 1rem max(1rem, env(safe-area-inset-bottom, 1rem)) 1rem'
       }}
     >
       <div
@@ -58,10 +58,12 @@ export const CommunityAccessModal: React.FC<Props> = ({
         style={{
           width: '100%',
           maxWidth: '380px',
+          maxHeight: '94dvh',
+          overflowY: 'auto',
           background: '#111111',
           border: '1px solid rgba(255, 255, 255, 0.12)',
           borderRadius: 'var(--radius-lg)',
-          padding: '1.75rem',
+          padding: 'clamp(1.25rem, 4vw, 1.75rem)',
           position: 'relative',
           boxShadow: '0 20px 40px rgba(0, 0, 0, 0.7)'
         }}

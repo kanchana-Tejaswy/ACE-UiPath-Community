@@ -160,7 +160,7 @@ export const ResourcesPage: React.FC<Props> = ({
           ))}
         </div>
 
-        <div style={{ position: 'relative', minWidth: '240px' }}>
+        <div style={{ position: 'relative', minWidth: 'min(100%, 240px)', flex: '1 1 220px' }}>
           <Search size={16} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
           <input
             type="text"

@@ -13,7 +13,9 @@ import {
   Sparkles,
   Edit3,
   Trash2,
-  Star
+  Star,
+  X,
+  RotateCcw
 } from 'lucide-react';
 import { Activity, User } from '../types';
 import { hasPermission } from '../lib/security';
@@ -220,106 +222,235 @@ export const ActivitiesPage: React.FC<Props> = ({
 
       {/* Multi-Dimensional Filter Bar */}
       <div className="glass-panel" style={{
-        padding: '1.25rem 1.5rem',
-        marginBottom: '2.5rem',
+        padding: 'clamp(1rem, 2.5vw, 1.35rem)',
+        marginBottom: '2rem',
         display: 'flex',
         flexDirection: 'column',
-        gap: '1rem'
+        gap: '1rem',
+        border: '1px solid var(--border-glow)'
       }}>
         {/* Search Bar */}
         <div style={{ position: 'relative' }}>
-          <Search size={17} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+          <Search
+            size={18}
+            style={{
+              position: 'absolute',
+              left: '1rem',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              color: 'var(--text-muted)',
+              pointerEvents: 'none'
+            }}
+          />
           <input
             type="text"
             placeholder="Search activities by title, concept (e.g. REFramework, Selectors), speaker, or venue..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="form-control-dark"
-            style={{ paddingLeft: '2.65rem' }}
+            className="form-control-dark form-control-with-icon"
+            style={{
+              width: '100%',
+              minHeight: '44px',
+              paddingLeft: '2.75rem',
+              paddingRight: searchQuery ? '2.5rem' : '1rem',
+              boxSizing: 'border-box'
+            }}
           />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              style={{
+                position: 'absolute',
+                right: '0.85rem',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--text-muted)',
+                cursor: 'pointer',
+                padding: '0.3rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: '50%',
+                transition: 'color 0.15s ease'
+              }}
+              title="Clear search"
+              aria-label="Clear search"
+            >
+              <X size={15} />
+            </button>
+          )}
         </div>
 
-        {/* Filter Chips */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.25rem', alignItems: 'center', paddingTop: '0.25rem' }}>
+        {/* Filter Dimensions (Year, Type, Mode) */}
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0.75rem',
+          paddingTop: '0.65rem',
+          borderTop: '1px solid rgba(255, 255, 255, 0.06)'
+        }}>
           {/* Year Chips */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Year:</span>
-            {years.map((y) => (
-              <button
-                key={y}
-                onClick={() => setSelectedYear(y)}
-                style={{
-                  background: selectedYear === y ? 'var(--uipath-orange)' : 'rgba(255, 255, 255, 0.05)',
-                  color: selectedYear === y ? '#FFF' : 'var(--text-secondary)',
-                  border: selectedYear === y ? '1px solid var(--uipath-orange)' : '1px solid var(--border-subtle)',
-                  borderRadius: 'var(--radius-full)',
-                  padding: '0.2rem 0.65rem',
-                  fontSize: '0.775rem',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  transition: 'all var(--transition-fast)'
-                }}
-              >
-                {y}
-              </button>
-            ))}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem',
+            flexWrap: 'wrap'
+          }}>
+            <span style={{
+              minWidth: '50px',
+              fontSize: '0.72rem',
+              fontWeight: 700,
+              color: 'var(--text-muted)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
+              flexShrink: 0
+            }}>
+              Year:
+            </span>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', alignItems: 'center' }}>
+              {years.map((y) => {
+                const isSelected = selectedYear === y;
+                return (
+                  <button
+                    key={y}
+                    onClick={() => setSelectedYear(y)}
+                    style={{
+                      background: isSelected ? 'var(--uipath-orange)' : 'rgba(255, 255, 255, 0.04)',
+                      color: isSelected ? '#FFF' : 'var(--text-secondary)',
+                      border: isSelected ? '1px solid var(--uipath-orange)' : '1px solid rgba(255, 255, 255, 0.08)',
+                      boxShadow: isSelected ? '0 2px 8px rgba(250, 70, 22, 0.35)' : 'none',
+                      borderRadius: 'var(--radius-full)',
+                      padding: '0.28rem 0.75rem',
+                      fontSize: '0.78rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                      lineHeight: 1.3
+                    }}
+                  >
+                    {y}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
-          {/* Category Chips */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Type:</span>
-            {categories.map((c) => (
-              <button
-                key={c}
-                onClick={() => setSelectedCategory(c)}
-                style={{
-                  background: selectedCategory === c ? 'var(--uipath-orange)' : 'rgba(255, 255, 255, 0.05)',
-                  color: selectedCategory === c ? '#FFF' : 'var(--text-secondary)',
-                  border: selectedCategory === c ? '1px solid var(--uipath-orange)' : '1px solid var(--border-subtle)',
-                  borderRadius: 'var(--radius-full)',
-                  padding: '0.2rem 0.65rem',
-                  fontSize: '0.775rem',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  transition: 'all var(--transition-fast)'
-                }}
-              >
-                {c}
-              </button>
-            ))}
+          {/* Category / Type Chips */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: '0.75rem',
+            flexWrap: 'wrap'
+          }}>
+            <span style={{
+              minWidth: '50px',
+              paddingTop: '0.3rem',
+              fontSize: '0.72rem',
+              fontWeight: 700,
+              color: 'var(--text-muted)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
+              flexShrink: 0
+            }}>
+              Type:
+            </span>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', alignItems: 'center', flex: 1 }}>
+              {categories.map((c) => {
+                const isSelected = selectedCategory === c;
+                return (
+                  <button
+                    key={c}
+                    onClick={() => setSelectedCategory(c)}
+                    style={{
+                      background: isSelected ? 'var(--uipath-orange)' : 'rgba(255, 255, 255, 0.04)',
+                      color: isSelected ? '#FFF' : 'var(--text-secondary)',
+                      border: isSelected ? '1px solid var(--uipath-orange)' : '1px solid rgba(255, 255, 255, 0.08)',
+                      boxShadow: isSelected ? '0 2px 8px rgba(250, 70, 22, 0.35)' : 'none',
+                      borderRadius: 'var(--radius-full)',
+                      padding: '0.28rem 0.75rem',
+                      fontSize: '0.78rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                      lineHeight: 1.3
+                    }}
+                  >
+                    {c}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* Mode Chips */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Mode:</span>
-            {modes.map((m) => (
-              <button
-                key={m}
-                onClick={() => setSelectedMode(m)}
-                style={{
-                  background: selectedMode === m ? 'var(--uipath-orange)' : 'rgba(255, 255, 255, 0.05)',
-                  color: selectedMode === m ? '#FFF' : 'var(--text-secondary)',
-                  border: selectedMode === m ? '1px solid var(--uipath-orange)' : '1px solid var(--border-subtle)',
-                  borderRadius: 'var(--radius-full)',
-                  padding: '0.2rem 0.65rem',
-                  fontSize: '0.775rem',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  transition: 'all var(--transition-fast)'
-                }}
-              >
-                {m}
-              </button>
-            ))}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem',
+            flexWrap: 'wrap'
+          }}>
+            <span style={{
+              minWidth: '50px',
+              fontSize: '0.72rem',
+              fontWeight: 700,
+              color: 'var(--text-muted)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
+              flexShrink: 0
+            }}>
+              Mode:
+            </span>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', alignItems: 'center' }}>
+              {modes.map((m) => {
+                const isSelected = selectedMode === m;
+                return (
+                  <button
+                    key={m}
+                    onClick={() => setSelectedMode(m)}
+                    style={{
+                      background: isSelected ? 'var(--uipath-orange)' : 'rgba(255, 255, 255, 0.04)',
+                      color: isSelected ? '#FFF' : 'var(--text-secondary)',
+                      border: isSelected ? '1px solid var(--uipath-orange)' : '1px solid rgba(255, 255, 255, 0.08)',
+                      boxShadow: isSelected ? '0 2px 8px rgba(250, 70, 22, 0.35)' : 'none',
+                      borderRadius: 'var(--radius-full)',
+                      padding: '0.28rem 0.75rem',
+                      fontSize: '0.78rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                      lineHeight: 1.3
+                    }}
+                  >
+                    {m}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Results Count Bar */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.75rem' }}>
+      {/* Results Count Bar & Reset Action */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
         <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-          Showing <strong style={{ color: 'var(--text-primary)' }}>{filteredActivities.length}</strong> recorded community activities
+          Showing <strong style={{ color: 'var(--text-primary)' }}>{filteredActivities.length}</strong> recorded community {filteredActivities.length === 1 ? 'activity' : 'activities'}
         </div>
+        {(selectedYear !== 'ALL' || selectedCategory !== 'ALL' || selectedMode !== 'ALL' || searchQuery.trim() !== '') && (
+          <button
+            onClick={() => {
+              setSelectedYear('ALL');
+              setSelectedCategory('ALL');
+              setSelectedMode('ALL');
+              setSearchQuery('');
+            }}
+            className="btn btn-secondary btn-sm"
+            style={{ fontSize: '0.75rem', padding: '0.25rem 0.65rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
+          >
+            <RotateCcw size={12} /> Reset Filters
+          </button>
+        )}
       </div>
 
       {/* Activities Display (Timeline vs Grid) */}

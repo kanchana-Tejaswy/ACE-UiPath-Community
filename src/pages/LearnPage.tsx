@@ -131,7 +131,7 @@ export const LearnPage: React.FC<Props> = ({
     const moduleDescription = activeModule.description || activeModule.summary || activeModule.contentMd;
 
     return (
-      <div className="container academy-module-view" style={{ paddingTop: '2rem', paddingBottom: '6rem' }}>
+      <div className="container academy-module-view" style={{ paddingTop: 'clamp(1.5rem, 3.5vw, 2.5rem)', paddingBottom: '6rem' }}>
         {/* Breadcrumb Navigation */}
         <AcademyBreadcrumbs
           courseTitle={activeCourse.title || activeCourse.name || 'Course'}
@@ -146,18 +146,18 @@ export const LearnPage: React.FC<Props> = ({
             background: 'var(--bg-secondary, #131722)',
             border: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.1))',
             borderRadius: 'var(--radius-lg, 16px)',
-            padding: '2.5rem',
-            marginBottom: '2rem',
-            boxShadow: '0 12px 36px rgba(0, 0, 0, 0.35)'
+            padding: 'clamp(1.25rem, 3vw, 2rem)',
+            marginBottom: '1.5rem',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.35)'
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1.5rem' }}>
-            <div style={{ flex: 1, minWidth: '280px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1.25rem' }}>
+            <div style={{ flex: '1 1 320px', minWidth: 'min(100%, 260px)' }}>
               {/* Course & Module Index Tag */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.65rem' }}>
                 <span
                   style={{
-                    fontSize: '0.75rem',
+                    fontSize: '0.72rem',
                     fontWeight: 700,
                     color: 'var(--uipath-orange, #FA4616)',
                     background: 'rgba(250, 70, 22, 0.12)',
@@ -171,12 +171,12 @@ export const LearnPage: React.FC<Props> = ({
                   {activeCourse.title || activeCourse.name}
                 </span>
 
-                <span className="badge badge-slate" style={{ fontSize: '0.75rem' }}>
+                <span className="badge badge-slate" style={{ fontSize: '0.72rem' }}>
                   Module {moduleNumber} of {String(sortedModules.length).padStart(2, '0')}
                 </span>
 
                 {activeModule.durationMinutes && (
-                  <span className="badge badge-neutral" style={{ fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                  <span className="badge badge-neutral" style={{ fontSize: '0.72rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
                     <Clock size={12} /> {activeModule.durationMinutes} mins
                   </span>
                 )}
@@ -185,11 +185,12 @@ export const LearnPage: React.FC<Props> = ({
               {/* Module Name */}
               <h1
                 style={{
-                  fontSize: 'clamp(1.8rem, 3.5vw, 2.5rem)',
+                  fontSize: 'clamp(1.5rem, 3vw, 2.2rem)',
                   fontWeight: 800,
                   color: 'var(--text-primary, #FFFFFF)',
-                  margin: '0 0 0.5rem 0',
-                  lineHeight: 1.25
+                  margin: '0 0 0.25rem 0',
+                  lineHeight: 1.25,
+                  letterSpacing: '-0.02em'
                 }}
               >
                 Module {moduleNumber} — {activeModule.title || activeModule.name}
@@ -198,12 +199,14 @@ export const LearnPage: React.FC<Props> = ({
 
             {/* Official UiPath Academy Link Button */}
             {officialUrl && (
-              <OfficialAcademyButton
-                url={officialUrl}
-                label="Complete this course on UiPath Academy ↗"
-                size="lg"
-                variant="glow"
-              />
+              <div className="module-cta-wrapper" style={{ flexShrink: 0 }}>
+                <OfficialAcademyButton
+                  url={officialUrl}
+                  label="Complete this course on UiPath Academy ↗"
+                  size="md"
+                  variant="glow"
+                />
+              </div>
             )}
           </div>
         </div>
@@ -215,14 +218,14 @@ export const LearnPage: React.FC<Props> = ({
               background: 'var(--bg-secondary, #131722)',
               border: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.08))',
               borderRadius: 'var(--radius-lg, 14px)',
-              padding: '2rem 2.25rem',
-              marginBottom: '2rem',
+              padding: 'clamp(1.25rem, 3vw, 2rem)',
+              marginBottom: '1.75rem',
               boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)'
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem', borderBottom: '1px solid rgba(255, 255, 255, 0.06)', paddingBottom: '0.75rem' }}>
               <Sparkles size={18} style={{ color: 'var(--uipath-orange, #FA4616)' }} />
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, color: 'var(--text-primary, #FFFFFF)' }}>
+              <h2 style={{ fontSize: '1.2rem', fontWeight: 700, margin: 0, color: 'var(--text-primary, #FFFFFF)' }}>
                 About this module
               </h2>
             </div>
@@ -285,13 +288,13 @@ export const LearnPage: React.FC<Props> = ({
             background: 'linear-gradient(135deg, rgba(28, 14, 8, 0.95) 0%, rgba(13, 17, 26, 0.95) 100%)',
             border: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.12))',
             borderRadius: 'var(--radius-lg, 16px)',
-            padding: '2.5rem',
+            padding: 'clamp(1.25rem, 3vw, 2.5rem)',
             marginBottom: '2.5rem',
             boxShadow: '0 12px 36px rgba(0, 0, 0, 0.4)'
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1.5rem' }}>
-            <div style={{ flex: 1, minWidth: '300px' }}>
+            <div style={{ flex: 1, minWidth: 'min(100%, 280px)' }}>
               {/* Badges */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
                 {activeCourse.badgeText && (
@@ -424,7 +427,7 @@ export const LearnPage: React.FC<Props> = ({
           })}
         </div>
 
-        <div style={{ position: 'relative', minWidth: '260px' }}>
+        <div style={{ position: 'relative', minWidth: 'min(100%, 260px)', flex: '1 1 240px' }}>
           <Search size={15} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted, #9CA3AF)' }} />
           <input
             type="text"
@@ -448,7 +451,7 @@ export const LearnPage: React.FC<Props> = ({
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))',
           gap: '1.75rem',
           marginBottom: '4rem'
         }}

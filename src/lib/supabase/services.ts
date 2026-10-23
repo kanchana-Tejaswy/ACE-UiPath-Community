@@ -647,6 +647,49 @@ export async function fetchArticlesFromSupabase(): Promise<Article[] | null> {
   }
 }
 
+export async function fetchSingleArticleFromSupabase(slugOrId: string): Promise<Article | null> {
+  if (!isSupabaseConfigured() || !slugOrId) return null;
+  const clean = decodeURIComponent(slugOrId).trim().replace(/\/$/, '').split('?')[0].split('#')[0];
+  if (!clean) return null;
+
+  try {
+    // 1. Exact match on slug
+    let { data, error } = await supabase
+      .from('articles')
+      .select('*')
+      .eq('slug', clean)
+      .maybeSingle();
+
+    // 2. Case-insensitive ilike match on slug
+    if (!data) {
+      const { data: ilikeData } = await supabase
+        .from('articles')
+        .select('*')
+        .ilike('slug', clean)
+        .maybeSingle();
+      data = ilikeData;
+    }
+
+    // 3. Fallback match by primary key id
+    if (!data) {
+      const { data: idData } = await supabase
+        .from('articles')
+        .select('*')
+        .eq('id', clean)
+        .maybeSingle();
+      data = idData;
+    }
+
+    if (data) {
+      return mapArticleRowToEntity(data as DatabaseArticleRow);
+    }
+    return null;
+  } catch (err) {
+    console.warn('Failed to query single article from Supabase:', err);
+    return null;
+  }
+}
+
 export async function saveArticleToSupabase(article: Article): Promise<{ success: boolean; error?: string }> {
   if (!isSupabaseConfigured()) return { success: true };
   try {
@@ -654,20 +697,32 @@ export async function saveArticleToSupabase(article: Article): Promise<{ success
 
     // If featuring this article, ensure any other featured articles in Supabase are unfeatured
     if (article.isFeatured) {
-      const { error: unfeatureError } = await supabase
-        .from('articles')
-        .update({ is_featured: false })
-        .neq('id', article.id)
-        .eq('is_featured', true);
-      if (unfeatureError) {
-        console.warn('Supabase unfeature previous articles warning:', unfeatureError);
+      try {
+        const { error: unfeatureError } = await supabase
+          .from('articles')
+          .update({ is_featured: false })
+          .neq('id', article.id)
+          .eq('is_featured', true);
+        if (unfeatureError) {
+          console.warn('Supabase unfeature previous articles warning:', unfeatureError);
+        }
+      } catch (e) {
+        console.warn('Supabase unfeature warning:', e);
+      }
+    }
+
+    // Clean undefined values to prevent Supabase serialization errors
+    const cleanedRow: Record<string, any> = {};
+    for (const [k, v] of Object.entries(row)) {
+      if (v !== undefined) {
+        cleanedRow[k] = v;
       }
     }
 
     let { error } = await supabase
       .from('articles')
       .upsert({
-        ...row,
+        ...cleanedRow,
         updated_at: new Date().toISOString()
       });
 
@@ -679,7 +734,7 @@ export async function saveArticleToSupabase(article: Article): Promise<{ success
       error.code === 'PGRST204'
     )) {
       console.warn('Supabase articles table missing aspect_ratio column; retrying upsert without aspect_ratio field...');
-      const { aspect_ratio, ...rowWithoutAspectRatio } = row;
+      const { aspect_ratio, ...rowWithoutAspectRatio } = cleanedRow;
       const retryResult = await supabase
         .from('articles')
         .upsert({
@@ -687,6 +742,29 @@ export async function saveArticleToSupabase(article: Article): Promise<{ success
           updated_at: new Date().toISOString()
         });
       error = retryResult.error;
+    }
+
+    // If still an error with unknown column, retry with only standard essential schema columns
+    if (error && (error.code === 'PGRST204' || error.message?.toLowerCase().includes('column'))) {
+      console.warn('Retrying Supabase article upsert with core schema columns only...');
+      const coreRow = {
+        id: row.id,
+        slug: row.slug,
+        title: row.title,
+        excerpt: row.excerpt,
+        content: row.content,
+        cover_image: row.cover_image,
+        category: row.category,
+        author_name: row.author_name,
+        author_role: row.author_role,
+        status: row.status,
+        published_at: row.published_at,
+        is_featured: row.is_featured,
+        views: row.views,
+        updated_at: new Date().toISOString()
+      };
+      const retryResult2 = await supabase.from('articles').upsert(coreRow);
+      error = retryResult2.error;
     }
 
     if (error) {

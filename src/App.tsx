@@ -35,98 +35,86 @@ export function App() {
   const store = useCommunityStore();
   // Parse initial view and slug from location.hash or pathname
   const parseHashLocation = () => {
-    let path = '';
-    if (typeof window !== 'undefined') {
-      const pathname = window.location.pathname.replace(/^\//, '').replace(/\/$/, '').toLowerCase();
-      if (pathname) {
-        if (pathname.startsWith('activity/')) {
-          return { view: 'activity_detail', detailId: pathname.replace('activity/', '') };
-        }
-        if (pathname.startsWith('activities/')) {
-          return { view: 'activity_detail', detailId: pathname.replace('activities/', '') };
-        }
-        if (pathname.startsWith('learning-academy/')) {
-          return { view: 'learn', detailId: pathname.replace('learning-academy/', '') };
-        }
-        if (pathname.startsWith('learn/')) {
-          return { view: 'learn', detailId: pathname.replace('learn/', '') };
-        }
-        if (pathname.startsWith('projects/')) {
-          return { view: 'projects', detailId: pathname.replace('projects/', '') };
-        }
-        if (pathname.startsWith('challenges/')) {
-          return { view: 'challenges', detailId: pathname.replace('challenges/', '') };
-        }
-        if (pathname.startsWith('resources/')) {
-          return { view: 'resources', detailId: pathname.replace('resources/', '') };
-        }
-        if (pathname.startsWith('blogs/') || pathname.startsWith('blog/')) {
-          return { view: 'blog_detail', detailId: pathname.replace(/^blogs?\//, '') };
-        }
-        if (pathname.startsWith('admin/article/')) {
-          return { view: 'article_editor', detailId: pathname.replace('admin/article/', '') };
-        }
-        if (pathname.startsWith('core/draft/')) {
-          return { view: 'core', detailId: pathname.replace('core/draft/', '') };
-        }
-        if (pathname === 'learning-academy') {
-          return { view: 'learn', detailId: undefined };
-        }
-        if (['home', 'activities', 'learn', 'projects', 'challenges', 'resources', 'about', 'join', 'admin', 'core', 'blogs', 'article_editor'].includes(pathname)) {
-          return { view: pathname, detailId: undefined };
-        }
-      }
-      path = window.location.hash.replace(/^#\/?/, '');
-    }
-    if (!path || path === 'home') {
+    if (typeof window === 'undefined') {
       return { view: 'home', detailId: undefined };
     }
-    if (path.startsWith('activity/')) {
-      const slug = path.replace('activity/', '');
-      return { view: 'activity_detail', detailId: slug };
+
+    const cleanRaw = (raw: string) => {
+      try {
+        return decodeURIComponent(raw).trim().replace(/\/$/, '').split('?')[0].split('#')[0];
+      } catch {
+        return raw.trim().replace(/\/$/, '').split('?')[0].split('#')[0];
+      }
+    };
+
+    const hash = window.location.hash.replace(/^#\/?/, '');
+    const pathname = window.location.pathname.replace(/^\//, '').replace(/\/$/, '');
+
+    // 1. Check Hash first (as SPA navigation and deep linking primarily updates hash)
+    if (hash) {
+      if (hash.startsWith('activity/') || hash.startsWith('activities/')) {
+        return { view: 'activity_detail', detailId: cleanRaw(hash.replace(/^activities?\//, '')) };
+      }
+      if (hash.startsWith('learning-academy/') || hash.startsWith('learn/')) {
+        return { view: 'learn', detailId: cleanRaw(hash.replace(/^(learning-academy|learn)\//, '')) };
+      }
+      if (hash.startsWith('projects/')) {
+        return { view: 'projects', detailId: cleanRaw(hash.replace(/^projects\//, '')) };
+      }
+      if (hash.startsWith('challenges/')) {
+        return { view: 'challenges', detailId: cleanRaw(hash.replace(/^challenges\//, '')) };
+      }
+      if (hash.startsWith('resources/')) {
+        return { view: 'resources', detailId: cleanRaw(hash.replace(/^resources\//, '')) };
+      }
+      if (hash.startsWith('blogs/') || hash.startsWith('blog/')) {
+        return { view: 'blog_detail', detailId: cleanRaw(hash.replace(/^blogs?\//, '')) };
+      }
+      if (hash.startsWith('admin/article/')) {
+        return { view: 'article_editor', detailId: cleanRaw(hash.replace(/^admin\/article\//, '')) };
+      }
+      if (hash.startsWith('core/draft/')) {
+        return { view: 'core', detailId: cleanRaw(hash.replace(/^core\/draft\//, '')) };
+      }
+      if (['home', 'activities', 'learn', 'projects', 'challenges', 'resources', 'about', 'join', 'admin', 'core', 'blogs', 'article_editor'].includes(hash.toLowerCase())) {
+        return { view: hash.toLowerCase(), detailId: undefined };
+      }
     }
-    if (path.startsWith('activities/')) {
-      const slug = path.replace('activities/', '');
-      return { view: 'activity_detail', detailId: slug };
+
+    // 2. Check Pathname (for direct Vercel server rewrite URL access)
+    if (pathname) {
+      if (pathname.startsWith('activity/') || pathname.startsWith('activities/')) {
+        return { view: 'activity_detail', detailId: cleanRaw(pathname.replace(/^activities?\//, '')) };
+      }
+      if (pathname.startsWith('learning-academy/') || pathname.startsWith('learn/')) {
+        return { view: 'learn', detailId: cleanRaw(pathname.replace(/^(learning-academy|learn)\//, '')) };
+      }
+      if (pathname.startsWith('projects/')) {
+        return { view: 'projects', detailId: cleanRaw(pathname.replace(/^projects\//, '')) };
+      }
+      if (pathname.startsWith('challenges/')) {
+        return { view: 'challenges', detailId: cleanRaw(pathname.replace(/^challenges\//, '')) };
+      }
+      if (pathname.startsWith('resources/')) {
+        return { view: 'resources', detailId: cleanRaw(pathname.replace(/^resources\//, '')) };
+      }
+      if (pathname.startsWith('blogs/') || pathname.startsWith('blog/')) {
+        return { view: 'blog_detail', detailId: cleanRaw(pathname.replace(/^blogs?\//, '')) };
+      }
+      if (pathname.startsWith('admin/article/')) {
+        return { view: 'article_editor', detailId: cleanRaw(pathname.replace(/^admin\/article\//, '')) };
+      }
+      if (pathname.startsWith('core/draft/')) {
+        return { view: 'core', detailId: cleanRaw(pathname.replace(/^core\/draft\//, '')) };
+      }
+      if (pathname === 'learning-academy') {
+        return { view: 'learn', detailId: undefined };
+      }
+      if (['home', 'activities', 'learn', 'projects', 'challenges', 'resources', 'about', 'join', 'admin', 'core', 'blogs', 'article_editor'].includes(pathname.toLowerCase())) {
+        return { view: pathname.toLowerCase(), detailId: undefined };
+      }
     }
-    if (path.startsWith('learning-academy/')) {
-      const slug = path.replace('learning-academy/', '');
-      return { view: 'learn', detailId: slug };
-    }
-    if (path.startsWith('learn/')) {
-      const slug = path.replace('learn/', '');
-      return { view: 'learn', detailId: slug };
-    }
-    if (path.startsWith('projects/')) {
-      const slug = path.replace('projects/', '');
-      return { view: 'projects', detailId: slug };
-    }
-    if (path.startsWith('challenges/')) {
-      const slug = path.replace('challenges/', '');
-      return { view: 'challenges', detailId: slug };
-    }
-    if (path.startsWith('resources/')) {
-      const slug = path.replace('resources/', '');
-      return { view: 'resources', detailId: slug };
-    }
-    if (path.startsWith('blogs/') || path.startsWith('blog/')) {
-      const slug = path.replace(/^blogs?\//, '');
-      return { view: 'blog_detail', detailId: slug };
-    }
-    if (path.startsWith('admin/article/')) {
-      const artId = path.replace('admin/article/', '');
-      return { view: 'article_editor', detailId: artId };
-    }
-    if (path.startsWith('core/draft/')) {
-      const draftId = path.replace('core/draft/', '');
-      return { view: 'core', detailId: draftId };
-    }
-    if (path === 'learning-academy') {
-      return { view: 'learn', detailId: undefined };
-    }
-    if (['activities', 'learn', 'projects', 'challenges', 'resources', 'about', 'join', 'admin', 'core', 'blogs', 'article_editor'].includes(path)) {
-      return { view: path, detailId: undefined };
-    }
+
     return { view: 'home', detailId: undefined };
   };
 

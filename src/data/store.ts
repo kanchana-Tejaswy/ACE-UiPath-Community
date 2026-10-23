@@ -100,36 +100,105 @@ export function useCommunityStore() {
             localDatabase.saveSettings(mergedSettings);
           }
           if (remoteActivities !== null && Array.isArray(remoteActivities)) {
-            setActivities(remoteActivities);
-            localDatabase.saveActivities(remoteActivities);
+            const localActivities = localDatabase.getActivities();
+            if (remoteActivities.length > 0) {
+              const remoteIds = new Set(remoteActivities.map((a) => a.id));
+              const remoteSlugs = new Set(remoteActivities.map((a) => (a.slug || '').toLowerCase()).filter(Boolean));
+              const uniqueLocal = localActivities.filter(
+                (la) => !remoteIds.has(la.id) && !(la.slug && remoteSlugs.has(la.slug.toLowerCase()))
+              );
+              const merged = [...remoteActivities, ...uniqueLocal];
+              setActivities(merged);
+              localDatabase.saveActivities(merged);
+            } else if (localActivities.length > 0) {
+              setActivities(localActivities);
+            }
           }
           if (remoteProjects !== null && Array.isArray(remoteProjects)) {
-            setProjects(remoteProjects);
-            localDatabase.saveProjects(remoteProjects);
+            const localProjects = localDatabase.getProjects();
+            if (remoteProjects.length > 0) {
+              const remoteIds = new Set(remoteProjects.map((p) => p.id));
+              const remoteSlugs = new Set(remoteProjects.map((p) => (p.slug || '').toLowerCase()).filter(Boolean));
+              const uniqueLocal = localProjects.filter(
+                (lp) => !remoteIds.has(lp.id) && !(lp.slug && remoteSlugs.has(lp.slug.toLowerCase()))
+              );
+              const merged = [...remoteProjects, ...uniqueLocal];
+              setProjects(merged);
+              localDatabase.saveProjects(merged);
+            } else if (localProjects.length > 0) {
+              setProjects(localProjects);
+            }
           }
           if (remoteResources !== null && Array.isArray(remoteResources)) {
-            setResources(remoteResources);
-            localDatabase.saveResources(remoteResources);
+            const localResources = localDatabase.getResources();
+            if (remoteResources.length > 0) {
+              const remoteIds = new Set(remoteResources.map((r) => r.id));
+              const uniqueLocal = localResources.filter((lr) => !remoteIds.has(lr.id));
+              const merged = [...remoteResources, ...uniqueLocal];
+              setResources(merged);
+              localDatabase.saveResources(merged);
+            } else if (localResources.length > 0) {
+              setResources(localResources);
+            }
           }
           if (remoteLearningPaths !== null && Array.isArray(remoteLearningPaths)) {
-            setLearningPaths(remoteLearningPaths);
-            localDatabase.saveLearningPaths(remoteLearningPaths);
+            const localPaths = localDatabase.getLearningPaths();
+            if (remoteLearningPaths.length > 0) {
+              const remoteIds = new Set(remoteLearningPaths.map((p) => p.id));
+              const uniqueLocal = localPaths.filter((lp) => !remoteIds.has(lp.id));
+              const merged = [...remoteLearningPaths, ...uniqueLocal];
+              setLearningPaths(merged);
+              localDatabase.saveLearningPaths(merged);
+            } else if (localPaths.length > 0) {
+              setLearningPaths(localPaths);
+            }
           }
           if (remoteChallenges !== null && Array.isArray(remoteChallenges)) {
-            setChallenges(remoteChallenges);
-            localDatabase.saveChallenges(remoteChallenges);
+            const localChallenges = localDatabase.getChallenges();
+            if (remoteChallenges.length > 0) {
+              const remoteIds = new Set(remoteChallenges.map((c) => c.id));
+              const uniqueLocal = localChallenges.filter((lc) => !remoteIds.has(lc.id));
+              const merged = [...remoteChallenges, ...uniqueLocal];
+              setChallenges(merged);
+              localDatabase.saveChallenges(merged);
+            } else if (localChallenges.length > 0) {
+              setChallenges(localChallenges);
+            }
           }
           if (remoteLeadership !== null && Array.isArray(remoteLeadership)) {
-            setLeadership(remoteLeadership);
-            localDatabase.saveLeadership(remoteLeadership);
+            const localLeadership = localDatabase.getLeadership();
+            if (remoteLeadership.length > 0) {
+              const remoteIds = new Set(remoteLeadership.map((l) => l.id));
+              const uniqueLocal = localLeadership.filter((ll) => !remoteIds.has(ll.id));
+              const merged = [...remoteLeadership, ...uniqueLocal];
+              setLeadership(merged);
+              localDatabase.saveLeadership(merged);
+            } else if (localLeadership.length > 0) {
+              setLeadership(localLeadership);
+            }
           }
           if (remoteDrafts !== null && Array.isArray(remoteDrafts)) {
-            setActivityDrafts(remoteDrafts);
-            localDatabase.saveActivityDrafts(remoteDrafts);
+            const localDrafts = localDatabase.getActivityDrafts();
+            if (remoteDrafts.length > 0) {
+              const remoteIds = new Set(remoteDrafts.map((d) => d.id));
+              const uniqueLocal = localDrafts.filter((ld) => !remoteIds.has(ld.id));
+              const merged = [...remoteDrafts, ...uniqueLocal];
+              setActivityDrafts(merged);
+              localDatabase.saveActivityDrafts(merged);
+            } else if (localDrafts.length > 0) {
+              setActivityDrafts(localDrafts);
+            }
           }
           if (remoteArticles !== null && Array.isArray(remoteArticles)) {
-            setArticles(remoteArticles);
-            localDatabase.saveArticles(remoteArticles);
+            const localArticles = localDatabase.getArticles();
+            const remoteIds = new Set(remoteArticles.map((a) => a.id));
+            const remoteSlugs = new Set(remoteArticles.map((a) => (a.slug || '').toLowerCase()).filter(Boolean));
+            const uniqueLocal = localArticles.filter(
+              (la) => !remoteIds.has(la.id) && !(la.slug && remoteSlugs.has(la.slug.toLowerCase()))
+            );
+            const mergedArticles = [...remoteArticles, ...uniqueLocal];
+            setArticles(mergedArticles);
+            localDatabase.saveArticles(mergedArticles);
           }
         }
       } catch (err) {

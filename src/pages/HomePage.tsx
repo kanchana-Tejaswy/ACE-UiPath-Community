@@ -158,7 +158,7 @@ export const HomePage: React.FC<Props> = ({
 
             {/* Main Headline */}
             <h1 className="animate-fade-up stagger-2" style={{
-              fontSize: 'clamp(2.4rem, 4.8vw, 3.75rem)',
+              fontSize: 'clamp(1.85rem, 5vw, 3.75rem)',
               lineHeight: 1.14,
               fontWeight: 800,
               letterSpacing: '-0.035em',
@@ -187,7 +187,7 @@ export const HomePage: React.FC<Props> = ({
             <div className="animate-fade-up stagger-4" style={{ display: 'flex', justifyContent: 'center', gap: '0.9rem', flexWrap: 'wrap', alignItems: 'center' }}>
               <button
                 onClick={() => onNavigate(primaryCtaLink)}
-                className="btn btn-primary btn-lg btn-tactile"
+                className="btn btn-primary btn-lg btn-tactile hero-cta-btn"
                 style={{ minHeight: '46px', padding: '0.8rem 1.75rem' }}
               >
                 <span>{primaryCtaText}</span>
@@ -196,7 +196,7 @@ export const HomePage: React.FC<Props> = ({
 
               <button
                 onClick={() => onNavigate(secondaryCtaLink)}
-                className="btn btn-secondary btn-lg btn-tactile"
+                className="btn btn-secondary btn-lg btn-tactile hero-cta-btn"
                 style={{ minHeight: '46px', padding: '0.8rem 1.75rem' }}
               >
                 {secondaryCtaText}
@@ -1058,6 +1058,9 @@ export const HomePage: React.FC<Props> = ({
           .stats-responsive-grid {
             grid-template-columns: 1fr !important;
             gap: 0.875rem !important;
+          }
+          .hero-cta-btn {
+            width: 100% !important;
           }
         }
         @media (max-width: 860px) {

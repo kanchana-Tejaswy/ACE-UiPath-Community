@@ -57,14 +57,17 @@ export const JoinPage: React.FC<Props> = ({ settings, onNavigate }) => {
         </div>
 
         {/* Tab Switcher */}
-        <div style={{
-          display: 'flex',
-          background: 'var(--bg-secondary)',
-          padding: '0.35rem',
-          borderRadius: 'var(--radius-md)',
-          border: '1px solid var(--border-subtle)',
-          marginBottom: '2.5rem'
-        }}>
+        <div 
+          className="join-tab-switcher"
+          style={{
+            display: 'flex',
+            background: 'var(--bg-secondary)',
+            padding: '0.35rem',
+            borderRadius: 'var(--radius-md)',
+            border: '1px solid var(--border-subtle)',
+            marginBottom: '2.5rem'
+          }}
+        >
           {[
             { id: 'member', label: 'Student Member', icon: Users },
             { id: 'core', label: 'Core Team Application', icon: ShieldCheck },
@@ -101,7 +104,7 @@ export const JoinPage: React.FC<Props> = ({ settings, onNavigate }) => {
         </div>
 
         {/* Form Container */}
-        <div className="glass-panel" style={{ padding: '2.5rem' }}>
+        <div className="glass-panel" style={{ padding: 'clamp(1.25rem, 4vw, 2.5rem)' }}>
           {submitted ? (
             <div style={{ textAlign: 'center', padding: '3rem 1rem' }}>
               <div style={{
@@ -236,6 +239,20 @@ export const JoinPage: React.FC<Props> = ({ settings, onNavigate }) => {
           )}
         </div>
       </div>
+
+      <style>{`
+        @media (max-width: 640px) {
+          .join-tab-switcher {
+            flex-direction: column !important;
+            gap: 0.35rem !important;
+          }
+          .join-tab-switcher button {
+            width: 100% !important;
+            justify-content: flex-start !important;
+            padding: 0.65rem 0.85rem !important;
+          }
+        }
+      `}</style>
     </div>
   );
 };

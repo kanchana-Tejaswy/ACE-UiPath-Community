@@ -150,8 +150,8 @@ export const CommunityAssistant: React.FC<Props> = ({
           className="ask-guide-floating-btn"
           style={{
             position: 'fixed',
-            bottom: '1.5rem',
-            right: '1.5rem',
+            bottom: 'max(1.25rem, env(safe-area-inset-bottom, 1.25rem))',
+            right: 'max(1.25rem, env(safe-area-inset-right, 1.25rem))',
             zIndex: 50,
             background: 'rgba(23, 23, 23, 0.90)',
             backdropFilter: 'blur(12px)',
@@ -188,15 +188,15 @@ export const CommunityAssistant: React.FC<Props> = ({
       {/* Floating Drawer Modal */}
       {isOpen && (
         <div
-          className="glass-panel"
+          className="glass-panel community-assistant-drawer"
           style={{
             position: 'fixed',
-            bottom: '2rem',
-            right: '2rem',
+            bottom: 'max(1.5rem, env(safe-area-inset-bottom, 1.5rem))',
+            right: 'max(1.5rem, env(safe-area-inset-right, 1.5rem))',
             width: '90vw',
             maxWidth: '420px',
             height: '580px',
-            maxHeight: '80vh',
+            maxHeight: 'calc(85dvh - env(safe-area-inset-bottom, 0px))',
             zIndex: 100,
             background: 'var(--bg-secondary)',
             border: '1px solid var(--border-glow)',
@@ -379,6 +379,19 @@ export const CommunityAssistant: React.FC<Props> = ({
           </div>
         </div>
       )}
+
+      <style>{`
+        @media (max-width: 480px) {
+          .community-assistant-drawer {
+            left: 0.75rem !important;
+            right: 0.75rem !important;
+            bottom: max(0.75rem, env(safe-area-inset-bottom, 0.75rem)) !important;
+            width: auto !important;
+            max-width: none !important;
+            max-height: calc(90dvh - env(safe-area-inset-bottom, 0px)) !important;
+          }
+        }
+      `}</style>
     </>
   );
 };

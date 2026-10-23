@@ -7,7 +7,8 @@ import {
   LeadershipMember, 
   SiteSettings, 
   ActivityDraft,
-  Article
+  Article,
+  ArticleStatus
 } from '../../types';
 import { normalizeBannerAspectRatio } from '../../utils/bannerRatio';
 import { 
@@ -413,12 +414,17 @@ export function mapActivityDraftEntityToRow(draft: ActivityDraft): DatabaseActiv
 // Articles & Technical Write-ups
 export function mapArticleRowToEntity(row: DatabaseArticleRow): Article {
   const normalizedRatio = normalizeBannerAspectRatio(row.aspect_ratio);
+  const rawStatus = String(row.status || 'PUBLISHED').toUpperCase().trim();
+  const normalizedStatus: ArticleStatus = (rawStatus === 'DRAFT' || rawStatus === 'SCHEDULED')
+    ? rawStatus
+    : 'PUBLISHED';
+
   return {
     id: row.id,
-    slug: row.slug,
-    title: row.title,
-    excerpt: row.excerpt,
-    content: row.content,
+    slug: row.slug || row.id,
+    title: row.title || 'Untitled Publication',
+    excerpt: row.excerpt || '',
+    content: row.content || '',
     coverImage: row.cover_image,
     coverImageUrl: row.cover_image,
     aspectRatio: normalizedRatio,
@@ -427,11 +433,11 @@ export function mapArticleRowToEntity(row: DatabaseArticleRow): Article {
       aspectRatio: normalizedRatio
     },
     category: row.category as any,
-    authorName: row.author_name,
-    authorRole: row.author_role,
-    status: row.status as any,
+    authorName: row.author_name || 'ACE Core Team',
+    authorRole: row.author_role || 'Community Author',
+    status: normalizedStatus,
     scheduledAt: row.scheduled_at,
-    publishedAt: row.published_at,
+    publishedAt: row.published_at || (normalizedStatus === 'PUBLISHED' ? (row.created_at || new Date().toISOString()) : undefined),
     isFeatured: Boolean(row.is_featured),
     views: row.views || 0,
     createdAt: row.created_at || new Date().toISOString(),
@@ -443,6 +449,9 @@ export function mapArticleRowToEntity(row: DatabaseArticleRow): Article {
 
 export function mapArticleEntityToRow(article: Article): DatabaseArticleRow {
   const ratio = normalizeBannerAspectRatio(article.coverBanner?.aspectRatio || article.aspectRatio);
+  const rawStatus = String(article.status || 'PUBLISHED').toUpperCase().trim();
+  const normalizedStatus = (rawStatus === 'DRAFT' || rawStatus === 'SCHEDULED') ? rawStatus : 'PUBLISHED';
+
   return {
     id: article.id,
     slug: article.slug || article.id,
@@ -454,9 +463,9 @@ export function mapArticleEntityToRow(article: Article): DatabaseArticleRow {
     category: article.category || 'TUTORIAL',
     author_name: article.authorName || 'ACE UiPath Core Team',
     author_role: article.authorRole || 'Community Author',
-    status: article.status || 'PUBLISHED',
+    status: normalizedStatus,
     scheduled_at: article.scheduledAt,
-    published_at: article.publishedAt || new Date().toISOString(),
+    published_at: article.publishedAt || (normalizedStatus === 'PUBLISHED' ? new Date().toISOString() : undefined),
     is_featured: Boolean(article.isFeatured),
     views: article.views || 0,
     created_at: article.createdAt || new Date().toISOString(),

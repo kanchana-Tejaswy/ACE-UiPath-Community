@@ -386,10 +386,11 @@ export const ArticleEditorPage: React.FC<Props> = ({
 
     setIsSaving(true);
     const now = new Date().toISOString();
+    const finalSlug = (slug.trim() || slugify(title.trim()) || `art-${Date.now()}`).toLowerCase();
 
     const articleToSave: Article = {
       id: existingArticle?.id || `art_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
-      slug: slug.trim(),
+      slug: finalSlug,
       title: title.trim(),
       excerpt: excerpt.trim(),
       content: content.trim(),
@@ -506,6 +507,7 @@ export const ArticleEditorPage: React.FC<Props> = ({
 
       {/* TOP BAR: Sticky Header */}
       <header
+        className="article-editor-header"
         style={{
           position: 'sticky',
           top: 0,
@@ -517,7 +519,8 @@ export const ArticleEditorPage: React.FC<Props> = ({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          gap: '1rem'
+          gap: '1rem',
+          flexWrap: 'wrap'
         }}
       >
         {/* Left: Back & Status */}
@@ -1846,6 +1849,7 @@ export const ArticleEditorPage: React.FC<Props> = ({
 
           {/* EDIT & PREVIEW PANES */}
           <div
+            className="article-editor-panes"
             style={{
               flex: 1,
               display: 'grid',
@@ -1957,6 +1961,7 @@ export const ArticleEditorPage: React.FC<Props> = ({
 
       {/* FOOTER ACTION BAR */}
       <footer
+        className="article-editor-footer"
         style={{
           position: 'sticky',
           bottom: 0,

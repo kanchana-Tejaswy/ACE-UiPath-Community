@@ -12,12 +12,17 @@ import {
   Edit3,
   Bookmark,
   ShieldCheck,
-  Newspaper
+  Newspaper,
+  RotateCw,
+  Loader2
 } from 'lucide-react';
 import { Article, User } from '../types';
 import { normalizeBannerAspectRatio, getBannerContainerStyle, getBannerImageStyle } from '../utils/bannerRatio';
 import { TechnicalMarkdownRenderer } from '../components/TechnicalMarkdownRenderer';
 import { hasPermission } from '../lib/security';
+import { articlesRepository } from '../data/repositories/articlesRepository';
+import { isSupabaseConfigured } from '../lib/supabase/client';
+import { fetchSingleArticleFromSupabase } from '../lib/supabase/services';
 
 interface Props {
   slugOrId: string;
@@ -35,25 +40,107 @@ export const BlogDetailPage: React.FC<Props> = ({
   onIncrementViews
 }) => {
   const [copiedLink, setCopiedLink] = useState(false);
+  const [asyncArticle, setAsyncArticle] = useState<Article | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [retryCounter, setRetryCounter] = useState(0);
 
-  // Find article by slug or id
-  const article = useMemo(() => {
-    return articles.find((a) => a.slug === slugOrId || a.id === slugOrId) || null;
-  }, [articles, slugOrId]);
+  // Clean slug or id from URI encoding, trailing slashes, or query parameters
+  const cleanSlug = useMemo(() => {
+    if (!slugOrId) return '';
+    try {
+      return decodeURIComponent(slugOrId).trim().replace(/\/$/, '').split('?')[0].split('#')[0];
+    } catch {
+      return slugOrId.trim().replace(/\/$/, '').split('?')[0].split('#')[0];
+    }
+  }, [slugOrId]);
+
+  // Robust search from props: exact, case-insensitive, and slug variations
+  const matchedFromProps = useMemo(() => {
+    if (!cleanSlug) return null;
+    const lowerClean = cleanSlug.toLowerCase();
+
+    // 1. Exact match by slug or id
+    let found = articles.find((a) => a.slug === cleanSlug || a.id === cleanSlug || a.slug === slugOrId || a.id === slugOrId);
+    if (found) return found;
+
+    // 2. Case-insensitive match
+    found = articles.find((a) => (a.slug && a.slug.toLowerCase() === lowerClean) || (a.id && a.id.toLowerCase() === lowerClean));
+    if (found) return found;
+
+    // 3. Slug variation (replacing spaces/underscores with dashes)
+    const normalizedKey = lowerClean.replace(/[\s_-]+/g, '-');
+    found = articles.find((a) => a.slug && a.slug.toLowerCase().replace(/[\s_-]+/g, '-') === normalizedKey);
+    return found || null;
+  }, [articles, cleanSlug, slugOrId]);
+
+  // If not found in props, check local repository and Supabase cloud
+  useEffect(() => {
+    if (matchedFromProps) {
+      setAsyncArticle(null);
+      setIsLoading(false);
+      return;
+    }
+
+    if (!cleanSlug) {
+      setIsLoading(false);
+      return;
+    }
+
+    // Check local database repository
+    const fromLocal = articlesRepository.getBySlug(cleanSlug) ||
+      articlesRepository.getAll().find((a) =>
+        a.slug?.toLowerCase() === cleanSlug.toLowerCase() ||
+        a.id?.toLowerCase() === cleanSlug.toLowerCase()
+      );
+
+    if (fromLocal) {
+      setAsyncArticle(fromLocal);
+      setIsLoading(false);
+      return;
+    }
+
+    // Check Supabase directly if configured
+    if (isSupabaseConfigured()) {
+      setIsLoading(true);
+      fetchSingleArticleFromSupabase(cleanSlug)
+        .then((remote) => {
+          if (remote) {
+            setAsyncArticle(remote);
+            articlesRepository.save(remote);
+          }
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
+    } else {
+      setIsLoading(false);
+    }
+  }, [cleanSlug, matchedFromProps, retryCounter]);
+
+  const article = matchedFromProps || asyncArticle;
 
   const isPrivileged = Boolean(currentUser && hasPermission(currentUser.role, 'CORE_TEAM'));
+  const isAuthor = Boolean(
+    currentUser && article && (
+      article.authorId === currentUser.id ||
+      (currentUser.name && article.authorName && article.authorName.toLowerCase() === currentUser.name.toLowerCase()) ||
+      (currentUser.name && article.createdBy && article.createdBy.toLowerCase() === currentUser.name.toLowerCase())
+    )
+  );
 
-  // Public eligibility: PUBLISHED or SCHEDULED whose time has passed
+  // Public eligibility: PUBLISHED or past SCHEDULED
   const isPubliclyAvailable = useMemo(() => {
     if (!article) return false;
-    if (article.status === 'PUBLISHED' || !article.status) return true;
-    if (article.status === 'SCHEDULED' && article.scheduledAt) {
+    const statusUpper = String(article.status || 'PUBLISHED').toUpperCase().trim();
+    if (statusUpper === 'PUBLISHED' || !article.status) return true;
+    if (statusUpper === 'SCHEDULED') {
+      if (!article.scheduledAt) return true;
       return new Date(article.scheduledAt).getTime() <= Date.now();
     }
     return false;
   }, [article]);
 
-  const canViewArticle = Boolean(article && (isPubliclyAvailable || isPrivileged));
+  const canViewArticle = Boolean(article && (isPubliclyAvailable || isPrivileged || isAuthor));
 
   // View count increment with sessionStorage de-duplication (only for publicly available articles)
   useEffect(() => {
@@ -84,8 +171,8 @@ export const BlogDetailPage: React.FC<Props> = ({
     if (!article) return [];
     return articles
       .filter((a) => a.id !== article.id && (
-        a.status === 'PUBLISHED' || 
-        (a.status === 'SCHEDULED' && a.scheduledAt && new Date(a.scheduledAt).getTime() <= Date.now())
+        String(a.status || 'PUBLISHED').toUpperCase() === 'PUBLISHED' || 
+        (String(a.status || '').toUpperCase() === 'SCHEDULED' && a.scheduledAt && new Date(a.scheduledAt).getTime() <= Date.now())
       ))
       .sort((a, b) => {
         if (a.category === article.category && b.category !== article.category) return -1;
@@ -95,6 +182,38 @@ export const BlogDetailPage: React.FC<Props> = ({
       .slice(0, 3);
   }, [articles, article]);
 
+  // Loading state while checking cloud or syncing
+  if (isLoading) {
+    return (
+      <div className="page-container" style={{ padding: '8rem 1.5rem', textAlign: 'center' }}>
+        <div style={{ maxWidth: '440px', margin: '0 auto' }}>
+          <div
+            style={{
+              width: '52px',
+              height: '52px',
+              borderRadius: '50%',
+              background: 'rgba(250, 70, 22, 0.1)',
+              border: '2px solid rgba(250, 70, 22, 0.3)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 1.5rem auto',
+              color: '#FA4616'
+            }}
+          >
+            <Loader2 size={24} className="spin-slow" />
+          </div>
+          <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: '#FFF', marginBottom: '0.5rem' }}>
+            Retrieving Article
+          </h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', lineHeight: 1.6 }}>
+            Locating technical write-up from institutional repository...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   // If article not found or unauthorized draft
   if (!article || !canViewArticle) {
     return (
@@ -103,16 +222,27 @@ export const BlogDetailPage: React.FC<Props> = ({
         <h2 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#FFF', marginBottom: '0.5rem' }}>
           Article Not Available
         </h2>
-        <p style={{ color: 'var(--text-secondary)', maxWidth: '460px', margin: '0 auto 1.5rem' }}>
-          This article is currently unpublished, scheduled for future release, or has been archived.
+        <p style={{ color: 'var(--text-secondary)', maxWidth: '480px', margin: '0 auto 1.5rem', lineHeight: 1.6 }}>
+          {!article
+            ? `We couldn't locate an article matching "${cleanSlug || slugOrId}". It may still be syncing or under review.`
+            : 'This article is currently unpublished, scheduled for future release, or has been archived.'}
         </p>
-        <button
-          onClick={() => onNavigate('blogs')}
-          className="btn btn-primary"
-          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
-        >
-          <ArrowLeft size={16} /> Return to All Articles
-        </button>
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+          <button
+            onClick={() => setRetryCounter((c) => c + 1)}
+            className="btn btn-secondary"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
+          >
+            <RotateCw size={15} /> Check Again
+          </button>
+          <button
+            onClick={() => onNavigate('blogs')}
+            className="btn btn-primary"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
+          >
+            <ArrowLeft size={16} /> Return to All Articles
+          </button>
+        </div>
       </div>
     );
   }

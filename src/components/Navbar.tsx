@@ -42,7 +42,14 @@ export const Navbar: React.FC<Props> = ({
   const [mobileEventsOpen, setMobileEventsOpen] = useState(true);
   const [mobileResourcesOpen, setMobileResourcesOpen] = useState(true);
   
-  const navContainerRef = useRef<HTMLDivElement>(null);
+  // Smart auto-hide navbar state
+  const [isVisible, setIsVisible] = useState(true);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const lastScrollYRef = useRef(0);
+  
+  const headerRef = useRef<HTMLElement>(null);
+  const navContainerRef = useRef<HTMLElement>(null);
+  const mobileMenuOpenRef = useRef(mobileMenuOpen);
   const dropdownTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Grouped Navigation Structure
@@ -93,11 +100,17 @@ export const Navbar: React.FC<Props> = ({
   const isHomeActive = currentView === 'home';
   const isAboutActive = currentView === 'about';
 
-  // Close dropdown on outside click
+  // Synchronize mobileMenuOpenRef
+  useEffect(() => {
+    mobileMenuOpenRef.current = mobileMenuOpen;
+  }, [mobileMenuOpen]);
+
+  // Close dropdown or mobile menu on outside click
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (navContainerRef.current && !navContainerRef.current.contains(event.target as Node)) {
+      if (headerRef.current && !headerRef.current.contains(event.target as Node)) {
         setOpenDropdown(null);
+        setMobileMenuOpen(false);
       }
     };
     const handleEscape = (e: KeyboardEvent) => {
@@ -115,6 +128,72 @@ export const Navbar: React.FC<Props> = ({
     };
   }, []);
 
+  // Robust auto-hide navbar on scroll down, reveal on intentional scroll up
+  useEffect(() => {
+    let ticking = false;
+    let accumulatedDown = 0;
+    let accumulatedUp = 0;
+
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const currentScrollY = Math.max(0, window.pageYOffset || document.documentElement.scrollTop || window.scrollY || 0);
+          const prevScrollY = lastScrollYRef.current;
+          const delta = currentScrollY - prevScrollY;
+
+          // Always visible at the top of the page
+          if (currentScrollY <= 25) {
+            setIsVisible(true);
+            setIsScrolled(false);
+            accumulatedDown = 0;
+            accumulatedUp = 0;
+          } else {
+            setIsScrolled(true);
+
+            if (delta > 0) {
+              // Scrolling down
+              accumulatedDown += delta;
+              accumulatedUp = 0;
+
+              // Hide navbar & close menu as soon as 10px of downward scroll occurs past top zone
+              if (accumulatedDown >= 10 && currentScrollY > 35) {
+                setIsVisible(false);
+                setMobileMenuOpen(false);
+                setOpenDropdown(null);
+              }
+            } else if (delta < 0) {
+              // Scrolling up
+              accumulatedUp += Math.abs(delta);
+              accumulatedDown = 0;
+
+              // Only reveal on intentional upward scroll (>= 18px), preventing micro-lift bounce
+              if (accumulatedUp >= 18) {
+                setIsVisible(true);
+              }
+            }
+          }
+
+          lastScrollYRef.current = currentScrollY;
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+
+  // Reset navbar to visible when navigating to another view
+  useEffect(() => {
+    setIsVisible(true);
+    setMobileMenuOpen(false);
+    setOpenDropdown(null);
+    lastScrollYRef.current = window.scrollY;
+  }, [currentView]);
+
   const handleMouseEnter = (dropdown: 'events' | 'resources') => {
     if (dropdownTimeoutRef.current) {
       clearTimeout(dropdownTimeoutRef.current);
@@ -131,14 +210,20 @@ export const Navbar: React.FC<Props> = ({
 
   return (
     <header 
+      ref={headerRef}
       style={{
         position: 'sticky',
         top: 0,
         zIndex: 50,
-        background: 'rgba(10, 10, 10, 0.85)',
-        backdropFilter: 'blur(12px)',
-        WebkitBackdropFilter: 'blur(12px)',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.08)'
+        background: isScrolled ? 'rgba(10, 10, 10, 0.94)' : 'rgba(10, 10, 10, 0.85)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
+        borderBottom: isScrolled ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid rgba(255, 255, 255, 0.08)',
+        paddingTop: 'env(safe-area-inset-top, 0px)',
+        transform: isVisible ? 'translateY(0)' : 'translateY(-100%)',
+        transition: 'transform 0.32s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease',
+        boxShadow: isScrolled ? '0 8px 24px rgba(0, 0, 0, 0.45)' : 'none',
+        willChange: 'transform'
       }}
     >
       <div 
@@ -211,7 +296,7 @@ export const Navbar: React.FC<Props> = ({
                 COMMUNITY
               </span>
             </div>
-            <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', letterSpacing: '0.04em' }}>
+            <div className="brand-college-tag" style={{ fontSize: '0.65rem', color: 'var(--text-muted)', letterSpacing: '0.04em' }}>
               ACE ENGINEERING COLLEGE
             </div>
           </div>
@@ -631,7 +716,6 @@ export const Navbar: React.FC<Props> = ({
               borderRadius: '8px',
               border: 'none',
               cursor: 'pointer',
-              display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',
               transition: 'all 0.2s ease',
@@ -643,11 +727,22 @@ export const Navbar: React.FC<Props> = ({
 
           {/* Mobile Hamburger */}
           <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            onClick={() => {
+              const nextState = !mobileMenuOpen;
+              mobileMenuOpenRef.current = nextState;
+              setMobileMenuOpen(nextState);
+              if (nextState) {
+                setIsVisible(true);
+              }
+            }}
             className="btn btn-secondary btn-sm mobile-hamburger"
             style={{ 
               padding: '0.45rem', 
+              minWidth: '42px',
+              minHeight: '42px',
               display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
               background: 'rgba(20, 20, 20, 0.7)',
               border: '1px solid rgba(255, 255, 255, 0.1)'
             }}
@@ -662,16 +757,23 @@ export const Navbar: React.FC<Props> = ({
       {mobileMenuOpen && (
         <div 
           style={{
+            position: 'absolute',
+            top: '100%',
+            left: 0,
+            right: 0,
             background: 'rgba(12, 12, 12, 0.98)',
-            backdropFilter: 'blur(16px)',
-            WebkitBackdropFilter: 'blur(16px)',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            borderBottom: '1px solid rgba(255, 255, 255, 0.12)',
+            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.75)',
             padding: '1rem',
+            paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom, 1.5rem))',
             display: 'flex',
             flexDirection: 'column',
             gap: '0.5rem',
-            maxHeight: 'calc(100vh - 4.5rem)',
-            overflowY: 'auto'
+            maxHeight: 'calc(100dvh - 4.5rem)',
+            overflowY: 'auto',
+            zIndex: 60
           }}
         >
           {/* Mobile: Home */}
@@ -926,6 +1028,22 @@ export const Navbar: React.FC<Props> = ({
           box-shadow: 0 0 16px rgba(255, 90, 0, 0.35) !important;
           transform: translateY(-1px);
           background: #FF5522 !important;
+        }
+
+        .desktop-cta {
+          display: none !important;
+        }
+
+        @media (max-width: 480px) {
+          .brand-college-tag {
+            display: none !important;
+          }
+          .search-button-pill kbd {
+            display: none !important;
+          }
+          .search-button-pill {
+            padding: 0.5rem 0.6rem !important;
+          }
         }
 
         @media (min-width: 960px) {

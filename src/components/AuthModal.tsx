@@ -162,12 +162,14 @@ export const AuthModal: React.FC<Props> = ({
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      padding: '1.5rem'
+      padding: 'max(1rem, env(safe-area-inset-top, 1rem)) 1rem max(1rem, env(safe-area-inset-bottom, 1rem)) 1rem'
     }}>
       <div className="glass-panel" style={{
         width: '100%',
         maxWidth: '450px',
-        padding: '2.5rem',
+        maxHeight: '94dvh',
+        overflowY: 'auto',
+        padding: 'clamp(1.25rem, 5vw, 2.5rem)',
         borderRadius: 'var(--radius-lg)',
         border: '1px solid var(--border-glow)',
         position: 'relative'

@@ -37,8 +37,13 @@ import {
   GraduationCap,
   ChevronDown,
   ChevronUp,
-  Award
+  Award,
+  Cloud,
+  CloudOff,
+  RefreshCw
 } from 'lucide-react';
+import { isSupabaseConfigured } from '../lib/supabase/client';
+import { migrateLocalToSupabase, MigrationReport } from '../lib/supabase/migration';
 
 import { 
   Activity, 
@@ -819,6 +824,28 @@ export const AdminPage: React.FC<Props> = ({
     }
   };
 
+  // CLOUD MIGRATION
+  const [isMigratingToCloud, setIsMigratingToCloud] = useState(false);
+  const [migrationResult, setMigrationResult] = useState<MigrationReport | null>(null);
+
+  const handleMigrateToCloud = async () => {
+    setIsMigratingToCloud(true);
+    setMigrationResult(null);
+    try {
+      const res = await migrateLocalToSupabase();
+      setMigrationResult(res);
+      if (res.success) {
+        showToast('All local data successfully synced to Supabase Cloud!');
+      } else {
+        showToast('Cloud migration completed with warnings.');
+      }
+    } catch (e: any) {
+      showToast('Cloud migration failed: ' + (e?.message || 'Unknown error'));
+    } finally {
+      setIsMigratingToCloud(false);
+    }
+  };
+
   return (
     <div className="container" style={{ paddingTop: '2.5rem', paddingBottom: '6rem' }}>
       {/* Toast Notification */}
@@ -872,8 +899,8 @@ export const AdminPage: React.FC<Props> = ({
       {/* Admin Layout: Left Navigation + Main Form / Content Panel */}
       <div style={{ display: 'grid', gridTemplateColumns: '240px minmax(0, 1fr)', gap: '1.75rem' }} className="admin-layout">
         {/* Navigation Sidebar */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', padding: '0.5rem 0.5rem 0.25rem 0.5rem' }}>
+        <div className="admin-sidebar-nav" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <div className="admin-sidebar-heading" style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', padding: '0.5rem 0.5rem 0.25rem 0.5rem' }}>
             PUBLIC CONTENT
           </div>
 
@@ -918,7 +945,7 @@ export const AdminPage: React.FC<Props> = ({
             );
           })}
 
-          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', padding: '1rem 0.5rem 0.25rem 0.5rem' }}>
+          <div className="admin-sidebar-heading" style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', padding: '1rem 0.5rem 0.25rem 0.5rem' }}>
             SYSTEM & GOVERNANCE
           </div>
 
@@ -2801,6 +2828,65 @@ export const AdminPage: React.FC<Props> = ({
               </p>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                <div style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', padding: '1.5rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    <h3 style={{ fontSize: '1rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      {isSupabaseConfigured() ? <Cloud size={18} color="#10B981" /> : <CloudOff size={18} color="#F59E0B" />}
+                      Supabase Cloud Sync & Migration
+                    </h3>
+                    <span style={{
+                      fontSize: '0.75rem',
+                      padding: '0.2rem 0.6rem',
+                      borderRadius: '9999px',
+                      background: isSupabaseConfigured() ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                      color: isSupabaseConfigured() ? '#10B981' : '#F59E0B',
+                      fontWeight: 600
+                    }}>
+                      {isSupabaseConfigured() ? 'Cloud Connected' : 'Local-First Mode'}
+                    </span>
+                  </div>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>
+                    Push and upsert your entire local dataset (activities, articles, projects, learning paths, hackathons, resources, leadership) into Supabase relational tables.
+                  </p>
+                  <button
+                    onClick={handleMigrateToCloud}
+                    disabled={isMigratingToCloud || !isSupabaseConfigured()}
+                    className="btn btn-primary btn-sm"
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
+                  >
+                    {isMigratingToCloud ? (
+                      <>
+                        <Loader2 size={14} className="animate-spin" /> Syncing to Supabase...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw size={14} /> Push Local Data to Supabase
+                      </>
+                    )}
+                  </button>
+
+                  {migrationResult && (
+                    <div style={{
+                      marginTop: '1rem',
+                      padding: '0.75rem',
+                      borderRadius: 'var(--radius-sm)',
+                      background: migrationResult.success ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                      border: `1px solid ${migrationResult.success ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
+                      fontSize: '0.85rem',
+                      color: migrationResult.success ? '#10B981' : '#EF4444'
+                    }}>
+                      <div style={{ fontWeight: 600, marginBottom: '0.25rem' }}>{migrationResult.message}</div>
+                      {migrationResult.errors.length > 0 && (
+                        <ul style={{ paddingLeft: '1.25rem', marginTop: '0.25rem', fontSize: '0.8rem' }}>
+                          {migrationResult.errors.map((err, i) => (
+                            <li key={i}>{err}</li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  )}
+                </div>
+
                 <div style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', padding: '1.5rem' }}>
                   <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '0.5rem' }}>Export Full Database Snapshot</h3>
                   <button onClick={handleDownloadBackupFile} className="btn btn-primary btn-sm">

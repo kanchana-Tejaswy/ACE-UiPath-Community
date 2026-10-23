@@ -65,8 +65,18 @@ export const supabaseAdapter: DataAdapter = {
     try {
       const remote = await fetchActivitiesFromSupabase();
       if (remote !== null && Array.isArray(remote)) {
-        localDatabase.saveActivities(remote);
-        return remote;
+        if (remote.length === 0) {
+          return localDatabase.getActivities();
+        }
+        const local = localDatabase.getActivities();
+        const remoteIds = new Set(remote.map((r) => r.id));
+        const remoteSlugs = new Set(remote.map((r) => (r.slug || '').toLowerCase()).filter(Boolean));
+        const preservedLocal = local.filter(
+          (l) => !remoteIds.has(l.id) && !(l.slug && remoteSlugs.has(l.slug.toLowerCase()))
+        );
+        const merged = [...remote, ...preservedLocal];
+        localDatabase.saveActivities(merged);
+        return merged;
       }
     } catch (e) {
       console.warn('Supabase getActivities fallback to local:', e);
@@ -112,8 +122,18 @@ export const supabaseAdapter: DataAdapter = {
     try {
       const remote = await fetchProjectsFromSupabase();
       if (remote !== null && Array.isArray(remote)) {
-        localDatabase.saveProjects(remote);
-        return remote;
+        if (remote.length === 0) {
+          return localDatabase.getProjects();
+        }
+        const local = localDatabase.getProjects();
+        const remoteIds = new Set(remote.map((p) => p.id));
+        const remoteSlugs = new Set(remote.map((p) => (p.slug || '').toLowerCase()).filter(Boolean));
+        const preservedLocal = local.filter(
+          (l) => !remoteIds.has(l.id) && !(l.slug && remoteSlugs.has(l.slug.toLowerCase()))
+        );
+        const merged = [...remote, ...preservedLocal];
+        localDatabase.saveProjects(merged);
+        return merged;
       }
     } catch (e) {
       console.warn('Supabase getProjects fallback to local:', e);
@@ -175,9 +195,16 @@ export const supabaseAdapter: DataAdapter = {
     if (!isSupabaseConfigured()) return localAdapter.getLearningPaths();
     try {
       const remote = await fetchLearningPathsFromSupabase();
-      if (remote !== null && Array.isArray(remote) && remote.length > 0) {
-        localDatabase.saveLearningPaths(remote);
-        return remote;
+      if (remote !== null && Array.isArray(remote)) {
+        if (remote.length === 0) {
+          return localDatabase.getLearningPaths();
+        }
+        const local = localDatabase.getLearningPaths();
+        const remoteIds = new Set(remote.map((l) => l.id));
+        const preservedLocal = local.filter((l) => !remoteIds.has(l.id));
+        const merged = [...remote, ...preservedLocal];
+        localDatabase.saveLearningPaths(merged);
+        return merged;
       }
     } catch (e) {
       console.warn('Supabase getLearningPaths fallback to local:', e);
@@ -231,8 +258,15 @@ export const supabaseAdapter: DataAdapter = {
     try {
       const remote = await fetchChallengesFromSupabase();
       if (remote !== null && Array.isArray(remote)) {
-        localDatabase.saveChallenges(remote);
-        return remote;
+        if (remote.length === 0) {
+          return localDatabase.getChallenges();
+        }
+        const local = localDatabase.getChallenges();
+        const remoteIds = new Set(remote.map((c) => c.id));
+        const preservedLocal = local.filter((l) => !remoteIds.has(l.id));
+        const merged = [...remote, ...preservedLocal];
+        localDatabase.saveChallenges(merged);
+        return merged;
       }
     } catch (e) {
       console.warn('Supabase getChallenges fallback to local:', e);
@@ -278,8 +312,15 @@ export const supabaseAdapter: DataAdapter = {
     try {
       const remote = await fetchResourcesFromSupabase();
       if (remote !== null && Array.isArray(remote)) {
-        localDatabase.saveResources(remote);
-        return remote;
+        if (remote.length === 0) {
+          return localDatabase.getResources();
+        }
+        const local = localDatabase.getResources();
+        const remoteIds = new Set(remote.map((r) => r.id));
+        const preservedLocal = local.filter((l) => !remoteIds.has(l.id));
+        const merged = [...remote, ...preservedLocal];
+        localDatabase.saveResources(merged);
+        return merged;
       }
     } catch (e) {
       console.warn('Supabase getResources fallback to local:', e);
@@ -342,8 +383,15 @@ export const supabaseAdapter: DataAdapter = {
     try {
       const remote = await fetchLeadershipFromSupabase();
       if (remote !== null && Array.isArray(remote)) {
-        localDatabase.saveLeadership(remote);
-        return remote;
+        if (remote.length === 0) {
+          return localDatabase.getLeadership();
+        }
+        const local = localDatabase.getLeadership();
+        const remoteIds = new Set(remote.map((m) => m.id));
+        const preservedLocal = local.filter((l) => !remoteIds.has(l.id));
+        const merged = [...remote, ...preservedLocal];
+        localDatabase.saveLeadership(merged);
+        return merged;
       }
     } catch (e) {
       console.warn('Supabase getLeadership fallback to local:', e);
@@ -388,9 +436,16 @@ export const supabaseAdapter: DataAdapter = {
     if (!isSupabaseConfigured()) return localAdapter.getActivityDrafts();
     try {
       const remote = await fetchActivityDraftsFromSupabase();
-      if (remote !== null && Array.isArray(remote) && remote.length > 0) {
-        localDatabase.saveActivityDrafts(remote);
-        return remote;
+      if (remote !== null && Array.isArray(remote)) {
+        if (remote.length === 0) {
+          return localDatabase.getActivityDrafts();
+        }
+        const local = localDatabase.getActivityDrafts();
+        const remoteIds = new Set(remote.map((d) => d.id));
+        const preservedLocal = local.filter((l) => !remoteIds.has(l.id));
+        const merged = [...remote, ...preservedLocal];
+        localDatabase.saveActivityDrafts(merged);
+        return merged;
       }
     } catch (e) {
       console.warn('Supabase getActivityDrafts fallback to local:', e);
@@ -451,8 +506,16 @@ export const supabaseAdapter: DataAdapter = {
     try {
       const remote = await fetchArticlesFromSupabase();
       if (remote !== null && Array.isArray(remote)) {
-        localDatabase.saveArticles(remote);
-        return remote;
+        // Smart merge: retain any locally created or updated articles that aren't yet in Supabase
+        const local = localDatabase.getArticles();
+        const remoteIds = new Set(remote.map((r) => r.id));
+        const remoteSlugs = new Set(remote.map((r) => (r.slug || '').toLowerCase()).filter(Boolean));
+        const preservedLocal = local.filter(
+          (l) => !remoteIds.has(l.id) && !(l.slug && remoteSlugs.has(l.slug.toLowerCase()))
+        );
+        const merged = [...remote, ...preservedLocal];
+        localDatabase.saveArticles(merged);
+        return merged;
       }
     } catch (e) {
       console.warn('Supabase getArticles fallback to local:', e);

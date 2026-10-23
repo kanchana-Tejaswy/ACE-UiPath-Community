@@ -60,8 +60,29 @@ function setItem<T>(key: string, value: T): void {
   if (typeof window === 'undefined') return;
   try {
     localStorage.setItem(key, JSON.stringify(value));
-  } catch (e) {
+  } catch (e: any) {
     console.error(`Error saving ${key} to storage:`, e);
+    // If QuotaExceededError or storage is full
+    if (
+      e?.name === 'QuotaExceededError' ||
+      e?.name === 'NS_ERROR_DOM_QUOTA_REACHED' ||
+      e?.code === 22 ||
+      e?.code === 1014 ||
+      (typeof e?.message === 'string' && e.message.toLowerCase().includes('quota'))
+    ) {
+      try {
+        console.warn(`LocalStorage quota exceeded while saving ${key}. Evicting analytics events and trimming audit logs...`);
+        localStorage.removeItem(STORAGE_KEYS.ANALYTICS_EVENTS);
+        const logs = getItem<AuditLogEntry[]>(STORAGE_KEYS.AUDIT_LOGS, []);
+        if (logs.length > 20) {
+          localStorage.setItem(STORAGE_KEYS.AUDIT_LOGS, JSON.stringify(logs.slice(0, 20)));
+        }
+        localStorage.setItem(key, JSON.stringify(value));
+        console.info(`Successfully saved ${key} after storage quota pruning.`);
+      } catch (retryErr) {
+        console.error(`Storage quota recovery failed for ${key}:`, retryErr);
+      }
+    }
   }
 }
 
@@ -100,7 +121,11 @@ export const localDatabase = {
   saveLeadership: (data: LeadershipMember[]): void => setItem(STORAGE_KEYS.LEADERSHIP, data),
 
   getArticles: (): Article[] => {
-    const raw = getItem<Article[]>(STORAGE_KEYS.ARTICLES, INITIAL_ARTICLES);
+    let raw = getItem<Article[]>(STORAGE_KEYS.ARTICLES, INITIAL_ARTICLES);
+    if (!raw || !Array.isArray(raw) || raw.length === 0) {
+      raw = INITIAL_ARTICLES;
+      setItem(STORAGE_KEYS.ARTICLES, INITIAL_ARTICLES);
+    }
     return (raw || []).map((art) => {
       const ratio = normalizeBannerAspectRatio(art.coverBanner?.aspectRatio || art.aspectRatio);
       const isTejaswy = (art.authorName && art.authorName.toLowerCase().includes('tejaswy')) || (art.createdBy && art.createdBy.toLowerCase().includes('tejaswy'));

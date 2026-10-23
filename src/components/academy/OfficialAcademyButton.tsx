@@ -22,21 +22,21 @@ export const OfficialAcademyButton: React.FC<Props> = ({
 
   const sizeStyles: Record<string, React.CSSProperties> = {
     sm: {
-      padding: '0.45rem 0.95rem',
+      padding: '0.45rem 0.85rem',
       fontSize: '0.8rem',
-      gap: '0.45rem',
+      gap: '0.4rem',
       borderRadius: 'var(--radius-md, 8px)'
     },
     md: {
-      padding: '0.7rem 1.35rem',
-      fontSize: '0.9rem',
-      gap: '0.55rem',
+      padding: '0.65rem 1.25rem',
+      fontSize: '0.875rem',
+      gap: '0.5rem',
       borderRadius: 'var(--radius-md, 10px)'
     },
     lg: {
-      padding: '0.9rem 1.75rem',
-      fontSize: '1rem',
-      gap: '0.65rem',
+      padding: '0.8rem 1.5rem',
+      fontSize: '0.95rem',
+      gap: '0.6rem',
       borderRadius: 'var(--radius-lg, 12px)'
     }
   };
@@ -83,7 +83,7 @@ export const OfficialAcademyButton: React.FC<Props> = ({
         textDecoration: 'none',
         cursor: 'pointer',
         transition: 'all 0.2s ease',
-        whiteSpace: 'nowrap',
+        lineHeight: 1.35,
         ...sizeStyles[size],
         ...variantStyles[variant],
         ...style

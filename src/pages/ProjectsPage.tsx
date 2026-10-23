@@ -234,7 +234,7 @@ export const ProjectsPage: React.FC<Props> = ({
         </div>
 
         {/* Search */}
-        <div style={{ position: 'relative', minWidth: '240px' }}>
+        <div style={{ position: 'relative', minWidth: 'min(100%, 240px)', flex: '1 1 220px' }}>
           <Search size={16} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
           <input
             type="text"
@@ -399,11 +399,12 @@ export const ProjectsPage: React.FC<Props> = ({
             style={{
               width: '100%',
               maxWidth: '750px',
-              maxHeight: '90vh',
+              maxHeight: '92dvh',
               overflowY: 'auto',
               background: 'var(--bg-secondary)',
               border: '1px solid var(--border-medium)',
-              padding: '2.5rem'
+              padding: 'clamp(1.25rem, 3.5vw, 2.5rem)',
+              borderRadius: 'var(--radius-lg)'
             }}
           >
             {/* Modal Header */}
