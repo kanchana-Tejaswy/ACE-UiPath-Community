@@ -40,20 +40,14 @@ export const authService = {
             }
 
             const emailLower = (profile.email || authUser.email || '').toLowerCase().trim();
-            let role: UserRole = 'STUDENT';
-            if (emailLower === 'mail2tejaswy@gmail.com' || emailLower === 'admin@aceec.ac.in') {
-              role = 'ADMIN';
-            } else if (emailLower === 'techlead@aceec.ac.in') {
-              role = 'CORE_TEAM';
-            } else {
-              role = normalizeRole(profile.role) as UserRole;
-            }
+            // Database profile is the single authoritative source of truth for user roles
+            const role: UserRole = normalizeRole(profile.role) as UserRole;
 
-            const isLeadAdmin = role === 'ADMIN' || emailLower.includes('tejaswy');
-            const defaultName = emailLower === 'mail2tejaswy@gmail.com' ? 'K.Tejaswy' : (emailLower === 'admin@aceec.ac.in' ? 'System Administrator' : (emailLower === 'techlead@aceec.ac.in' ? 'Rohit Varma' : 'Community Member'));
+            const isLeadAdmin = role === 'ADMIN';
+            const defaultName = profile.name || authUser.user_metadata?.name || 'Community Member';
             const userObj: User = {
               id: profile.id,
-              name: profile.name || defaultName,
+              name: defaultName,
               email: profile.email || authUser.email || '',
               role,
               status: (profile.status as UserStatus) || 'ACTIVE',
@@ -72,17 +66,14 @@ export const authService = {
           const localUsers = localDatabase.getUsers();
           const matchedLocal = localUsers.find((u) => u.email.toLowerCase() === emailLower);
 
+          // In production, fallback must always be unprivileged (STUDENT) until synced with database
           let inferredRole: UserRole = 'STUDENT';
-          if (emailLower === 'mail2tejaswy@gmail.com' || emailLower === 'admin@aceec.ac.in') {
-            inferredRole = 'ADMIN';
-          } else if (emailLower === 'techlead@aceec.ac.in') {
-            inferredRole = 'CORE_TEAM';
-          } else if (matchedLocal) {
+          if (!import.meta.env.PROD && matchedLocal) {
             inferredRole = normalizeRole(matchedLocal.role) as UserRole;
           }
 
-          const isLeadAdmin = inferredRole === 'ADMIN' || emailLower.includes('tejaswy');
-          const defaultName = emailLower === 'mail2tejaswy@gmail.com' ? 'K.Tejaswy' : (emailLower === 'admin@aceec.ac.in' ? 'System Administrator' : (emailLower === 'techlead@aceec.ac.in' ? 'Rohit Varma' : 'Authenticated User'));
+          const isLeadAdmin = inferredRole === 'ADMIN';
+          const defaultName = authUser.user_metadata?.name || matchedLocal?.name || 'Authenticated User';
           const fallbackUser: User = {
             id: authUser.id,
             name: authUser.user_metadata?.name || matchedLocal?.name || defaultName,

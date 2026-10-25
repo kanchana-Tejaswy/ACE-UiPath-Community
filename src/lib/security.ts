@@ -30,8 +30,6 @@ export const ROLE_HIERARCHY: Record<string, number> = {
 export function getLogicalAccessType(roleOrUser?: UserRole | string | { role?: string; email?: string } | null): LogicalAccessType {
   if (!roleOrUser) return 'PUBLIC_USER';
   if (typeof roleOrUser === 'object') {
-    const email = (roleOrUser.email || '').toLowerCase().trim();
-    if (ADMIN_ALLOWLIST_EMAILS.includes(email)) return 'ADMIN';
     const norm = normalizeRole(roleOrUser.role);
     return (norm === 'ADMIN' || norm === 'CORE_TEAM') ? 'ADMIN' : 'PUBLIC_USER';
   }

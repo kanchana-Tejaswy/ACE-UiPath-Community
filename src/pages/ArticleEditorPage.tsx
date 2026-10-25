@@ -920,7 +920,7 @@ export const ArticleEditorPage: React.FC<Props> = ({
               <input
                 type="file"
                 ref={inlineFileInputRef}
-                accept="image/*"
+                accept="image/png,image/jpeg,image/webp,image/gif"
                 style={{ display: 'none' }}
                 onChange={handleInlineImageFileSelect}
               />
@@ -1106,7 +1106,7 @@ export const ArticleEditorPage: React.FC<Props> = ({
                 <input
                   type="file"
                   ref={fileInputRef}
-                  accept="image/*"
+                  accept="image/png,image/jpeg,image/webp,image/gif"
                   style={{ display: 'none' }}
                   onChange={handleImageFileSelect}
                 />

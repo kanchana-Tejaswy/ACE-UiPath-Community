@@ -18,10 +18,10 @@
 
 ## 2. Applying Database Migrations & Schemas
 
-1. Navigate to **SQL Editor** in the Supabase Dashboard.
-2. For an existing deployment, execute `supabase/migrations/20261025000000_phase1_database_security_remediation.sql` to apply all critical RLS protections, prevent role self-promotion, and shield student PII.
-3. For a fresh project setup, execute `supabase/migrations/full_migration_and_seed.sql` which includes the complete relational schema, security hardening triggers, and seed data in a single run.
-4. Open `supabase/migrations/20260831000001_storage_buckets.sql`, paste, and click **RUN** to ensure storage buckets (`activities-media`, `resources-files`, `project-artifacts`, `challenge-submissions`, `user-avatars`, `leadership-media`, `blog-media`) are provisioned.
+1. Navigate to **SQL Editor** in the Supabase Dashboard (`https://supabase.com/dashboard/project/<project-id>/sql`).
+2. **Database Hardening**: Execute `supabase/migrations/20261025000000_phase1_database_security_remediation.sql` to apply all critical RLS protections, close open `projects`/`resources` UPDATE policies, prevent role self-promotion triggers, and shield student PII behind `public_user_profiles`.
+3. **Storage Hardening**: Execute `supabase/migrations/20261025000001_phase1_storage_security_hardening.sql` to restrict storage buckets (`leadership-media`, `blog-media`, `activities-media`, `resources-files`, `user-avatars`, `challenge-submissions`), eliminate SVG MIME types to prevent Stored SVG XSS, and isolate user avatar folder mutations to respective account owners.
+4. For a brand new project setup from scratch, executing `supabase/migrations/full_migration_and_seed.sql` includes the complete hardened relational schema, storage configurations, security triggers, and seed data in a single run.
 
 ---
 

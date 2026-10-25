@@ -853,10 +853,10 @@ export async function incrementArticleViewsInSupabase(id: string): Promise<{ suc
  * Returns the public URL if uploaded, or generates a compressed, permanent data URL for offline/fallback mode.
  */
 export async function uploadArticleCoverImage(file: File): Promise<{ url: string | null; error?: string }> {
-  // Validate file type
-  const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml'];
+  // Validate file type (raster formats only; SVG excluded to prevent Stored SVG XSS)
+  const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
   if (!validTypes.includes(file.type)) {
-    return { url: null, error: 'Unsupported file format. Please upload a PNG, JPEG, WEBP, or SVG image.' };
+    return { url: null, error: 'Unsupported file format. Please upload a PNG, JPEG, WEBP, or GIF image.' };
   }
 
   // 10 MB limit
@@ -922,9 +922,9 @@ export async function uploadArticleCoverImage(file: File): Promise<{ url: string
 }
 
 export async function uploadMemberAvatarImage(file: File, memberId?: string): Promise<{ url: string | null; error?: string }> {
-  const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml'];
+  const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
   if (!validTypes.includes(file.type)) {
-    return { url: null, error: 'Unsupported file format. Please upload a PNG, JPEG, WEBP, or SVG image.' };
+    return { url: null, error: 'Unsupported file format. Please upload a PNG, JPEG, WEBP, or GIF image.' };
   }
 
   // 10 MB limit

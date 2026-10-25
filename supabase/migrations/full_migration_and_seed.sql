@@ -988,21 +988,46 @@ DROP POLICY IF EXISTS "Core and Admin modify articles" ON public.articles;
 CREATE POLICY "Core and Admin modify articles" ON public.articles
   FOR ALL USING (public.is_core_or_admin());
 
+-- Provision Secure Storage Buckets (No SVG allowed to eliminate Stored XSS)
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 VALUES 
-  ('blog-media', 'blog-media', true, 10485760, ARRAY['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/svg+xml'])
+  ('leadership-media', 'leadership-media', true, 10485760, ARRAY['image/png', 'image/jpeg', 'image/webp', 'image/gif']),
+  ('blog-media', 'blog-media', true, 10485760, ARRAY['image/png', 'image/jpeg', 'image/webp', 'image/gif']),
+  ('activities-media', 'activities-media', true, 52428800, ARRAY['image/png', 'image/jpeg', 'image/webp', 'application/pdf', 'application/zip', 'application/x-zip-compressed']),
+  ('project-artifacts', 'project-artifacts', true, 52428800, ARRAY['image/png', 'image/jpeg', 'image/webp', 'application/zip', 'application/x-zip-compressed']),
+  ('user-avatars', 'user-avatars', true, 5242880, ARRAY['image/png', 'image/jpeg', 'image/webp']),
+  ('resources-files', 'resources-files', true, 52428800, ARRAY['application/pdf', 'application/zip', 'application/x-zip-compressed', 'application/octet-stream']),
+  ('challenge-submissions', 'challenge-submissions', false, 52428800, ARRAY['application/zip', 'application/x-zip-compressed', 'application/pdf'])
 ON CONFLICT (id) DO UPDATE SET 
   public = EXCLUDED.public,
   file_size_limit = EXCLUDED.file_size_limit,
   allowed_mime_types = EXCLUDED.allowed_mime_types;
 
+-- Public read access policies
 DROP POLICY IF EXISTS "Public read access on blog-media" ON storage.objects;
 CREATE POLICY "Public read access on blog-media" ON storage.objects
   FOR SELECT USING (bucket_id = 'blog-media');
 
+DROP POLICY IF EXISTS "Public read access on leadership-media" ON storage.objects;
+CREATE POLICY "Public read access on leadership-media" ON storage.objects
+  FOR SELECT USING (bucket_id = 'leadership-media');
+
+DROP POLICY IF EXISTS "Public read access on activities-media" ON storage.objects;
+CREATE POLICY "Public read access on activities-media" ON storage.objects
+  FOR SELECT USING (bucket_id = 'activities-media');
+
+DROP POLICY IF EXISTS "Public read access on user-avatars" ON storage.objects;
+CREATE POLICY "Public read access on user-avatars" ON storage.objects
+  FOR SELECT USING (bucket_id = 'user-avatars');
+
+-- Role-restricted storage mutation policies
 DROP POLICY IF EXISTS "Core and Admin upload to blog-media" ON storage.objects;
 CREATE POLICY "Core and Admin upload to blog-media" ON storage.objects
-  FOR INSERT WITH CHECK (bucket_id = 'blog-media' AND (auth.role() = 'authenticated' OR auth.role() = 'service_role'));
+  FOR INSERT WITH CHECK (bucket_id = 'blog-media' AND (auth.role() = 'service_role' OR public.is_core_or_admin()));
+
+DROP POLICY IF EXISTS "Allow authenticated uploads to leadership-media" ON storage.objects;
+CREATE POLICY "leadership_media_admin_insert" ON storage.objects
+  FOR INSERT WITH CHECK (bucket_id = 'leadership-media' AND (auth.role() = 'service_role' OR public.is_admin()));
 
 INSERT INTO public.articles (
   id, slug, title, excerpt, content, cover_image, category, author_name, author_role, status, published_at, is_featured, views

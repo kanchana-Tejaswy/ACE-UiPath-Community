@@ -623,9 +623,9 @@ export const AdminPage: React.FC<Props> = ({
       return;
     }
 
-    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml'];
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
     if (!validTypes.includes(file.type)) {
-      setAvatarError('Only JPG, PNG, WebP, GIF, or SVG images are supported.');
+      setAvatarError('Only JPG, PNG, WebP, or GIF images are supported.');
       return;
     }
 
@@ -3195,7 +3195,7 @@ export const AdminPage: React.FC<Props> = ({
                       <input
                         ref={avatarFileInputRef}
                         type="file"
-                        accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml"
+                        accept="image/png,image/jpeg,image/webp,image/gif"
                         className="hidden"
                         onChange={handleAvatarFileChange}
                       />
