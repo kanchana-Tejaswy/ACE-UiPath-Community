@@ -53,9 +53,9 @@ BEGIN
     NEW.id,
     NEW.email,
     COALESCE(NEW.raw_user_meta_data->>'name', NEW.email),
-    COALESCE(NEW.raw_user_meta_data->>'role', 'STUDENT'),
+    'STUDENT', -- ALWAYS FORCED TO STUDENT: Never trust client-supplied role metadata
     'ACTIVE',
-    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+    COALESCE(NEW.raw_user_meta_data->>'avatar_url', 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80'),
     NOW(),
     NOW()
   )
@@ -65,7 +65,7 @@ BEGIN
     updated_at = NOW();
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public, auth;
 
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
@@ -353,7 +353,27 @@ DROP POLICY IF EXISTS "Public read projects" ON public.projects;
 CREATE POLICY "Public read projects" ON public.projects FOR SELECT USING (true);
 
 DROP POLICY IF EXISTS "Public update project upvotes" ON public.projects;
-CREATE POLICY "Public update project upvotes" ON public.projects FOR UPDATE USING (true) WITH CHECK (true);
+
+-- Secure atomic RPC for project upvoting
+CREATE OR REPLACE FUNCTION public.increment_project_upvote(target_project_id TEXT)
+RETURNS INT AS $$
+DECLARE
+  new_upvotes INT;
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM public.projects WHERE id = target_project_id) THEN
+    RAISE EXCEPTION 'Target project not found';
+  END IF;
+
+  UPDATE public.projects
+  SET upvotes = COALESCE(upvotes, 0) + 1
+  WHERE id = target_project_id
+  RETURNING upvotes INTO new_upvotes;
+
+  RETURN COALESCE(new_upvotes, 0);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public;
+
+GRANT EXECUTE ON FUNCTION public.increment_project_upvote(TEXT) TO anon, authenticated, service_role;
 
 DROP POLICY IF EXISTS "Admin modify projects" ON public.projects;
 CREATE POLICY "Admin modify projects" ON public.projects FOR ALL USING (public.is_admin());
@@ -374,7 +394,27 @@ DROP POLICY IF EXISTS "Public read resources" ON public.resources;
 CREATE POLICY "Public read resources" ON public.resources FOR SELECT USING (true);
 
 DROP POLICY IF EXISTS "Public increment resource downloads" ON public.resources;
-CREATE POLICY "Public increment resource downloads" ON public.resources FOR UPDATE USING (true) WITH CHECK (true);
+
+-- Secure atomic RPC for resource download counter
+CREATE OR REPLACE FUNCTION public.increment_resource_download(target_resource_id TEXT)
+RETURNS INT AS $$
+DECLARE
+  new_downloads INT;
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM public.resources WHERE id = target_resource_id) THEN
+    RAISE EXCEPTION 'Target resource not found';
+  END IF;
+
+  UPDATE public.resources
+  SET download_count = COALESCE(download_count, 0) + 1
+  WHERE id = target_resource_id
+  RETURNING download_count INTO new_downloads;
+
+  RETURN COALESCE(new_downloads, 0);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public;
+
+GRANT EXECUTE ON FUNCTION public.increment_resource_download(TEXT) TO anon, authenticated, service_role;
 
 DROP POLICY IF EXISTS "Admin modify resources" ON public.resources;
 CREATE POLICY "Admin modify resources" ON public.resources FOR ALL USING (public.is_admin());
@@ -386,22 +426,91 @@ DROP POLICY IF EXISTS "Admin modify leadership" ON public.leadership;
 CREATE POLICY "Admin modify leadership" ON public.leadership FOR ALL USING (public.is_admin());
 
 DROP POLICY IF EXISTS "Core Team and Admin read activity drafts" ON public.activity_drafts;
-CREATE POLICY "Core Team and Admin read activity drafts" ON public.activity_drafts FOR SELECT USING (true);
+CREATE POLICY "Core Team and Admin read activity drafts" ON public.activity_drafts FOR SELECT USING (public.is_core_or_admin());
 
 DROP POLICY IF EXISTS "Core Team and Admin modify activity drafts" ON public.activity_drafts;
 CREATE POLICY "Core Team and Admin modify activity drafts" ON public.activity_drafts FOR ALL USING (public.is_core_or_admin());
 
+-- Users Table Security: Restrict profile reads & prevent self-promotion
 DROP POLICY IF EXISTS "Public profiles read" ON public.users;
-CREATE POLICY "Public profiles read" ON public.users FOR SELECT USING (true);
-
+DROP POLICY IF EXISTS "Public profiles viewable by authenticated users" ON public.users;
 DROP POLICY IF EXISTS "Users update own profile" ON public.users;
-CREATE POLICY "Users update own profile" ON public.users FOR UPDATE USING (auth.uid() = id);
-
 DROP POLICY IF EXISTS "Admin manage users" ON public.users;
-CREATE POLICY "Admin manage users" ON public.users FOR ALL USING (public.is_admin());
 
+CREATE POLICY "Users read own profile" ON public.users
+  FOR SELECT USING (auth.uid() = id);
+
+CREATE POLICY "Users update own profile fields" ON public.users
+  FOR UPDATE USING (auth.uid() = id) WITH CHECK (auth.uid() = id);
+
+CREATE POLICY "Admins manage users" ON public.users
+  FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
+
+-- Column protection trigger to block non-admins from changing role/status/id/email
+CREATE OR REPLACE FUNCTION public.protect_user_profile_columns()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NOT public.is_admin() THEN
+    IF NEW.role IS DISTINCT FROM OLD.role THEN
+      RAISE EXCEPTION 'Unauthorized: Users cannot modify their assigned role.';
+    END IF;
+    IF NEW.status IS DISTINCT FROM OLD.status THEN
+      RAISE EXCEPTION 'Unauthorized: Users cannot modify account activation status.';
+    END IF;
+    IF NEW.id IS DISTINCT FROM OLD.id THEN
+      RAISE EXCEPTION 'Prohibited: User ID is immutable.';
+    END IF;
+    IF NEW.email IS DISTINCT FROM OLD.email THEN
+      NEW.email = OLD.email;
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public, auth;
+
+DROP TRIGGER IF EXISTS trg_protect_user_profile ON public.users;
+CREATE TRIGGER trg_protect_user_profile
+  BEFORE UPDATE ON public.users
+  FOR EACH ROW
+  EXECUTE FUNCTION public.protect_user_profile_columns();
+
+REVOKE UPDATE (role, status) ON public.users FROM anon, authenticated;
+
+-- Sanitized Public Profile View (Excludes private student emails and roll numbers)
+CREATE OR REPLACE VIEW public.public_user_profiles AS
+  SELECT id, name, avatar_url, branch, graduation_year, role, github_url, linkedin_url, uipath_forum_url
+  FROM public.users
+  WHERE status = 'ACTIVE';
+
+GRANT SELECT ON public.public_user_profiles TO anon, authenticated, service_role;
+
+-- Audit Logs: Restrict direct INSERT to admins/service_role and provide safe logging RPC
 DROP POLICY IF EXISTS "System insert audit logs" ON public.audit_logs;
-CREATE POLICY "System insert audit logs" ON public.audit_logs FOR INSERT WITH CHECK (true);
+CREATE POLICY "Authorized insert audit logs" ON public.audit_logs
+  FOR INSERT WITH CHECK (auth.role() = 'service_role' OR public.is_admin());
+
+CREATE OR REPLACE FUNCTION public.record_audit_event(
+  p_action TEXT, 
+  p_entity_type TEXT, 
+  p_entity_id TEXT, 
+  p_description TEXT
+)
+RETURNS VOID AS $$
+BEGIN
+  INSERT INTO public.audit_logs (
+    user_id, action, entity_type, entity_id, changes_json, created_at
+  ) VALUES (
+    auth.uid(),
+    SUBSTRING(p_action FROM 1 FOR 64),
+    SUBSTRING(p_entity_type FROM 1 FOR 64),
+    SUBSTRING(p_entity_id FROM 1 FOR 128),
+    jsonb_build_object('description', p_description, 'client_role', auth.role()),
+    NOW()
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, public, auth;
+
+GRANT EXECUTE ON FUNCTION public.record_audit_event(TEXT, TEXT, TEXT, TEXT) TO anon, authenticated, service_role;
 
 DROP POLICY IF EXISTS "Admin select audit logs" ON public.audit_logs;
 CREATE POLICY "Admin select audit logs" ON public.audit_logs FOR SELECT USING (public.is_admin());

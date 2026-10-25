@@ -330,8 +330,10 @@ export function mapLeadershipEntityToRow(lead: LeadershipMember): DatabaseLeader
     linkedin_url: lead.linkedinUrl,
     github_url: lead.githubUrl,
     uipath_profile_url: lead.uipathProfileUrl,
-    bio: lead.bio,
-    contributions: lead.contributions || [],
+    bio: lead.bio || '',
+    contributions: Array.isArray(lead.contributions)
+      ? lead.contributions.filter(Boolean).map(String)
+      : (typeof lead.contributions === 'string' && (lead.contributions as string).trim() ? [(lead.contributions as string).trim()] : []),
     order_index: lead.orderIndex || 1
   };
 }

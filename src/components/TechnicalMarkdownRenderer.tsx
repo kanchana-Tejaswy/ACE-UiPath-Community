@@ -519,6 +519,29 @@ function renderMixedBlock(block: string, blockIdx: number) {
   );
 }
 
+// Helper: strictly sanitize URLs in markdown links and images (prevents javascript:, data:, and attribute breakouts)
+function sanitizeMarkdownUrl(rawUrl: string): string {
+  if (!rawUrl) return '#';
+  const trimmed = rawUrl.trim().replace(/[\x00-\x1F\x7F]/g, '');
+
+  // Strictly block javascript:, data:, vbscript: pseudo-protocols
+  if (/^(javascript|data|vbscript):/i.test(trimmed)) {
+    return '#blocked-unsafe-url';
+  }
+
+  // Allow standard web schemes and safe relative paths
+  if (/^(https?:|mailto:|tel:|\/|#|\.\/)/i.test(trimmed)) {
+    return trimmed.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  // If no scheme is present, ensure safe relative URL without quotes
+  if (!trimmed.includes(':')) {
+    return trimmed.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  return '#blocked-unsafe-url';
+}
+
 // Helper: parse inline markdown (bold, italic, inline code, links, images, strikethrough, highlights)
 function inlineMarkdown(text: string): string {
   if (!text) return '';
@@ -528,11 +551,18 @@ function inlineMarkdown(text: string): string {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
 
-  // Images: ![alt](url)
-  html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" style="max-width:100%;border-radius:0.5rem;margin:1rem 0;display:block;" />');
+  // Images: ![alt](url) - strictly sanitize URL and escape attribute quotes
+  html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, altText, rawUrl) => {
+    const safeUrl = sanitizeMarkdownUrl(rawUrl);
+    const safeAlt = (altText || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    return `<img src="${safeUrl}" alt="${safeAlt}" style="max-width:100%;border-radius:0.5rem;margin:1rem 0;display:block;" />`;
+  });
 
-  // Links: [text](url)
-  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" style="color:var(--uipath-orange, #FA4616);text-decoration:underline;text-underline-offset:3px;font-weight:600;display:inline-flex;align-items:center;gap:3px;">$1</a>');
+  // Links: [text](url) - strictly sanitize URL against javascript: execution
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, linkText, rawUrl) => {
+    const safeUrl = sanitizeMarkdownUrl(rawUrl);
+    return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" style="color:var(--uipath-orange, #FA4616);text-decoration:underline;text-underline-offset:3px;font-weight:600;display:inline-flex;align-items:center;gap:3px;">${linkText}</a>`;
+  });
 
   // Bold & Italic: ***text*** or ___text___
   html = html.replace(/\*\*\*([\s\S]+?)\*\*\*/g, '<strong style="color:#FFF;"><em>$1</em></strong>');

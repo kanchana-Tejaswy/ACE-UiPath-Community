@@ -362,11 +362,7 @@ export function useCommunityStore() {
       notifyDbChange();
 
       if (activeAdapter.isCloudConnected()) {
-        try {
-          await activeAdapter.saveActivity(activity);
-        } catch (e) {
-          console.warn('Cloud saveActivity sync notice:', e);
-        }
+        await activeAdapter.saveActivity(activity);
       }
 
       return { success: true };
@@ -391,11 +387,7 @@ export function useCommunityStore() {
       notifyDbChange();
 
       if (activeAdapter.isCloudConnected()) {
-        try {
-          await activeAdapter.deleteActivity(id);
-        } catch (e) {
-          console.warn('Cloud deleteActivity sync notice:', e);
-        }
+        await activeAdapter.deleteActivity(id);
       }
 
       return { success: true };
@@ -419,11 +411,7 @@ export function useCommunityStore() {
       notifyDbChange();
 
       if (activeAdapter.isCloudConnected()) {
-        try {
-          await activeAdapter.saveProject(project);
-        } catch (e) {
-          console.warn('Cloud saveProject sync notice:', e);
-        }
+        await activeAdapter.saveProject(project);
       }
 
       return { success: true };
@@ -448,11 +436,7 @@ export function useCommunityStore() {
       notifyDbChange();
 
       if (activeAdapter.isCloudConnected()) {
-        try {
-          await activeAdapter.deleteProject(id);
-        } catch (e) {
-          console.warn('Cloud deleteProject sync notice:', e);
-        }
+        await activeAdapter.deleteProject(id);
       }
 
       return { success: true };
@@ -490,11 +474,7 @@ export function useCommunityStore() {
       notifyDbChange();
 
       if (activeAdapter.isCloudConnected()) {
-        try {
-          await activeAdapter.saveResource(res);
-        } catch (e) {
-          console.warn('Cloud saveResource sync notice:', e);
-        }
+        await activeAdapter.saveResource(res);
       }
 
       return { success: true };
@@ -519,11 +499,7 @@ export function useCommunityStore() {
       notifyDbChange();
 
       if (activeAdapter.isCloudConnected()) {
-        try {
-          await activeAdapter.deleteResource(id);
-        } catch (e) {
-          console.warn('Cloud deleteResource sync notice:', e);
-        }
+        await activeAdapter.deleteResource(id);
       }
 
       return { success: true };
@@ -560,11 +536,7 @@ export function useCommunityStore() {
       notifyDbChange();
 
       if (activeAdapter.isCloudConnected()) {
-        try {
-          await activeAdapter.saveArticle(article);
-        } catch (e) {
-          console.warn('Cloud saveArticle sync notice:', e);
-        }
+        await activeAdapter.saveArticle(article);
       }
 
       return { success: true };
@@ -604,11 +576,7 @@ export function useCommunityStore() {
       notifyDbChange();
 
       if (activeAdapter.isCloudConnected()) {
-        try {
-          await activeAdapter.deleteArticle(id);
-        } catch (e) {
-          console.warn('Cloud deleteArticle sync notice:', e);
-        }
+        await activeAdapter.deleteArticle(id);
       }
 
       return { success: true };
@@ -649,11 +617,7 @@ export function useCommunityStore() {
       notifyDbChange();
 
       if (activeAdapter.isCloudConnected()) {
-        try {
-          await activeAdapter.saveChallenge(chal);
-        } catch (e) {
-          console.warn('Cloud saveChallenge sync notice:', e);
-        }
+        await activeAdapter.saveChallenge(chal);
       }
 
       return { success: true };
@@ -680,11 +644,7 @@ export function useCommunityStore() {
       notifyDbChange();
 
       if (activeAdapter.isCloudConnected()) {
-        try {
-          await activeAdapter.deleteChallenge(id);
-        } catch (e) {
-          console.warn('Cloud deleteChallenge sync notice:', e);
-        }
+        await activeAdapter.deleteChallenge(id);
       }
 
       return { success: true };
@@ -708,11 +668,7 @@ export function useCommunityStore() {
       notifyDbChange();
 
       if (activeAdapter.isCloudConnected()) {
-        try {
-          await activeAdapter.updateSettings(newSettings);
-        } catch (e) {
-          console.warn('Cloud updateSettings sync notice:', e);
-        }
+        await activeAdapter.updateSettings(newSettings);
       }
 
       return { success: true };
@@ -1111,11 +1067,7 @@ export function useCommunityStore() {
       notifyDbChange();
 
       if (activeAdapter.isCloudConnected()) {
-        try {
-          await activeAdapter.saveLeadership(member);
-        } catch (e) {
-          console.warn('Cloud saveLeadership sync notice:', e);
-        }
+        await activeAdapter.saveLeadership(member);
       }
 
       return { success: true };
@@ -1147,11 +1099,7 @@ export function useCommunityStore() {
       notifyDbChange();
 
       if (activeAdapter.isCloudConnected()) {
-        try {
-          await activeAdapter.deleteLeadership(id);
-        } catch (e) {
-          console.warn('Cloud deleteLeadership sync notice:', e);
-        }
+        await activeAdapter.deleteLeadership(id);
       }
 
       return { success: true };

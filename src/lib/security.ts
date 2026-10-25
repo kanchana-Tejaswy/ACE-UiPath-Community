@@ -1,5 +1,15 @@
 import { UserRole, DraftStatus } from '../types';
 
+// Two Logical Access Types per Production Governance Model
+export type LogicalAccessType = 'ADMIN' | 'PUBLIC_USER';
+
+// Explicit Allowlist for Authorized Administrative Accounts (Admin, SDC, Core Team)
+export const ADMIN_ALLOWLIST_EMAILS: readonly string[] = [
+  'mail2tejaswy@gmail.com', // Student Developer Champion (SDC) & Lead Admin
+  'admin@aceec.ac.in',      // System Administrator
+  'techlead@aceec.ac.in'    // Core Team Member / Technical Lead
+];
+
 export function normalizeRole(role?: string | null): 'STUDENT' | 'CORE_TEAM' | 'ADMIN' {
   if (!role) return 'STUDENT';
   const r = role.toString().trim().toUpperCase().replace(/\s+/g, '_');
@@ -16,6 +26,22 @@ export const ROLE_HIERARCHY: Record<string, number> = {
   ADMIN: 3,
   Admin: 3
 };
+
+export function getLogicalAccessType(roleOrUser?: UserRole | string | { role?: string; email?: string } | null): LogicalAccessType {
+  if (!roleOrUser) return 'PUBLIC_USER';
+  if (typeof roleOrUser === 'object') {
+    const email = (roleOrUser.email || '').toLowerCase().trim();
+    if (ADMIN_ALLOWLIST_EMAILS.includes(email)) return 'ADMIN';
+    const norm = normalizeRole(roleOrUser.role);
+    return (norm === 'ADMIN' || norm === 'CORE_TEAM') ? 'ADMIN' : 'PUBLIC_USER';
+  }
+  const norm = normalizeRole(roleOrUser);
+  return (norm === 'ADMIN' || norm === 'CORE_TEAM') ? 'ADMIN' : 'PUBLIC_USER';
+}
+
+export function isAdministrativeUser(user?: { role?: string; email?: string } | null): boolean {
+  return getLogicalAccessType(user) === 'ADMIN';
+}
 
 export function hasPermission(userRole: UserRole | string, requiredRole: UserRole | string): boolean {
   const userNorm = normalizeRole(userRole);

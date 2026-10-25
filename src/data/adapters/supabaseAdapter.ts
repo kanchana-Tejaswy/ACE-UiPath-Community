@@ -85,33 +85,23 @@ export const supabaseAdapter: DataAdapter = {
   },
 
   saveActivity: async (activity: Activity): Promise<Activity[]> => {
-    const updated = await localAdapter.saveActivity(activity);
     if (isSupabaseConfigured()) {
-      try {
-        const res = await saveActivityToSupabase(activity);
-        if (!res.success) {
-          console.warn('Supabase saveActivity warning:', res.error);
-        }
-      } catch (e) {
-        console.warn('Supabase saveActivity network notice:', e);
+      const res = await saveActivityToSupabase(activity);
+      if (!res.success) {
+        throw new Error(res.error || 'Failed to save activity to Supabase');
       }
     }
-    return updated;
+    return localAdapter.saveActivity(activity);
   },
 
   deleteActivity: async (id: string): Promise<Activity[]> => {
-    const updated = await localAdapter.deleteActivity(id);
     if (isSupabaseConfigured()) {
-      try {
-        const res = await deleteActivityFromSupabase(id);
-        if (!res.success) {
-          console.warn('Supabase deleteActivity warning:', res.error);
-        }
-      } catch (e) {
-        console.warn('Supabase deleteActivity network notice:', e);
+      const res = await deleteActivityFromSupabase(id);
+      if (!res.success) {
+        throw new Error(res.error || 'Failed to delete activity from Supabase');
       }
     }
-    return updated;
+    return localAdapter.deleteActivity(id);
   },
 
   // ==================================================================
@@ -142,33 +132,23 @@ export const supabaseAdapter: DataAdapter = {
   },
 
   saveProject: async (project: ProjectShowcase): Promise<ProjectShowcase[]> => {
-    const updated = await localAdapter.saveProject(project);
     if (isSupabaseConfigured()) {
-      try {
-        const res = await saveProjectToSupabase(project);
-        if (!res.success) {
-          console.warn('Supabase saveProject warning:', res.error);
-        }
-      } catch (e) {
-        console.warn('Supabase saveProject network notice:', e);
+      const res = await saveProjectToSupabase(project);
+      if (!res.success) {
+        throw new Error(res.error || 'Failed to save project to Supabase');
       }
     }
-    return updated;
+    return localAdapter.saveProject(project);
   },
 
   deleteProject: async (id: string): Promise<ProjectShowcase[]> => {
-    const updated = await localAdapter.deleteProject(id);
     if (isSupabaseConfigured()) {
-      try {
-        const res = await deleteProjectFromSupabase(id);
-        if (!res.success) {
-          console.warn('Supabase deleteProject warning:', res.error);
-        }
-      } catch (e) {
-        console.warn('Supabase deleteProject network notice:', e);
+      const res = await deleteProjectFromSupabase(id);
+      if (!res.success) {
+        throw new Error(res.error || 'Failed to delete project from Supabase');
       }
     }
-    return updated;
+    return localAdapter.deleteProject(id);
   },
 
   upvoteProject: async (id: string): Promise<ProjectShowcase[]> => {
@@ -213,33 +193,23 @@ export const supabaseAdapter: DataAdapter = {
   },
 
   saveLearningPath: async (path: LearningPath): Promise<LearningPath[]> => {
-    const updated = await localAdapter.saveLearningPath(path);
     if (isSupabaseConfigured()) {
-      try {
-        const res = await saveLearningPathToSupabase(path);
-        if (!res.success) {
-          console.warn('Supabase saveLearningPath warning:', res.error);
-        }
-      } catch (e) {
-        console.warn('Supabase saveLearningPath network notice:', e);
+      const res = await saveLearningPathToSupabase(path);
+      if (!res.success) {
+        throw new Error(res.error || 'Failed to save learning path to Supabase');
       }
     }
-    return updated;
+    return localAdapter.saveLearningPath(path);
   },
 
   deleteLearningPath: async (id: string): Promise<LearningPath[]> => {
-    const updated = await localAdapter.deleteLearningPath(id);
     if (isSupabaseConfigured()) {
-      try {
-        const res = await deleteLearningPathFromSupabase(id);
-        if (!res.success) {
-          console.warn('Supabase deleteLearningPath warning:', res.error);
-        }
-      } catch (e) {
-        console.warn('Supabase deleteLearningPath network notice:', e);
+      const res = await deleteLearningPathFromSupabase(id);
+      if (!res.success) {
+        throw new Error(res.error || 'Failed to delete learning path from Supabase');
       }
     }
-    return updated;
+    return localAdapter.deleteLearningPath(id);
   },
 
   getCompletedModules: async (): Promise<string[]> => {
@@ -275,33 +245,23 @@ export const supabaseAdapter: DataAdapter = {
   },
 
   saveChallenge: async (challenge: Challenge): Promise<Challenge[]> => {
-    const updated = await localAdapter.saveChallenge(challenge);
     if (isSupabaseConfigured()) {
-      try {
-        const res = await saveChallengeToSupabase(challenge);
-        if (!res.success) {
-          console.warn('Supabase saveChallenge warning:', res.error);
-        }
-      } catch (e) {
-        console.warn('Supabase saveChallenge network notice:', e);
+      const res = await saveChallengeToSupabase(challenge);
+      if (!res.success) {
+        throw new Error(res.error || 'Failed to save challenge to Supabase');
       }
     }
-    return updated;
+    return localAdapter.saveChallenge(challenge);
   },
 
   deleteChallenge: async (id: string): Promise<Challenge[]> => {
-    const updated = await localAdapter.deleteChallenge(id);
     if (isSupabaseConfigured()) {
-      try {
-        const res = await deleteChallengeFromSupabase(id);
-        if (!res.success) {
-          console.warn('Supabase deleteChallenge warning:', res.error);
-        }
-      } catch (e) {
-        console.warn('Supabase deleteChallenge network notice:', e);
+      const res = await deleteChallengeFromSupabase(id);
+      if (!res.success) {
+        throw new Error(res.error || 'Failed to delete challenge from Supabase');
       }
     }
-    return updated;
+    return localAdapter.deleteChallenge(id);
   },
 
   // ==================================================================
@@ -329,33 +289,23 @@ export const supabaseAdapter: DataAdapter = {
   },
 
   saveResource: async (resource: CommunityResource): Promise<CommunityResource[]> => {
-    const updated = await localAdapter.saveResource(resource);
     if (isSupabaseConfigured()) {
-      try {
-        const res = await saveResourceToSupabase(resource);
-        if (!res.success) {
-          console.warn('Supabase saveResource warning:', res.error);
-        }
-      } catch (e) {
-        console.warn('Supabase saveResource network notice:', e);
+      const res = await saveResourceToSupabase(resource);
+      if (!res.success) {
+        throw new Error(res.error || 'Failed to save resource to Supabase');
       }
     }
-    return updated;
+    return localAdapter.saveResource(resource);
   },
 
   deleteResource: async (id: string): Promise<CommunityResource[]> => {
-    const updated = await localAdapter.deleteResource(id);
     if (isSupabaseConfigured()) {
-      try {
-        const res = await deleteResourceFromSupabase(id);
-        if (!res.success) {
-          console.warn('Supabase deleteResource warning:', res.error);
-        }
-      } catch (e) {
-        console.warn('Supabase deleteResource network notice:', e);
+      const res = await deleteResourceFromSupabase(id);
+      if (!res.success) {
+        throw new Error(res.error || 'Failed to delete resource from Supabase');
       }
     }
-    return updated;
+    return localAdapter.deleteResource(id);
   },
 
   incrementResourceDownloads: async (id: string): Promise<CommunityResource[]> => {
@@ -400,33 +350,23 @@ export const supabaseAdapter: DataAdapter = {
   },
 
   saveLeadership: async (member: LeadershipMember): Promise<LeadershipMember[]> => {
-    const updated = await localAdapter.saveLeadership(member);
     if (isSupabaseConfigured()) {
-      try {
-        const res = await saveLeadershipToSupabase(member);
-        if (!res.success) {
-          console.warn('Supabase saveLeadership warning:', res.error);
-        }
-      } catch (e) {
-        console.warn('Supabase saveLeadership network notice:', e);
+      const res = await saveLeadershipToSupabase(member);
+      if (!res.success) {
+        throw new Error(res.error || 'Failed to save leadership to Supabase');
       }
     }
-    return updated;
+    return localAdapter.saveLeadership(member);
   },
 
   deleteLeadership: async (id: string): Promise<LeadershipMember[]> => {
-    const updated = await localAdapter.deleteLeadership(id);
     if (isSupabaseConfigured()) {
-      try {
-        const res = await deleteLeadershipFromSupabase(id);
-        if (!res.success) {
-          console.warn('Supabase deleteLeadership warning:', res.error);
-        }
-      } catch (e) {
-        console.warn('Supabase deleteLeadership network notice:', e);
+      const res = await deleteLeadershipFromSupabase(id);
+      if (!res.success) {
+        throw new Error(res.error || 'Failed to delete leadership member from Supabase');
       }
     }
-    return updated;
+    return localAdapter.deleteLeadership(id);
   },
 
   // ==================================================================
@@ -454,48 +394,33 @@ export const supabaseAdapter: DataAdapter = {
   },
 
   saveActivityDraft: async (draft: ActivityDraft): Promise<ActivityDraft[]> => {
-    const updated = await localAdapter.saveActivityDraft(draft);
     if (isSupabaseConfigured()) {
-      try {
-        const res = await saveActivityDraftToSupabase(draft);
-        if (!res.success) {
-          console.warn('Supabase saveActivityDraft warning:', res.error);
-        }
-      } catch (e) {
-        console.warn('Supabase saveActivityDraft network notice:', e);
+      const res = await saveActivityDraftToSupabase(draft);
+      if (!res.success) {
+        throw new Error(res.error || 'Failed to save activity draft to Supabase');
       }
     }
-    return updated;
+    return localAdapter.saveActivityDraft(draft);
   },
 
   deleteActivityDraft: async (id: string): Promise<ActivityDraft[]> => {
-    const updated = await localAdapter.deleteActivityDraft(id);
     if (isSupabaseConfigured()) {
-      try {
-        const res = await deleteActivityDraftFromSupabase(id);
-        if (!res.success) {
-          console.warn('Supabase deleteActivityDraft warning:', res.error);
-        }
-      } catch (e) {
-        console.warn('Supabase deleteActivityDraft network notice:', e);
+      const res = await deleteActivityDraftFromSupabase(id);
+      if (!res.success) {
+        throw new Error(res.error || 'Failed to delete activity draft from Supabase');
       }
     }
-    return updated;
+    return localAdapter.deleteActivityDraft(id);
   },
 
   updateDraftStatus: async (id: string, status: DraftStatus, notes?: string): Promise<ActivityDraft[]> => {
-    const updated = await localAdapter.updateDraftStatus(id, status, notes);
     if (isSupabaseConfigured()) {
-      try {
-        const res = await updateDraftStatusInSupabase(id, status, notes);
-        if (!res.success) {
-          console.warn('Supabase updateDraftStatus warning:', res.error);
-        }
-      } catch (e) {
-        console.warn('Supabase updateDraftStatus network notice:', e);
+      const res = await updateDraftStatusInSupabase(id, status, notes);
+      if (!res.success) {
+        throw new Error(res.error || 'Failed to update draft status in Supabase');
       }
     }
-    return updated;
+    return localAdapter.updateDraftStatus(id, status, notes);
   },
 
   // ==================================================================
@@ -524,33 +449,23 @@ export const supabaseAdapter: DataAdapter = {
   },
 
   saveArticle: async (article: Article): Promise<Article[]> => {
-    const updated = await localAdapter.saveArticle(article);
     if (isSupabaseConfigured()) {
-      try {
-        const res = await saveArticleToSupabase(article);
-        if (!res.success) {
-          console.warn('Supabase saveArticle warning:', res.error);
-        }
-      } catch (e) {
-        console.warn('Supabase saveArticle network notice:', e);
+      const res = await saveArticleToSupabase(article);
+      if (!res.success) {
+        throw new Error(res.error || 'Failed to save article to Supabase');
       }
     }
-    return updated;
+    return localAdapter.saveArticle(article);
   },
 
   deleteArticle: async (id: string): Promise<Article[]> => {
-    const updated = await localAdapter.deleteArticle(id);
     if (isSupabaseConfigured()) {
-      try {
-        const res = await deleteArticleFromSupabase(id);
-        if (!res.success) {
-          console.warn('Supabase deleteArticle warning:', res.error);
-        }
-      } catch (e) {
-        console.warn('Supabase deleteArticle network notice:', e);
+      const res = await deleteArticleFromSupabase(id);
+      if (!res.success) {
+        throw new Error(res.error || 'Failed to delete article from Supabase');
       }
     }
-    return updated;
+    return localAdapter.deleteArticle(id);
   },
 
   incrementArticleViews: async (id: string): Promise<Article[]> => {
@@ -590,17 +505,15 @@ export const supabaseAdapter: DataAdapter = {
   },
 
   updateSettings: async (newSettings: Partial<SiteSettings>): Promise<SiteSettings> => {
-    const updated = await localAdapter.updateSettings(newSettings);
     if (isSupabaseConfigured()) {
-      try {
-        const res = await saveSettingsToSupabase(updated);
-        if (!res.success) {
-          console.warn('Supabase saveSettings warning:', res.error);
-        }
-      } catch (e) {
-        console.warn('Supabase saveSettings network notice:', e);
+      const current = await localAdapter.getSettings();
+      const merged = { ...current, ...newSettings };
+      const res = await saveSettingsToSupabase(merged);
+      if (!res.success) {
+        throw new Error(res.error || 'Failed to save settings to Supabase');
       }
     }
+    const updated = await localAdapter.updateSettings(newSettings);
     return updated;
   },
 

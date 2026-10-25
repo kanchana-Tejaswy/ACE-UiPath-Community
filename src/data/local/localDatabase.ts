@@ -184,20 +184,16 @@ export const localDatabase = {
   getUserPassword: (email: string): string => {
     const normalized = email.trim().toLowerCase();
     const defaults: Record<string, string> = {
-      'mail2tejaswy@gmail.com': 'Password369@123',
-      'admin@aceec.ac.in': 'Password369@123',
       'techlead@aceec.ac.in': 'demo1234',
       'student@aceec.ac.in': 'demo1234'
     };
     const stored = getItem<Record<string, string>>(STORAGE_KEYS.USER_PASSWORDS, defaults);
-    return stored[normalized] || defaults[normalized] || (normalized.includes('admin') ? 'Password369@123' : 'demo1234');
+    return stored[normalized] || defaults[normalized] || 'demo1234';
   },
 
   setUserPassword: (email: string, password: string): void => {
     const normalized = email.trim().toLowerCase();
     const defaults: Record<string, string> = {
-      'mail2tejaswy@gmail.com': 'Password369@123',
-      'admin@aceec.ac.in': 'Password369@123',
       'techlead@aceec.ac.in': 'demo1234',
       'student@aceec.ac.in': 'demo1234'
     };

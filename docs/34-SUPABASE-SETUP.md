@@ -19,10 +19,9 @@
 ## 2. Applying Database Migrations & Schemas
 
 1. Navigate to **SQL Editor** in the Supabase Dashboard.
-2. Open `supabase/migrations/20260831000000_initial_schema.sql`.
-3. Paste the contents into the SQL Editor and click **RUN**.
-4. Verify that all 14 tables (`users`, `roles`, `activities`, `learning_paths`, `projects`, `challenges`, `resources`, `site_settings`, `audit_logs`, etc.) are created with Row Level Security (RLS) enabled.
-5. Open `supabase/migrations/20260831000001_storage_buckets.sql`, paste, and click **RUN** to create the 5 storage buckets (`activities-media`, `resources-files`, `project-artifacts`, `challenge-submissions`, `user-avatars`).
+2. For an existing deployment, execute `supabase/migrations/20261025000000_phase1_database_security_remediation.sql` to apply all critical RLS protections, prevent role self-promotion, and shield student PII.
+3. For a fresh project setup, execute `supabase/migrations/full_migration_and_seed.sql` which includes the complete relational schema, security hardening triggers, and seed data in a single run.
+4. Open `supabase/migrations/20260831000001_storage_buckets.sql`, paste, and click **RUN** to ensure storage buckets (`activities-media`, `resources-files`, `project-artifacts`, `challenge-submissions`, `user-avatars`, `leadership-media`, `blog-media`) are provisioned.
 
 ---
 

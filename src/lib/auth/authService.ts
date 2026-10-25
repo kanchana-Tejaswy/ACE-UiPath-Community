@@ -39,15 +39,25 @@ export const authService = {
               return null;
             }
 
-            const role = normalizeRole(profile.role) as UserRole;
-            const isAdminUser = role === 'ADMIN' || (profile.email || '').toLowerCase().includes('tejaswy');
+            const emailLower = (profile.email || authUser.email || '').toLowerCase().trim();
+            let role: UserRole = 'STUDENT';
+            if (emailLower === 'mail2tejaswy@gmail.com' || emailLower === 'admin@aceec.ac.in') {
+              role = 'ADMIN';
+            } else if (emailLower === 'techlead@aceec.ac.in') {
+              role = 'CORE_TEAM';
+            } else {
+              role = normalizeRole(profile.role) as UserRole;
+            }
+
+            const isLeadAdmin = role === 'ADMIN' || emailLower.includes('tejaswy');
+            const defaultName = emailLower === 'mail2tejaswy@gmail.com' ? 'K.Tejaswy' : (emailLower === 'admin@aceec.ac.in' ? 'System Administrator' : (emailLower === 'techlead@aceec.ac.in' ? 'Rohit Varma' : 'Community Member'));
             const userObj: User = {
               id: profile.id,
-              name: profile.name || (isAdminUser ? 'K.Tejaswy' : authUser.email) || 'Authenticated User',
+              name: profile.name || defaultName,
               email: profile.email || authUser.email || '',
               role,
               status: (profile.status as UserStatus) || 'ACTIVE',
-              avatarUrl: profile.avatar_url || (isAdminUser ? '/tejaswy.png' : 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80'),
+              avatarUrl: profile.avatar_url || (isLeadAdmin ? '/tejaswy.png' : 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80'),
               branch: profile.branch || 'CSE',
               graduationYear: profile.graduation_year || 2026,
               createdAt: profile.created_at,
@@ -65,20 +75,21 @@ export const authService = {
           let inferredRole: UserRole = 'STUDENT';
           if (emailLower === 'mail2tejaswy@gmail.com' || emailLower === 'admin@aceec.ac.in') {
             inferredRole = 'ADMIN';
+          } else if (emailLower === 'techlead@aceec.ac.in') {
+            inferredRole = 'CORE_TEAM';
           } else if (matchedLocal) {
             inferredRole = normalizeRole(matchedLocal.role) as UserRole;
-          } else if (authUser.user_metadata?.role) {
-            inferredRole = normalizeRole(authUser.user_metadata.role) as UserRole;
           }
 
-          const isAdminUser = inferredRole === 'ADMIN' || emailLower.includes('tejaswy');
+          const isLeadAdmin = inferredRole === 'ADMIN' || emailLower.includes('tejaswy');
+          const defaultName = emailLower === 'mail2tejaswy@gmail.com' ? 'K.Tejaswy' : (emailLower === 'admin@aceec.ac.in' ? 'System Administrator' : (emailLower === 'techlead@aceec.ac.in' ? 'Rohit Varma' : 'Authenticated User'));
           const fallbackUser: User = {
             id: authUser.id,
-            name: authUser.user_metadata?.name || matchedLocal?.name || (isAdminUser ? 'K.Tejaswy' : authUser.email) || 'Authenticated User',
+            name: authUser.user_metadata?.name || matchedLocal?.name || defaultName,
             email: authUser.email || '',
             role: inferredRole,
             status: 'ACTIVE',
-            avatarUrl: matchedLocal?.avatarUrl || (isAdminUser ? '/tejaswy.png' : 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80'),
+            avatarUrl: matchedLocal?.avatarUrl || (isLeadAdmin ? '/tejaswy.png' : 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80'),
             branch: matchedLocal?.branch || 'CSE',
             graduationYear: matchedLocal?.graduationYear || 2026
           };
@@ -90,7 +101,7 @@ export const authService = {
       }
     }
 
-    // Local/session storage fallback
+    // Local/session storage fallback for offline / unconfigured state
     const currentId = localDatabase.getCurrentUserId();
     const users = localDatabase.getUsers();
     const match = users.find((u) => u.id === currentId) || users[0] || null;
@@ -128,11 +139,10 @@ export const authService = {
         }
 
         const expectedPassword = localDatabase.getUserPassword(targetUser.email);
-        if (normalizeRole(targetUser.role) === 'ADMIN') {
-          if (cleanPassword !== expectedPassword && cleanPassword !== 'Password369@123') {
-            return { user: null, error: 'Incorrect password. Please verify and try again.' };
-          }
-        } else if (cleanPassword && expectedPassword && cleanPassword !== expectedPassword && cleanPassword !== 'demo1234') {
+        if (import.meta.env.PROD && normalizeRole(targetUser.role) === 'ADMIN') {
+          return { user: null, error: 'Administrator sign in requires live Supabase authentication in production.' };
+        }
+        if (cleanPassword !== expectedPassword) {
           return { user: null, error: 'Incorrect password. Please verify and try again.' };
         }
 
@@ -149,26 +159,6 @@ export const authService = {
       });
 
       if (error || !data.user) {
-        // Fallback for configured administrator account or local users if cloud auth is unseeded
-        const users = localDatabase.getUsers();
-        const match = users.find((u) => u.email.toLowerCase() === cleanEmail.toLowerCase());
-        const adminMatch = !match && (cleanEmail.toLowerCase() === 'mail2tejaswy@gmail.com' || cleanEmail.toLowerCase() === 'admin@aceec.ac.in')
-          ? users.find((u) => normalizeRole(u.role) === 'ADMIN')
-          : null;
-        const targetUser = match || adminMatch;
-
-        if (targetUser) {
-          const expectedPassword = localDatabase.getUserPassword(targetUser.email);
-          const isPassValid =
-            (normalizeRole(targetUser.role) === 'ADMIN' && (cleanPassword === expectedPassword || cleanPassword === 'Password369@123')) ||
-            (cleanPassword === expectedPassword || cleanPassword === 'demo1234');
-
-          if (isPassValid) {
-            localDatabase.setCurrentUserId(targetUser.id);
-            return { user: targetUser };
-          }
-        }
-
         return { user: null, error: error?.message || 'Authentication failed. Please verify credentials.' };
       }
 
@@ -180,17 +170,8 @@ export const authService = {
       localDatabase.setCurrentUserId(userProfile.id);
       return { user: userProfile };
     } catch (err: any) {
-      const users = localDatabase.getUsers();
-      const match = users.find((u) => u.email.toLowerCase() === cleanEmail.toLowerCase());
-      const adminMatch = !match && (cleanEmail.toLowerCase() === 'mail2tejaswy@gmail.com' || cleanEmail.toLowerCase() === 'admin@aceec.ac.in')
-        ? users.find((u) => normalizeRole(u.role) === 'ADMIN')
-        : null;
-      const targetUser = match || adminMatch;
-      if (targetUser) {
-        localDatabase.setCurrentUserId(targetUser.id);
-        return { user: targetUser };
-      }
-      return { user: null, error: err.message || 'Network authentication error.' };
+      console.error('Supabase cloud authentication exception:', err);
+      return { user: null, error: err?.message || 'Network authentication error.' };
     }
   },
 
@@ -260,6 +241,14 @@ export const authService = {
     if (!isSupabaseConfigured()) return { success: true };
     try {
       const normRole = normalizeRole(role);
+      // 1. Primary: Use dedicated administrative RPC
+      const { error: rpcError } = await supabase.rpc('admin_update_user_role', {
+        target_user_id: userId,
+        new_role: normRole
+      });
+      if (!rpcError) return { success: true };
+
+      // 2. Fallback to direct update if RPC is not yet applied
       const { error } = await supabase
         .from('users')
         .update({ role: normRole, updated_at: new Date().toISOString() })
@@ -275,6 +264,14 @@ export const authService = {
   updateUserStatusInCloud: async (userId: string, status: UserStatus): Promise<{ success: boolean; error?: string }> => {
     if (!isSupabaseConfigured()) return { success: true };
     try {
+      // 1. Primary: Use dedicated administrative RPC
+      const { error: rpcError } = await supabase.rpc('admin_update_user_status', {
+        target_user_id: userId,
+        new_status: status
+      });
+      if (!rpcError) return { success: true };
+
+      // 2. Fallback to direct update if RPC is not yet applied
       const { error } = await supabase
         .from('users')
         .update({ status, updated_at: new Date().toISOString() })

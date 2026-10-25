@@ -12,8 +12,16 @@ export default async function handler(req: any, res: any) {
   const { method, url } = req;
   const path = (url || '').split('?')[0];
 
-  // Set CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  // Validate and set CORS headers
+  const origin = req.headers?.origin || '';
+  const allowedOrigins = [
+    'https://ace-uipath-community.vercel.app',
+    'http://localhost:3000',
+    'http://localhost:5173'
+  ];
+  const isAllowed = !origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app');
+  res.setHeader('Access-Control-Allow-Origin', isAllowed ? (origin || '*') : allowedOrigins[0]);
+  res.setHeader('Vary', 'Origin');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 

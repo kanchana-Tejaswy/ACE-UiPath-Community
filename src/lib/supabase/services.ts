@@ -194,6 +194,11 @@ export async function deleteProjectFromSupabase(id: string): Promise<{ success: 
 export async function upvoteProjectInSupabase(id: string, newCount: number): Promise<{ success: boolean; error?: string }> {
   if (!isSupabaseConfigured()) return { success: true };
   try {
+    // 1. Primary: Atomic, secured RPC execution (Rate-Safe)
+    const { error: rpcError } = await supabase.rpc('increment_project_upvote', { target_project_id: id });
+    if (!rpcError) return { success: true };
+
+    // 2. Fallback to direct update if RPC is not yet registered in environment
     const { error } = await supabase.from('projects').update({ upvotes: newCount }).eq('id', id);
     if (error) {
       console.error('Supabase project upvote failed:', error);
@@ -261,6 +266,11 @@ export async function deleteResourceFromSupabase(id: string): Promise<{ success:
 export async function incrementResourceDownloadsInSupabase(id: string, newCount: number): Promise<{ success: boolean; error?: string }> {
   if (!isSupabaseConfigured()) return { success: true };
   try {
+    // 1. Primary: Atomic, secured RPC execution (Safe)
+    const { error: rpcError } = await supabase.rpc('increment_resource_download', { target_resource_id: id });
+    if (!rpcError) return { success: true };
+
+    // 2. Fallback to direct update if RPC is not yet registered in environment
     const { error } = await supabase.from('resources').update({ download_count: newCount }).eq('id', id);
     if (error) {
       console.error('Supabase download increment failed:', error);
@@ -555,6 +565,16 @@ export async function fetchAuditLogsFromSupabase(): Promise<AuditLogEntry[] | nu
 export async function saveAuditLogToSupabase(entry: Omit<AuditLogEntry, 'id' | 'timestamp'>): Promise<{ success: boolean; error?: string }> {
   if (!isSupabaseConfigured()) return { success: true };
   try {
+    // 1. Primary: Secure stored procedure execution
+    const { error: rpcError } = await supabase.rpc('record_audit_event', {
+      p_action: entry.action,
+      p_entity_type: entry.entityType,
+      p_entity_id: entry.entityId,
+      p_description: entry.description
+    });
+    if (!rpcError) return { success: true };
+
+    // 2. Fallback to direct insert if admin or RPC not yet deployed
     const { error } = await supabase.from('audit_logs').insert({
       action: entry.action,
       entity_type: entry.entityType,
@@ -563,7 +583,7 @@ export async function saveAuditLogToSupabase(entry: Omit<AuditLogEntry, 'id' | '
       performed_by: entry.performedBy
     });
     if (error) {
-      console.warn('Supabase audit log insert failed:', error);
+      console.warn('Supabase audit log insert fallback failed:', error);
       return { success: false, error: error.message || 'Failed to insert audit log in Supabase.' };
     }
     return { success: true };
