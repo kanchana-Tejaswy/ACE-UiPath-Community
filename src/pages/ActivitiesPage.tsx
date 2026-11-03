@@ -19,7 +19,6 @@ import {
   Sliders,
   Filter,
   Shield,
-  Lock,
   CheckCircle2
 } from 'lucide-react';
 import { Activity, User, SiteSettings } from '../types';
