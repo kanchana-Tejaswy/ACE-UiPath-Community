@@ -116,6 +116,31 @@ export const INITIAL_TIMELINE_MILESTONES: TimelineMilestone[] = [
   }
 ];
 
+export const DEFAULT_ACTIVITY_CATEGORIES = [
+  'Workshop',
+  'Community Meetup',
+  'Hackathon',
+  'Bootcamp',
+  'Masterclass',
+  'Certification',
+  'Guest Lecture',
+  'Ideathon'
+];
+
+export const DEFAULT_ACTIVITY_YEARS = [
+  '2026',
+  '2025',
+  '2024',
+  '2023',
+  '2022'
+];
+
+export const DEFAULT_ACTIVITY_MODES = [
+  'Offline',
+  'Online',
+  'Hybrid'
+];
+
 export const INITIAL_SETTINGS: SiteSettings = {
   heroHeading: 'ACE UiPath Community',
   heroTagline: 'A student community at ACE Engineering College focused on learning, building and exploring automation.',
@@ -160,7 +185,10 @@ export const INITIAL_SETTINGS: SiteSettings = {
   totalHoursSaved: 3840,
   statistics: INITIAL_STATISTICS,
   announcements: INITIAL_ANNOUNCEMENTS,
-  timelineMilestones: INITIAL_TIMELINE_MILESTONES
+  timelineMilestones: INITIAL_TIMELINE_MILESTONES,
+  activityCategories: DEFAULT_ACTIVITY_CATEGORIES,
+  activityYears: DEFAULT_ACTIVITY_YEARS,
+  activityModes: DEFAULT_ACTIVITY_MODES
 };
 
 export const INITIAL_USERS: User[] = [

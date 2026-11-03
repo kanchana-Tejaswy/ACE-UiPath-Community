@@ -22,7 +22,10 @@ import {
   INITIAL_LEADERSHIP,
   INITIAL_SETTINGS,
   INITIAL_USERS,
-  INITIAL_ARTICLES
+  INITIAL_ARTICLES,
+  DEFAULT_ACTIVITY_CATEGORIES,
+  DEFAULT_ACTIVITY_YEARS,
+  DEFAULT_ACTIVITY_MODES
 } from '../initialData';
 
 const STORAGE_KEYS = {
@@ -150,7 +153,16 @@ export const localDatabase = {
     const loaded = getItem<SiteSettings>(STORAGE_KEYS.SETTINGS, INITIAL_SETTINGS);
     return {
       ...INITIAL_SETTINGS,
-      ...(loaded || {})
+      ...(loaded || {}),
+      activityCategories: (loaded?.activityCategories && loaded.activityCategories.length > 0)
+        ? loaded.activityCategories
+        : DEFAULT_ACTIVITY_CATEGORIES,
+      activityYears: (loaded?.activityYears && loaded.activityYears.length > 0)
+        ? loaded.activityYears
+        : DEFAULT_ACTIVITY_YEARS,
+      activityModes: (loaded?.activityModes && loaded.activityModes.length > 0)
+        ? loaded.activityModes
+        : DEFAULT_ACTIVITY_MODES,
     };
   },
   saveSettings: (data: SiteSettings): void => setItem(STORAGE_KEYS.SETTINGS, data),

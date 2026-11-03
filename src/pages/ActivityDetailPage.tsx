@@ -817,6 +817,8 @@ export const ActivityDetailPage: React.FC<Props> = ({
           activity={activity}
           isFeaturedOnHome={activity ? activity.id === featuredActivityId : false}
           initialTab={editorInitialTab}
+          onUpdateCategories={(newCats) => onUpdateSettings?.({ activityCategories: newCats })}
+          onUpdateYears={(newYrs) => onUpdateSettings?.({ activityYears: newYrs })}
           onClose={() => setIsEditorOpen(false)}
           onSave={async (savedAct: Activity, makeFeatured: boolean) => {
             if (onSaveActivity) {

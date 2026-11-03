@@ -265,6 +265,7 @@ export function App() {
             activities={store.activities}
             currentUser={activeUser}
             featuredActivityId={store.settings.featuredActivityId}
+            settings={store.settings}
             onSaveActivity={store.saveActivity}
             onDeleteActivity={store.deleteActivity}
             onUpdateSettings={store.updateSettings}

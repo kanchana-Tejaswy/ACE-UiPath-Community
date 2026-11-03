@@ -27,9 +27,10 @@ export type ActivityCategory =
   | 'Ideathon' 
   | 'Bootcamp'
   | 'Community Meetup'
-  | 'Masterclass';
+  | 'Masterclass'
+  | (string & {});
 
-export type ActivityEventType = 'Offline' | 'Online' | 'Hybrid';
+export type ActivityEventType = 'Offline' | 'Online' | 'Hybrid' | (string & {});
 
 export type ActivityStatus = 'Draft' | 'Upcoming' | 'Ongoing' | 'In Progress' | 'Completed' | 'Archived';
 
@@ -129,6 +130,7 @@ export interface Activity {
   category: ActivityCategory;
   eventType: ActivityEventType;
   date: string; // YYYY-MM-DD
+  year?: string; // Event or session year (e.g. "2026")
   timeStart: string; // e.g. "10:00 AM"
   timeEnd: string; // e.g. "04:30 PM"
   venue: string;
@@ -439,6 +441,9 @@ export interface SiteSettings {
   statistics?: CommunityStatistic[];
   announcements?: Announcement[];
   timelineMilestones?: TimelineMilestone[];
+  activityCategories?: string[];
+  activityYears?: string[];
+  activityModes?: string[];
 }
 
 export type ArticleCategory =

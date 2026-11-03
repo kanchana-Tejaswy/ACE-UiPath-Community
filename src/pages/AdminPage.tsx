@@ -40,8 +40,11 @@ import {
   Award,
   Cloud,
   CloudOff,
-  RefreshCw
+  RefreshCw,
+  Sliders,
+  Filter
 } from 'lucide-react';
+import { DEFAULT_ACTIVITY_CATEGORIES, DEFAULT_ACTIVITY_YEARS, DEFAULT_ACTIVITY_MODES } from '../data/initialData';
 import { isSupabaseConfigured } from '../lib/supabase/client';
 import { migrateLocalToSupabase, MigrationReport } from '../lib/supabase/migration';
 
@@ -204,6 +207,100 @@ export const AdminPage: React.FC<Props> = ({
   const [communityEmail, setCommunityEmail] = useState(settings.communityEmail || 'uipath.community@aceec.ac.in');
   const campusImageFileInputRef = useRef<HTMLInputElement | null>(null);
   const aboutImageFileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Activity Filters & Categories CMS State
+  const [showFilterConfig, setShowFilterConfig] = useState(false);
+  const [newAdminCategory, setNewAdminCategory] = useState('');
+  const [newAdminYear, setNewAdminYear] = useState('');
+  const [newAdminMode, setNewAdminMode] = useState('');
+
+  const adminCategories = (settings.activityCategories && settings.activityCategories.length > 0)
+    ? settings.activityCategories
+    : DEFAULT_ACTIVITY_CATEGORIES;
+
+  const adminYears = (settings.activityYears && settings.activityYears.length > 0)
+    ? settings.activityYears
+    : DEFAULT_ACTIVITY_YEARS;
+
+  const adminModes = (settings.activityModes && settings.activityModes.length > 0)
+    ? settings.activityModes
+    : DEFAULT_ACTIVITY_MODES;
+
+  const handleAdminAddCategory = () => {
+    const trimmed = newAdminCategory.trim();
+    if (!trimmed) return;
+    if (!adminCategories.includes(trimmed)) {
+      const updated = [...adminCategories, trimmed];
+      onUpdateSettings({ activityCategories: updated });
+      showToast(`Category "${trimmed}" added to system.`);
+    }
+    setNewAdminCategory('');
+  };
+
+  const handleAdminRemoveCategory = (cat: string) => {
+    if (adminCategories.length <= 1) {
+      alert('At least one category must remain.');
+      return;
+    }
+    const updated = adminCategories.filter((c) => c !== cat);
+    onUpdateSettings({ activityCategories: updated });
+    showToast(`Category "${cat}" removed.`);
+  };
+
+  const handleAdminAddYear = () => {
+    const trimmed = newAdminYear.trim();
+    if (!trimmed || !/^\d{4}$/.test(trimmed)) {
+      alert('Please enter a valid 4-digit year (e.g., 2027)');
+      return;
+    }
+    if (!adminYears.includes(trimmed)) {
+      const updated = [trimmed, ...adminYears].sort((a, b) => Number(b) - Number(a));
+      onUpdateSettings({ activityYears: updated });
+      showToast(`Year "${trimmed}" added.`);
+    }
+    setNewAdminYear('');
+  };
+
+  const handleAdminRemoveYear = (yr: string) => {
+    if (adminYears.length <= 1) {
+      alert('At least one year must remain.');
+      return;
+    }
+    const updated = adminYears.filter((y) => y !== yr);
+    onUpdateSettings({ activityYears: updated });
+    showToast(`Year "${yr}" removed.`);
+  };
+
+  const handleAdminAddMode = () => {
+    const trimmed = newAdminMode.trim();
+    if (!trimmed) return;
+    if (!adminModes.includes(trimmed)) {
+      const updated = [...adminModes, trimmed];
+      onUpdateSettings({ activityModes: updated });
+      showToast(`Mode "${trimmed}" added.`);
+    }
+    setNewAdminMode('');
+  };
+
+  const handleAdminRemoveMode = (m: string) => {
+    if (adminModes.length <= 1) {
+      alert('At least one mode must remain.');
+      return;
+    }
+    const updated = adminModes.filter((item) => item !== m);
+    onUpdateSettings({ activityModes: updated });
+    showToast(`Mode "${m}" removed.`);
+  };
+
+  const handleAdminResetFilters = () => {
+    if (!window.confirm('Reset all categories, years, and delivery modes back to system defaults?')) return;
+    onUpdateSettings({
+      activityCategories: DEFAULT_ACTIVITY_CATEGORIES,
+      activityYears: DEFAULT_ACTIVITY_YEARS,
+      activityModes: DEFAULT_ACTIVITY_MODES
+    });
+    showToast('Filters reset to default configuration.');
+  };
 
   // ABOUT PAGE & STORY FORM STATE
   const [aboutBadge, setAboutBadge] = useState(settings.aboutBadge || 'Institutional Legacy & Leadership');
@@ -1745,20 +1842,235 @@ export const AdminPage: React.FC<Props> = ({
           {/* TAB 3: EVENTS & ACTIVITIES CMS */}
           {activeTab === 'events' && (
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '1rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
                 <div>
                   <h2 style={{ fontSize: '1.4rem', fontWeight: 700 }}>Events & Community Sessions</h2>
                   <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                     Manage upcoming and archived workshops, expert meetups, and hackathons.
                   </p>
                 </div>
-                <button
-                  onClick={() => handleOpenActivityModal()}
-                  className="btn btn-primary btn-sm"
-                >
-                  <Plus size={14} /> Create Event
-                </button>
+                <div style={{ display: 'flex', gap: '0.65rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowFilterConfig(!showFilterConfig)}
+                    className="btn btn-secondary btn-sm"
+                    style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', borderColor: showFilterConfig ? 'var(--uipath-orange)' : undefined, color: showFilterConfig ? 'var(--uipath-orange)' : '#FFF' }}
+                  >
+                    <Sliders size={14} /> {showFilterConfig ? 'Hide Filter Config' : 'Configure Categories & Filters'}
+                  </button>
+                  <button
+                    onClick={() => handleOpenActivityModal()}
+                    className="btn btn-primary btn-sm"
+                  >
+                    <Plus size={14} /> Create Event
+                  </button>
+                </div>
               </div>
+
+              {/* Filter Configuration Panel */}
+              {showFilterConfig && (
+                <div style={{
+                  background: 'rgba(255, 255, 255, 0.02)',
+                  border: '1px solid var(--border-subtle)',
+                  borderRadius: 'var(--radius-md)',
+                  padding: '1.5rem',
+                  marginBottom: '1.5rem',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '1.25rem'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.75rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <Sliders size={16} style={{ color: 'var(--uipath-orange)' }} />
+                      <h3 style={{ fontSize: '1.05rem', fontWeight: 700, margin: 0, color: '#FFF' }}>
+                        Activity Categories, Years & Filter Configuration
+                      </h3>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleAdminResetFilters}
+                      className="btn btn-secondary btn-sm"
+                      style={{ fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+                    >
+                      Reset to Defaults
+                    </button>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
+                    {/* Column 1: Categories */}
+                    <div style={{ background: 'var(--bg-primary)', padding: '1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', display: 'block', marginBottom: '0.5rem' }}>
+                        Categories / Types ({adminCategories.length})
+                      </span>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '0.75rem', maxHeight: '120px', overflowY: 'auto' }}>
+                        {adminCategories.map((c) => (
+                          <span
+                            key={c}
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.35rem',
+                              background: 'rgba(255,255,255,0.06)',
+                              border: '1px solid var(--border-subtle)',
+                              borderRadius: 'var(--radius-full)',
+                              padding: '0.2rem 0.6rem',
+                              fontSize: '0.78rem'
+                            }}
+                          >
+                            <span>{c}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleAdminRemoveCategory(c)}
+                              style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 0, display: 'flex' }}
+                              title={`Remove category "${c}"`}
+                            >
+                              <X size={12} />
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                      <div style={{ display: 'flex', gap: '0.4rem' }}>
+                        <input
+                          type="text"
+                          placeholder="e.g. Masterclass, Webinar..."
+                          value={newAdminCategory}
+                          onChange={(e) => setNewAdminCategory(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              handleAdminAddCategory();
+                            }
+                          }}
+                          style={{ flex: 1, padding: '0.4rem 0.6rem', background: '#000', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', color: '#FFF', fontSize: '0.8rem' }}
+                        />
+                        <button
+                          type="button"
+                          onClick={handleAdminAddCategory}
+                          className="btn btn-primary btn-sm"
+                          style={{ fontSize: '0.75rem', padding: '0.35rem 0.65rem' }}
+                        >
+                          <Plus size={12} /> Add
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Column 2: Years */}
+                    <div style={{ background: 'var(--bg-primary)', padding: '1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', display: 'block', marginBottom: '0.5rem' }}>
+                        Event Years ({adminYears.length})
+                      </span>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '0.75rem' }}>
+                        {adminYears.map((yr) => (
+                          <span
+                            key={yr}
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.35rem',
+                              background: 'rgba(255,255,255,0.06)',
+                              border: '1px solid var(--border-subtle)',
+                              borderRadius: 'var(--radius-full)',
+                              padding: '0.2rem 0.6rem',
+                              fontSize: '0.78rem'
+                            }}
+                          >
+                            <span>{yr}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleAdminRemoveYear(yr)}
+                              style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 0, display: 'flex' }}
+                              title={`Remove year ${yr}`}
+                            >
+                              <X size={12} />
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                      <div style={{ display: 'flex', gap: '0.4rem' }}>
+                        <input
+                          type="text"
+                          maxLength={4}
+                          placeholder="e.g. 2027"
+                          value={newAdminYear}
+                          onChange={(e) => setNewAdminYear(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              handleAdminAddYear();
+                            }
+                          }}
+                          style={{ flex: 1, padding: '0.4rem 0.6rem', background: '#000', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', color: '#FFF', fontSize: '0.8rem' }}
+                        />
+                        <button
+                          type="button"
+                          onClick={handleAdminAddYear}
+                          className="btn btn-primary btn-sm"
+                          style={{ fontSize: '0.75rem', padding: '0.35rem 0.65rem' }}
+                        >
+                          <Plus size={12} /> Add
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Column 3: Delivery Modes */}
+                    <div style={{ background: 'var(--bg-primary)', padding: '1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', display: 'block', marginBottom: '0.5rem' }}>
+                        Delivery Modes ({adminModes.length})
+                      </span>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '0.75rem' }}>
+                        {adminModes.map((m) => (
+                          <span
+                            key={m}
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.35rem',
+                              background: 'rgba(255,255,255,0.06)',
+                              border: '1px solid var(--border-subtle)',
+                              borderRadius: 'var(--radius-full)',
+                              padding: '0.2rem 0.6rem',
+                              fontSize: '0.78rem'
+                            }}
+                          >
+                            <span>{m}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleAdminRemoveMode(m)}
+                              style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 0, display: 'flex' }}
+                              title={`Remove mode "${m}"`}
+                            >
+                              <X size={12} />
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                      <div style={{ display: 'flex', gap: '0.4rem' }}>
+                        <input
+                          type="text"
+                          placeholder="e.g. Self-Paced..."
+                          value={newAdminMode}
+                          onChange={(e) => setNewAdminMode(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              handleAdminAddMode();
+                            }
+                          }}
+                          style={{ flex: 1, padding: '0.4rem 0.6rem', background: '#000', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', color: '#FFF', fontSize: '0.8rem' }}
+                        />
+                        <button
+                          type="button"
+                          onClick={handleAdminAddMode}
+                          className="btn btn-primary btn-sm"
+                          style={{ fontSize: '0.75rem', padding: '0.35rem 0.65rem' }}
+                        >
+                          <Plus size={12} /> Add
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 {activities.map((act) => (
@@ -2999,6 +3311,11 @@ export const AdminPage: React.FC<Props> = ({
         isOpen={isActivityModalOpen}
         activity={editingActivity}
         isFeaturedOnHome={editingActivity ? editingActivity.id === featuredActivityId : false}
+        categories={settings.activityCategories}
+        years={settings.activityYears}
+        modes={settings.activityModes}
+        onUpdateCategories={(newCats) => onUpdateSettings({ activityCategories: newCats })}
+        onUpdateYears={(newYrs) => onUpdateSettings({ activityYears: newYrs })}
         onClose={() => setIsActivityModalOpen(false)}
         onSave={handleSaveActivityModal}
       />

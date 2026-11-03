@@ -40,12 +40,20 @@ import {
   KnowledgeGraphLink
 } from '../types';
 import { TechnicalMarkdownRenderer } from './TechnicalMarkdownRenderer';
+import { DEFAULT_ACTIVITY_CATEGORIES, DEFAULT_ACTIVITY_YEARS } from '../data/initialData';
+import { localDatabase } from '../data/local/localDatabase';
+import { settingsRepository } from '../data/repositories/settingsRepository';
 
 interface Props {
   isOpen: boolean;
   activity: Activity | null;
   isFeaturedOnHome?: boolean;
   initialTab?: 'overview' | 'media' | 'speakers' | 'agenda' | 'vault';
+  categories?: string[];
+  years?: string[];
+  modes?: string[];
+  onUpdateCategories?: (categories: string[]) => void;
+  onUpdateYears?: (years: string[]) => void;
   onClose: () => void;
   onSave: (activity: Activity, makeFeatured: boolean) => void;
 }
@@ -85,6 +93,11 @@ export const EventEditorModal: React.FC<Props> = ({
   activity,
   isFeaturedOnHome = false,
   initialTab = 'overview',
+  categories,
+  years,
+  modes,
+  onUpdateCategories,
+  onUpdateYears,
   onClose,
   onSave
 }) => {
@@ -97,6 +110,35 @@ export const EventEditorModal: React.FC<Props> = ({
   const [imageSpecs, setImageSpecs] = useState<{ width: number; height: number; ratio: string } | null>(null);
   const [isDirty, setIsDirty] = useState(false);
   const [mdTab, setMdTab] = useState<'write' | 'preview'>('write');
+
+  // Categories management state
+  const [categoriesList, setCategoriesList] = useState<string[]>(() => {
+    if (categories && categories.length > 0) return categories;
+    return localDatabase.getSettings().activityCategories || DEFAULT_ACTIVITY_CATEGORIES;
+  });
+  const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+
+  // Years management state
+  const [yearsList, setYearsList] = useState<string[]>(() => {
+    if (years && years.length > 0) return years;
+    return localDatabase.getSettings().activityYears || DEFAULT_ACTIVITY_YEARS;
+  });
+  const [isAddingYear, setIsAddingYear] = useState(false);
+  const [newYearInput, setNewYearInput] = useState('');
+
+  // Synchronize categories and years with props when they change
+  useEffect(() => {
+    if (categories && categories.length > 0) {
+      setCategoriesList(categories);
+    }
+  }, [categories]);
+
+  useEffect(() => {
+    if (years && years.length > 0) {
+      setYearsList(years);
+    }
+  }, [years]);
 
   // New item inputs
   const [newObjective, setNewObjective] = useState('');
@@ -279,6 +321,104 @@ export const EventEditorModal: React.FC<Props> = ({
     ]);
   };
 
+  // Categories Mutation Handlers
+  const handleAddCategory = (customName?: string) => {
+    const raw = customName !== undefined ? customName : newCategoryName;
+    const trimmed = raw.trim();
+    if (!trimmed) return;
+    let updated = categoriesList;
+    if (!categoriesList.includes(trimmed)) {
+      updated = [...categoriesList, trimmed];
+      setCategoriesList(updated);
+      if (onUpdateCategories) {
+        onUpdateCategories(updated);
+      } else {
+        settingsRepository.update({ activityCategories: updated });
+        if (typeof window !== 'undefined') window.dispatchEvent(new Event('ace_uipath_db_update'));
+      }
+    }
+    updateField('category', trimmed);
+    setNewCategoryName('');
+  };
+
+  const handleRemoveCategory = (catToRemove: string) => {
+    if (categoriesList.length <= 1) {
+      alert('At least one category must remain.');
+      return;
+    }
+    const updated = categoriesList.filter((c) => c !== catToRemove);
+    setCategoriesList(updated);
+    if (formData?.category === catToRemove) {
+      updateField('category', updated[0] as ActivityCategory);
+    }
+    if (onUpdateCategories) {
+      onUpdateCategories(updated);
+    } else {
+      settingsRepository.update({ activityCategories: updated });
+      if (typeof window !== 'undefined') window.dispatchEvent(new Event('ace_uipath_db_update'));
+    }
+  };
+
+  // Year Selection & Addition Handlers
+  const handleYearChange = (newYear: string) => {
+    if (newYear === '__ADD_NEW__') {
+      setIsAddingYear(true);
+      return;
+    }
+    setFormData((prev) => {
+      if (!prev) return prev;
+      let newDate = prev.date;
+      if (newDate && newDate.includes('-')) {
+        const parts = newDate.split('-');
+        if (parts.length >= 3) {
+          newDate = `${newYear}-${parts[1]}-${parts[2]}`;
+        }
+      } else {
+        newDate = `${newYear}-01-01`;
+      }
+      return {
+        ...prev,
+        year: newYear,
+        date: newDate
+      };
+    });
+    setIsDirty(true);
+  };
+
+  const handleDateChange = (newDate: string) => {
+    const parts = newDate.split('-');
+    const newYear = parts[0];
+    setFormData((prev) => (prev ? {
+      ...prev,
+      date: newDate,
+      year: newYear || prev.year
+    } : prev));
+    setIsDirty(true);
+  };
+
+  const handleAddYear = () => {
+    const trimmed = newYearInput.trim();
+    if (!trimmed) return;
+    if (!/^\d{4}$/.test(trimmed)) {
+      alert('Please enter a valid 4-digit year (e.g., 2027)');
+      return;
+    }
+    let updated = yearsList;
+    if (!yearsList.includes(trimmed)) {
+      updated = [trimmed, ...yearsList].sort((a, b) => Number(b) - Number(a));
+      setYearsList(updated);
+      if (onUpdateYears) {
+        onUpdateYears(updated);
+      } else {
+        settingsRepository.update({ activityYears: updated });
+        if (typeof window !== 'undefined') window.dispatchEvent(new Event('ace_uipath_db_update'));
+      }
+    }
+    handleYearChange(trimmed);
+    setNewYearInput('');
+    setIsAddingYear(false);
+  };
+
   const handleSubmit = (e?: React.FormEvent | React.MouseEvent) => {
     if (e && e.preventDefault) {
       e.preventDefault();
@@ -293,8 +433,10 @@ export const EventEditorModal: React.FC<Props> = ({
       return;
     }
 
+    const derivedYear = formData.year || (formData.date ? formData.date.split('-')[0] : '2026');
     const activityToSave: Activity = {
       ...formData,
+      year: derivedYear,
       isFeatured,
       slug: formData.slug || formData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
     };
@@ -312,8 +454,10 @@ export const EventEditorModal: React.FC<Props> = ({
   // Initialize form when modal opens
   useEffect(() => {
     if (activity) {
+      const derivedYear = activity.year || (activity.date ? activity.date.split('-')[0] : '2026');
       setFormData({
         ...activity,
+        year: derivedYear,
         speakers: activity.speakers && activity.speakers.length > 0 
           ? activity.speakers 
           : [{ id: `spk_${Date.now()}`, name: '', roleTitle: 'Lead Trainer', organization: 'ACE UiPath Community', avatarUrl: '/tejaswy.png', linkedinUrl: '', bio: '' }],
@@ -443,22 +587,34 @@ export const EventEditorModal: React.FC<Props> = ({
               {/* Category, Mode & Status */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">
-                    Category
-                  </label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400">
+                      Category
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setIsCategoryManagerOpen(!isCategoryManagerOpen)}
+                      className="text-[11px] font-semibold text-orange-400 hover:text-orange-300 transition-colors flex items-center gap-1 cursor-pointer"
+                      title="Add or remove event categories"
+                    >
+                      <Plus size={11} /> {isCategoryManagerOpen ? 'Close' : 'Add / Remove'}
+                    </button>
+                  </div>
                   <select
                     value={formData.category}
-                    onChange={(e) => updateField('category', e.target.value as ActivityCategory)}
-                    className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-orange-500 transition-all cursor-pointer"
+                    onChange={(e) => {
+                      if (e.target.value === '__MANAGE__') {
+                        setIsCategoryManagerOpen(true);
+                      } else {
+                        updateField('category', e.target.value as ActivityCategory);
+                      }
+                    }}
+                    className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-orange-500 transition-all cursor-pointer font-medium"
                   >
-                    <option value="Workshop">Workshop</option>
-                    <option value="Community Meetup">Community Meetup</option>
-                    <option value="Hackathon">Hackathon</option>
-                    <option value="Bootcamp">Bootcamp</option>
-                    <option value="Masterclass">Masterclass</option>
-                    <option value="Certification">Certification</option>
-                    <option value="Guest Lecture">Guest Lecture</option>
-                    <option value="Ideathon">Ideathon</option>
+                    {categoriesList.map((cat) => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                    <option value="__MANAGE__">+ Add New Category...</option>
                   </select>
                 </div>
 
@@ -495,8 +651,117 @@ export const EventEditorModal: React.FC<Props> = ({
                 </div>
               </div>
 
-              {/* Timing & Logistics */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {/* Inline Category Manager Card */}
+              {isCategoryManagerOpen && (
+                <div className="p-4 bg-neutral-950/90 border border-orange-500/30 rounded-xl space-y-3 animate-in fade-in duration-150 shadow-xl">
+                  <div className="flex items-center justify-between pb-1 border-b border-neutral-850">
+                    <span className="text-xs font-bold text-white flex items-center gap-1.5 uppercase tracking-wide">
+                      <Sparkles size={13} className="text-[#FA4616]" />
+                      Manage Categories (Add / Remove)
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setIsCategoryManagerOpen(false)}
+                      className="text-xs text-neutral-400 hover:text-white px-2 py-0.5 rounded cursor-pointer"
+                    >
+                      Done
+                    </button>
+                  </div>
+
+                  {/* Add New Category Input */}
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      placeholder="Enter new category name (e.g., Webinar, AMA, Summit, Masterclass)..."
+                      value={newCategoryName}
+                      onChange={(e) => setNewCategoryName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddCategory();
+                        }
+                      }}
+                      className="flex-1 bg-neutral-900 border border-neutral-800 rounded-lg px-3 py-2 text-xs text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:border-orange-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleAddCategory()}
+                      className="px-3.5 py-2 bg-[#FA4616] hover:bg-[#ff5722] text-white rounded-lg text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer shadow-md shadow-orange-500/20"
+                    >
+                      <Plus size={13} /> Add Category
+                    </button>
+                  </div>
+
+                  {/* Existing Categories List with Remove Button */}
+                  <div>
+                    <span className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider block mb-2">
+                      Active Categories ({categoriesList.length}): Click × to remove
+                    </span>
+                    <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto pr-1">
+                      {categoriesList.map((cat) => {
+                        const isCurrentActive = formData.category === cat;
+                        return (
+                          <span
+                            key={cat}
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border transition-all ${
+                              isCurrentActive 
+                                ? 'bg-orange-500/15 border-orange-500/50 text-orange-200' 
+                                : 'bg-neutral-900 border-neutral-800 text-neutral-300'
+                            }`}
+                          >
+                            <span 
+                              className="cursor-pointer hover:underline"
+                              onClick={() => updateField('category', cat)}
+                              title={`Set "${cat}" as event category`}
+                            >
+                              {cat}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveCategory(cat)}
+                              className="w-4 h-4 rounded-full flex items-center justify-center text-neutral-400 hover:text-red-400 hover:bg-red-500/20 transition-all cursor-pointer"
+                              title={`Remove "${cat}" category from system`}
+                            >
+                              <X size={11} />
+                            </button>
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Timing & Logistics (With Explicit Year Selector) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                {/* Year Selector */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400">
+                      Event Year <span className="text-[#FA4616]">*</span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setIsAddingYear(!isAddingYear)}
+                      className="text-[11px] font-semibold text-orange-400 hover:text-orange-300 transition-colors flex items-center gap-1 cursor-pointer"
+                      title="Add custom year"
+                    >
+                      <Plus size={11} /> Add Year
+                    </button>
+                  </div>
+                  <select
+                    value={formData.year || (formData.date ? formData.date.split('-')[0] : '2026')}
+                    onChange={(e) => handleYearChange(e.target.value)}
+                    className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-orange-500 transition-all cursor-pointer font-medium"
+                  >
+                    {yearsList.map((yr) => (
+                      <option key={yr} value={yr}>{yr}</option>
+                    ))}
+                    <option value="__ADD_NEW__">+ Add Custom Year...</option>
+                  </select>
+                </div>
+
+                {/* Date Picker */}
                 <div>
                   <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">
                     Date (YYYY-MM-DD) <span className="text-[#FA4616]">*</span>
@@ -505,8 +770,8 @@ export const EventEditorModal: React.FC<Props> = ({
                     type="date"
                     required
                     value={formData.date}
-                    onChange={(e) => updateField('date', e.target.value)}
-                    className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-orange-500 transition-all"
+                    onChange={(e) => handleDateChange(e.target.value)}
+                    className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3 py-2 text-sm text-neutral-100 focus:outline-none focus:border-orange-500 transition-all font-medium"
                   />
                 </div>
 
@@ -536,6 +801,41 @@ export const EventEditorModal: React.FC<Props> = ({
                   />
                 </div>
               </div>
+
+              {/* Inline Add Year Form */}
+              {isAddingYear && (
+                <div className="p-3 bg-neutral-950/80 border border-orange-500/30 rounded-xl flex items-center gap-2 animate-in fade-in duration-150">
+                  <span className="text-xs text-neutral-300 font-semibold uppercase tracking-wide">Add Custom Year:</span>
+                  <input
+                    type="text"
+                    maxLength={4}
+                    placeholder="e.g. 2027"
+                    value={newYearInput}
+                    onChange={(e) => setNewYearInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddYear();
+                      }
+                    }}
+                    className="w-28 bg-neutral-900 border border-neutral-800 rounded-lg px-2.5 py-1.5 text-xs text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:border-orange-500 font-mono"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddYear}
+                    className="px-3 py-1.5 bg-[#FA4616] hover:bg-[#ff5722] text-white rounded-lg text-xs font-semibold transition-all cursor-pointer"
+                  >
+                    Save Year
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsAddingYear(false)}
+                    className="text-xs text-neutral-400 hover:text-white px-2 py-1.5 cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
 
               {/* Venue & Capacity */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
