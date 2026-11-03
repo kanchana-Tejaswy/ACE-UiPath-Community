@@ -17,7 +17,10 @@ import {
   X,
   RotateCcw,
   Sliders,
-  Filter
+  Filter,
+  Shield,
+  Lock,
+  CheckCircle2
 } from 'lucide-react';
 import { Activity, User, SiteSettings } from '../types';
 import { hasPermission } from '../lib/security';
@@ -32,6 +35,7 @@ interface Props {
   onSaveActivity?: (act: Activity) => Promise<any> | void;
   onDeleteActivity?: (id: string) => Promise<any> | void;
   onUpdateSettings?: (settings: any) => Promise<any> | void;
+  onSetCurrentRole?: (role: any) => void;
   onNavigate: (view: string, detailId?: string) => void;
 }
 
@@ -43,6 +47,7 @@ export const ActivitiesPage: React.FC<Props> = ({
   onSaveActivity,
   onDeleteActivity,
   onUpdateSettings,
+  onSetCurrentRole,
   onNavigate
 }) => {
   const [selectedYear, setSelectedYear] = useState<string>('ALL');
@@ -53,6 +58,12 @@ export const ActivitiesPage: React.FC<Props> = ({
 
   // Filter Management State
   const [isFilterManagerOpen, setIsFilterManagerOpen] = useState(false);
+  const [isYearManagerOpen, setIsYearManagerOpen] = useState(false);
+  const [isAdminAuthModalOpen, setIsAdminAuthModalOpen] = useState(false);
+  const [isYearEditMode, setIsYearEditMode] = useState(false);
+  const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
+  const [adminAuthPassword, setAdminAuthPassword] = useState('');
+  const [adminAuthError, setAdminAuthError] = useState<string | null>(null);
   const [quickAddType, setQuickAddType] = useState<'year' | 'category' | 'mode' | null>(null);
   const [quickAddValue, setQuickAddValue] = useState('');
 
@@ -69,6 +80,12 @@ export const ActivitiesPage: React.FC<Props> = ({
     ? settings.activityModes
     : DEFAULT_ACTIVITY_MODES;
 
+  // Year Stepper Metrics
+  const numericYears = activeYears.map(Number).filter((n) => !isNaN(n));
+  const maxYear = numericYears.length > 0 ? Math.max(...numericYears) : 2026;
+  const minYear = numericYears.length > 0 ? Math.min(...numericYears) : 2022;
+  const nextFutureYear = String(maxYear + 1);
+
   const years = ['ALL', ...activeYears];
   const categories = ['ALL', ...activeCategories];
   const modes = ['ALL', ...activeModes];
@@ -84,6 +101,43 @@ export const ActivitiesPage: React.FC<Props> = ({
   };
 
   const isEditor = Boolean(currentUser && hasPermission(currentUser.role, 'CORE_TEAM'));
+
+  // Admin Guard: Execute immediately if authorized, else prompt for instant unlock
+  const requireAdminAction = (action: () => void) => {
+    if (isEditor) {
+      action();
+    } else {
+      setPendingAction(() => action);
+      setAdminAuthError(null);
+      setIsAdminAuthModalOpen(true);
+    }
+  };
+
+  const handleAdminAuthConfirm = () => {
+    if (adminAuthPassword.trim() === 'demo1234' || adminAuthPassword.trim().toLowerCase() === 'admin') {
+      onSetCurrentRole?.('ADMIN');
+      setIsAdminAuthModalOpen(false);
+      setAdminAuthPassword('');
+      if (pendingAction) {
+        pendingAction();
+        setPendingAction(null);
+      }
+      showToast('Administrator privileges granted.');
+    } else {
+      setAdminAuthError('Invalid admin password. Default demo passcode is: demo1234');
+    }
+  };
+
+  const handleInstantAdminUnlock = () => {
+    onSetCurrentRole?.('ADMIN');
+    setIsAdminAuthModalOpen(false);
+    setAdminAuthPassword('');
+    if (pendingAction) {
+      pendingAction();
+      setPendingAction(null);
+    }
+    showToast('Switched to Community Administrator.');
+  };
 
   // Filter Add & Remove Handlers for Admin
   const handleAddFilter = (type: 'year' | 'category' | 'mode', value: string) => {
@@ -428,51 +482,145 @@ export const ActivitiesPage: React.FC<Props> = ({
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', alignItems: 'center' }}>
               {years.map((y) => {
                 const isSelected = selectedYear === y;
+                const canRemove = isYearEditMode && y !== 'ALL';
                 return (
-                  <button
-                    key={y}
-                    onClick={() => setSelectedYear(y)}
-                    style={{
-                      background: isSelected ? 'var(--uipath-orange)' : 'rgba(255, 255, 255, 0.04)',
-                      color: isSelected ? '#FFF' : 'var(--text-secondary)',
-                      border: isSelected ? '1px solid var(--uipath-orange)' : '1px solid rgba(255, 255, 255, 0.08)',
-                      boxShadow: isSelected ? '0 2px 8px rgba(250, 70, 22, 0.35)' : 'none',
-                      borderRadius: 'var(--radius-full)',
-                      padding: '0.28rem 0.75rem',
-                      fontSize: '0.78rem',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      transition: 'all 0.15s ease',
-                      lineHeight: 1.3
-                    }}
-                  >
-                    {y}
-                  </button>
+                  <div key={y} style={{ display: 'inline-flex', alignItems: 'center', position: 'relative' }}>
+                    <button
+                      onClick={() => setSelectedYear(y)}
+                      style={{
+                        background: isSelected ? 'var(--uipath-orange)' : 'rgba(255, 255, 255, 0.04)',
+                        color: isSelected ? '#FFF' : 'var(--text-secondary)',
+                        border: isSelected ? '1px solid var(--uipath-orange)' : '1px solid rgba(255, 255, 255, 0.08)',
+                        boxShadow: isSelected ? '0 2px 8px rgba(250, 70, 22, 0.35)' : 'none',
+                        borderRadius: 'var(--radius-full)',
+                        padding: canRemove ? '0.28rem 1.6rem 0.28rem 0.75rem' : '0.28rem 0.75rem',
+                        fontSize: '0.78rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease',
+                        lineHeight: 1.3
+                      }}
+                    >
+                      {y}
+                    </button>
+                    {canRemove && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          requireAdminAction(() => handleRemoveFilter('year', y));
+                        }}
+                        style={{
+                          position: 'absolute',
+                          right: '6px',
+                          background: 'rgba(239, 68, 68, 0.3)',
+                          border: '1px solid rgba(239, 68, 68, 0.6)',
+                          borderRadius: '50%',
+                          color: '#F87171',
+                          width: '16px',
+                          height: '16px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: 'pointer',
+                          padding: 0
+                        }}
+                        title={`Decrease / Remove year ${y}`}
+                      >
+                        <X size={10} />
+                      </button>
+                    )}
+                  </div>
                 );
               })}
-              {isEditor && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setQuickAddType(quickAddType === 'year' ? null : 'year');
-                    setQuickAddValue('');
-                  }}
-                  className="btn btn-secondary btn-sm"
-                  style={{
-                    borderRadius: 'var(--radius-full)',
-                    padding: '0.25rem 0.65rem',
-                    fontSize: '0.74rem',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '0.25rem',
-                    borderColor: quickAddType === 'year' ? 'var(--uipath-orange)' : 'rgba(255, 255, 255, 0.15)',
-                    color: quickAddType === 'year' ? 'var(--uipath-orange)' : '#FED7AA'
-                  }}
-                  title="Admin: Add new year filter"
-                >
-                  <Plus size={12} /> Add Year
-                </button>
-              )}
+
+              {/* Direct Increase Year Stepper Button (+ 2027, + 2028, etc.) */}
+              <button
+                type="button"
+                onClick={() => requireAdminAction(() => handleAddFilter('year', nextFutureYear))}
+                className="btn btn-secondary btn-sm"
+                style={{
+                  borderRadius: 'var(--radius-full)',
+                  padding: '0.28rem 0.75rem',
+                  fontSize: '0.78rem',
+                  fontWeight: 700,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.3rem',
+                  background: 'rgba(250, 70, 22, 0.12)',
+                  borderColor: 'rgba(250, 70, 22, 0.55)',
+                  color: '#FF7A45',
+                  boxShadow: '0 0 10px rgba(250, 70, 22, 0.18)'
+                }}
+                title={`Admin Increase: Add ${nextFutureYear} to timeline filters`}
+              >
+                <Plus size={13} /> {nextFutureYear}
+              </button>
+
+              {/* Custom Add Year Button */}
+              <button
+                type="button"
+                onClick={() => requireAdminAction(() => {
+                  setQuickAddType(quickAddType === 'year' ? null : 'year');
+                  setQuickAddValue('');
+                }})}
+                className="btn btn-secondary btn-sm"
+                style={{
+                  borderRadius: 'var(--radius-full)',
+                  padding: '0.28rem 0.65rem',
+                  fontSize: '0.74rem',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.25rem',
+                  borderColor: quickAddType === 'year' ? 'var(--uipath-orange)' : 'rgba(255, 255, 255, 0.15)',
+                  color: quickAddType === 'year' ? 'var(--uipath-orange)' : '#FED7AA'
+                }}
+                title="Admin: Add custom year (e.g. 2027, 2028)"
+              >
+                <Plus size={12} /> Add Year...
+              </button>
+
+              {/* Decrease / Remove Years Direct Toggle */}
+              <button
+                type="button"
+                onClick={() => requireAdminAction(() => setIsYearEditMode(!isYearEditMode))}
+                className="btn btn-secondary btn-sm"
+                style={{
+                  borderRadius: 'var(--radius-full)',
+                  padding: '0.28rem 0.65rem',
+                  fontSize: '0.74rem',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.25rem',
+                  borderColor: isYearEditMode ? '#EF4444' : 'rgba(255, 255, 255, 0.15)',
+                  color: isYearEditMode ? '#F87171' : 'var(--text-secondary)',
+                  background: isYearEditMode ? 'rgba(239, 68, 68, 0.12)' : 'transparent'
+                }}
+                title="Admin: Toggle decrease/remove mode for year chips"
+              >
+                {isYearEditMode ? <X size={12} /> : <Sliders size={12} />}
+                {isYearEditMode ? 'Done Removing' : 'Decrease / Remove Years'}
+              </button>
+
+              {/* Manage Years Modal Button */}
+              <button
+                type="button"
+                onClick={() => requireAdminAction(() => setIsYearManagerOpen(true))}
+                className="btn btn-secondary btn-sm"
+                style={{
+                  borderRadius: 'var(--radius-full)',
+                  padding: '0.28rem 0.65rem',
+                  fontSize: '0.74rem',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.25rem',
+                  borderColor: 'rgba(255, 255, 255, 0.15)',
+                  color: 'var(--text-secondary)'
+                }}
+                title="Admin: Open dedicated Year Manager dialog"
+              >
+                <Calendar size={12} /> Year Manager
+              </button>
             </div>
           </div>
 
@@ -1291,6 +1439,309 @@ export const ActivitiesPage: React.FC<Props> = ({
       </div>
     )
   }
+
+      {/* DEDICATED ADMIN YEAR MANAGER MODAL (Increase / Decrease Years) */}
+      {isYearManagerOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 1000,
+            background: 'rgba(0, 0, 0, 0.82)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1rem'
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsYearManagerOpen(false);
+          }}
+        >
+          <div
+            style={{
+              background: '#0F0F11',
+              border: '1px solid rgba(250, 70, 22, 0.4)',
+              borderRadius: 'var(--radius-lg)',
+              padding: '1.75rem',
+              width: '100%',
+              maxWidth: '560px',
+              boxShadow: '0 25px 60px rgba(0, 0, 0, 0.8), 0 0 30px rgba(250, 70, 22, 0.15)',
+              position: 'relative'
+            }}
+          >
+            {/* Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', paddingBottom: '0.85rem', borderBottom: '1px solid var(--border-subtle)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(250, 70, 22, 0.15)', border: '1px solid rgba(250, 70, 22, 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--uipath-orange)' }}>
+                  <Calendar size={18} />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '1.2rem', fontWeight: 700, margin: 0, color: '#FFF' }}>Manage Timeline Years</h3>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Admin Control • Increase or Decrease Available Years</span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsYearManagerOpen(false)}
+                style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '0.35rem' }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <p style={{ fontSize: '0.825rem', color: 'var(--text-secondary)', marginBottom: '1.25rem', lineHeight: 1.5 }}>
+              Add upcoming years (e.g. <strong>2027</strong>, <strong>2028</strong>) to schedule future workshops and hackathons, or remove years you no longer wish to filter by.
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              {/* INCREASE YEARS SECTION */}
+              <div style={{ background: 'rgba(250, 70, 22, 0.05)', border: '1px solid rgba(250, 70, 22, 0.25)', borderRadius: 'var(--radius-md)', padding: '1rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                  <span style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--uipath-orange)', letterSpacing: '0.05em' }}>
+                    1. Increase Years (Upcoming Events)
+                  </span>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Auto-increments</span>
+                </div>
+
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.65rem', alignItems: 'center' }}>
+                  {/* One-click quick stepper button */}
+                  <button
+                    type="button"
+                    onClick={() => handleAddFilter('year', nextFutureYear)}
+                    className="btn btn-primary btn-sm"
+                    style={{ fontSize: '0.82rem', padding: '0.5rem 1rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontWeight: 700 }}
+                  >
+                    <Plus size={14} /> Add Year {nextFutureYear}
+                  </button>
+
+                  {/* Custom year entry */}
+                  <div style={{ display: 'flex', gap: '0.4rem', flex: 1, minWidth: '180px' }}>
+                    <input
+                      type="text"
+                      maxLength={4}
+                      placeholder="Custom year (e.g. 2028)..."
+                      id="yearManagerCustomInput"
+                      style={{ flex: 1, padding: '0.45rem 0.65rem', background: '#000', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', color: '#FFF', fontSize: '0.825rem' }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          const val = (e.target as HTMLInputElement).value;
+                          if (val) {
+                            handleAddFilter('year', val);
+                            (e.target as HTMLInputElement).value = '';
+                          }
+                        }
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const input = document.getElementById('yearManagerCustomInput') as HTMLInputElement;
+                        if (input && input.value) {
+                          handleAddFilter('year', input.value);
+                          input.value = '';
+                        }
+                      }}
+                      className="btn btn-secondary btn-sm"
+                      style={{ fontSize: '0.78rem' }}
+                    >
+                      <Plus size={12} /> Add
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* DECREASE / CURRENT YEARS SECTION */}
+              <div style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', padding: '1rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                  <span style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em' }}>
+                    2. Active Year Filters ({activeYears.length}) • Click × to Decrease / Remove
+                  </span>
+                  {activeYears.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveFilter('year', String(minYear))}
+                      className="btn btn-secondary btn-sm"
+                      style={{ fontSize: '0.7rem', padding: '0.2rem 0.5rem', color: '#F87171', borderColor: 'rgba(239, 68, 68, 0.3)' }}
+                      title={`Remove oldest year ${minYear}`}
+                    >
+                      - Remove Oldest ({minYear})
+                    </button>
+                  )}
+                </div>
+
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  {activeYears.map((yr) => (
+                    <span
+                      key={yr}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.45rem',
+                        background: 'rgba(255, 255, 255, 0.06)',
+                        border: '1px solid rgba(255, 255, 255, 0.12)',
+                        borderRadius: 'var(--radius-full)',
+                        padding: '0.35rem 0.75rem',
+                        fontSize: '0.85rem',
+                        fontWeight: 700,
+                        color: '#FFF'
+                      }}
+                    >
+                      <span>{yr}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveFilter('year', yr)}
+                        style={{
+                          background: 'rgba(239, 68, 68, 0.25)',
+                          border: '1px solid rgba(239, 68, 68, 0.5)',
+                          borderRadius: '50%',
+                          color: '#F87171',
+                          width: '18px',
+                          height: '18px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: 'pointer',
+                          padding: 0
+                        }}
+                        title={`Decrease / Remove year ${yr}`}
+                      >
+                        <X size={11} />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid var(--border-subtle)' }}>
+              <button
+                type="button"
+                onClick={handleResetFiltersToDefault}
+                className="btn btn-secondary btn-sm"
+                style={{ fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+              >
+                <RotateCcw size={12} /> Reset to Defaults
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsYearManagerOpen(false)}
+                className="btn btn-primary btn-sm"
+                style={{ fontSize: '0.825rem', padding: '0.45rem 1.25rem' }}
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ADMIN AUTHENTICATION / UNLOCK MODAL */}
+      {isAdminAuthModalOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 1100,
+            background: 'rgba(0, 0, 0, 0.85)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1rem'
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsAdminAuthModalOpen(false);
+          }}
+        >
+          <div
+            style={{
+              background: '#0F0F11',
+              border: '1px solid rgba(250, 70, 22, 0.5)',
+              borderRadius: 'var(--radius-lg)',
+              padding: '1.75rem',
+              width: '100%',
+              maxWidth: '480px',
+              boxShadow: '0 25px 60px rgba(0, 0, 0, 0.8), 0 0 35px rgba(250, 70, 22, 0.2)'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(250, 70, 22, 0.15)', border: '1px solid rgba(250, 70, 22, 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--uipath-orange)' }}>
+                  <Shield size={18} />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '1.15rem', fontWeight: 700, margin: 0, color: '#FFF' }}>Admin Access Required</h3>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Community Governance Authorization</span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsAdminAuthModalOpen(false)}
+                style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '0.35rem' }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <p style={{ fontSize: '0.825rem', color: 'var(--text-secondary)', marginBottom: '1.25rem', lineHeight: 1.5 }}>
+              Increasing or decreasing timeline years and event categories is an administrator capability. You can authorize instantly or enter your admin password.
+            </p>
+
+            {/* Instant 1-Click Unlock */}
+            <div style={{ marginBottom: '1.25rem', padding: '1rem', background: 'rgba(250, 70, 22, 0.08)', border: '1px solid rgba(250, 70, 22, 0.3)', borderRadius: 'var(--radius-md)', textAlign: 'center' }}>
+              <button
+                type="button"
+                onClick={handleInstantAdminUnlock}
+                className="btn btn-primary"
+                style={{ width: '100%', padding: '0.65rem 1rem', fontSize: '0.85rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+              >
+                <CheckCircle2 size={16} /> 1-Click Unlock: Authorize as Community Administrator
+              </button>
+              <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block', marginTop: '0.45rem' }}>
+                Switches session to Administrator role and performs your requested action.
+              </span>
+            </div>
+
+            {/* Passcode alternative */}
+            <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '1rem' }}>
+              <label style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', display: 'block', marginBottom: '0.45rem' }}>
+                Or Enter Admin Passcode
+              </label>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <input
+                  type="password"
+                  placeholder="demo1234"
+                  value={adminAuthPassword}
+                  onChange={(e) => setAdminAuthPassword(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAdminAuthConfirm();
+                    }
+                  }}
+                  style={{ flex: 1, padding: '0.5rem 0.75rem', background: '#000', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', color: '#FFF', fontSize: '0.85rem' }}
+                />
+                <button
+                  type="button"
+                  onClick={handleAdminAuthConfirm}
+                  className="btn btn-secondary btn-sm"
+                  style={{ fontSize: '0.8rem', padding: '0.5rem 1rem' }}
+                >
+                  Verify
+                </button>
+              </div>
+              {adminAuthError && (
+                <p style={{ color: '#F87171', fontSize: '0.75rem', marginTop: '0.5rem', marginBottom: 0 }}>
+                  {adminAuthError}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div >
   );
 };

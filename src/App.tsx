@@ -269,6 +269,7 @@ export function App() {
             onSaveActivity={store.saveActivity}
             onDeleteActivity={store.deleteActivity}
             onUpdateSettings={store.updateSettings}
+            onSetCurrentRole={store.setCurrentRole}
             onNavigate={navigateTo}
           />
         )}
