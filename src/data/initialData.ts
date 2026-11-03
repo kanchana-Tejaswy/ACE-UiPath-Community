@@ -128,6 +128,7 @@ export const DEFAULT_ACTIVITY_CATEGORIES = [
 ];
 
 export const DEFAULT_ACTIVITY_YEARS = [
+  '2027',
   '2026',
   '2025',
   '2024',

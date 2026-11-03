@@ -151,15 +151,26 @@ export const localDatabase = {
 
   getSettings: (): SiteSettings => {
     const loaded = getItem<SiteSettings>(STORAGE_KEYS.SETTINGS, INITIAL_SETTINGS);
+    const storedActivities = getItem<Activity[]>(STORAGE_KEYS.ACTIVITIES, []);
+    const activityYearsFromStored = (storedActivities || [])
+      .map((a) => (a.year || (a.date ? a.date.split('-')[0] : '')).trim())
+      .filter((y) => /^\d{4}$/.test(y));
+
+    const existingConfigYears = (loaded?.activityYears && loaded.activityYears.length > 0)
+      ? loaded.activityYears
+      : DEFAULT_ACTIVITY_YEARS;
+
+    const mergedYears = Array.from(new Set([...existingConfigYears, ...activityYearsFromStored, '2027']))
+      .filter((y) => /^\d{4}$/.test(y))
+      .sort((a, b) => Number(b) - Number(a));
+
     return {
       ...INITIAL_SETTINGS,
       ...(loaded || {}),
       activityCategories: (loaded?.activityCategories && loaded.activityCategories.length > 0)
         ? loaded.activityCategories
         : DEFAULT_ACTIVITY_CATEGORIES,
-      activityYears: (loaded?.activityYears && loaded.activityYears.length > 0)
-        ? loaded.activityYears
-        : DEFAULT_ACTIVITY_YEARS,
+      activityYears: mergedYears,
       activityModes: (loaded?.activityModes && loaded.activityModes.length > 0)
         ? loaded.activityModes
         : DEFAULT_ACTIVITY_MODES,

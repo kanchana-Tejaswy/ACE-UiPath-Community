@@ -67,10 +67,20 @@ export const ActivitiesPage: React.FC<Props> = ({
   const [quickAddType, setQuickAddType] = useState<'year' | 'category' | 'mode' | null>(null);
   const [quickAddValue, setQuickAddValue] = useState('');
 
-  // Dynamic filter lists from settings or defaults
-  const activeYears = (settings?.activityYears && settings.activityYears.length > 0)
+  // Dynamically extract all years present in activities (e.g. "2027" from date "2027-01-08")
+  const yearsFromActivities = activities
+    .map((act) => (act.year || (act.date ? act.date.split('-')[0] : '')).trim())
+    .filter((yr) => /^\d{4}$/.test(yr));
+
+  // Base years configured by admin in settings or default years
+  const baseConfiguredYears = (settings?.activityYears && settings.activityYears.length > 0)
     ? settings.activityYears
     : DEFAULT_ACTIVITY_YEARS;
+
+  // Union of configured years + all years from recorded activities (ensuring 2027 and future years always appear)
+  const activeYears = Array.from(new Set([...baseConfiguredYears, ...yearsFromActivities, '2027']))
+    .filter((yr) => /^\d{4}$/.test(yr))
+    .sort((a, b) => Number(b) - Number(a));
 
   const activeCategories = (settings?.activityCategories && settings.activityCategories.length > 0)
     ? settings.activityCategories
@@ -82,7 +92,7 @@ export const ActivitiesPage: React.FC<Props> = ({
 
   // Year Stepper Metrics
   const numericYears = activeYears.map(Number).filter((n) => !isNaN(n));
-  const maxYear = numericYears.length > 0 ? Math.max(...numericYears) : 2026;
+  const maxYear = numericYears.length > 0 ? Math.max(...numericYears) : 2027;
   const minYear = numericYears.length > 0 ? Math.min(...numericYears) : 2022;
   const nextFutureYear = String(maxYear + 1);
 
@@ -153,6 +163,7 @@ export const ActivitiesPage: React.FC<Props> = ({
         onUpdateSettings?.({ activityYears: updated });
         showToast(`Year filter "${trimmed}" added.`);
       }
+      setSelectedYear(trimmed);
     } else if (type === 'category') {
       if (!activeCategories.includes(trimmed)) {
         const updated = [...activeCategories, trimmed];

@@ -433,7 +433,17 @@ export const EventEditorModal: React.FC<Props> = ({
       return;
     }
 
-    const derivedYear = formData.year || (formData.date ? formData.date.split('-')[0] : '2026');
+    const derivedYear = formData.year || (formData.date ? formData.date.split('-')[0] : '2027');
+    if (derivedYear && /^\d{4}$/.test(derivedYear) && !yearsList.includes(derivedYear)) {
+      const updatedYears = [derivedYear, ...yearsList].sort((a, b) => Number(b) - Number(a));
+      setYearsList(updatedYears);
+      if (onUpdateYears) {
+        onUpdateYears(updatedYears);
+      } else {
+        settingsRepository.update({ activityYears: updatedYears });
+        if (typeof window !== 'undefined') window.dispatchEvent(new Event('ace_uipath_db_update'));
+      }
+    }
     const activityToSave: Activity = {
       ...formData,
       year: derivedYear,
