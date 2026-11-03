@@ -49,7 +49,6 @@ export const ActivitiesPage: React.FC<Props> = ({
   onSetCurrentRole,
   onNavigate
 }) => {
-  const [selectedYear, setSelectedYear] = useState<string>('ALL');
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [selectedMode, setSelectedMode] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -57,9 +56,7 @@ export const ActivitiesPage: React.FC<Props> = ({
 
   // Filter Management State
   const [isFilterManagerOpen, setIsFilterManagerOpen] = useState(false);
-  const [isYearManagerOpen, setIsYearManagerOpen] = useState(false);
   const [isAdminAuthModalOpen, setIsAdminAuthModalOpen] = useState(false);
-  const [isYearEditMode, setIsYearEditMode] = useState(false);
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
   const [adminAuthPassword, setAdminAuthPassword] = useState('');
   const [adminAuthError, setAdminAuthError] = useState<string | null>(null);
@@ -89,13 +86,6 @@ export const ActivitiesPage: React.FC<Props> = ({
     ? settings.activityModes
     : DEFAULT_ACTIVITY_MODES;
 
-  // Year Stepper Metrics
-  const numericYears = activeYears.map(Number).filter((n) => !isNaN(n));
-  const maxYear = numericYears.length > 0 ? Math.max(...numericYears) : 2027;
-  const minYear = numericYears.length > 0 ? Math.min(...numericYears) : 2022;
-  const nextFutureYear = String(maxYear + 1);
-
-  const years = ['ALL', ...activeYears];
   const categories = ['ALL', ...activeCategories];
   const modes = ['ALL', ...activeModes];
 
@@ -160,9 +150,8 @@ export const ActivitiesPage: React.FC<Props> = ({
       if (!activeYears.includes(trimmed)) {
         const updated = [trimmed, ...activeYears].sort((a, b) => Number(b) - Number(a));
         onUpdateSettings?.({ activityYears: updated });
-        showToast(`Year filter "${trimmed}" added.`);
+        showToast(`Year "${trimmed}" added.`);
       }
-      setSelectedYear(trimmed);
     } else if (type === 'category') {
       if (!activeCategories.includes(trimmed)) {
         const updated = [...activeCategories, trimmed];
@@ -187,9 +176,8 @@ export const ActivitiesPage: React.FC<Props> = ({
         return;
       }
       const updated = activeYears.filter((y) => y !== value);
-      if (selectedYear === value) setSelectedYear('ALL');
       onUpdateSettings?.({ activityYears: updated });
-      showToast(`Year filter "${value}" removed.`);
+      showToast(`Year "${value}" removed.`);
     } else if (type === 'category') {
       if (activeCategories.length <= 1) {
         alert('At least one category filter must remain.');
